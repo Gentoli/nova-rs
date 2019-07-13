@@ -418,7 +418,7 @@ pub trait CommandList {
 =======
     /// Note: buffers you call this method on must _not_ be device local, because they must be
     /// CPU-addressable
-    /// 
+    ///
     /// * `destination_buffer` - The buffer to write data to
     /// * `destination_offset` - The number of bytes from the start of `destination_buffer` to write to
     /// * `source_buffer` - The buffer to read data from
