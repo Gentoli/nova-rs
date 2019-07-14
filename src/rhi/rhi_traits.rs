@@ -409,22 +409,11 @@ pub trait CommandList {
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
     /// * `destination_buffer` - The buffer to write data to.
     /// * `destination_offset` - The number of bytes from the start of `destination_buffer` to write to.
     /// * `source_buffer` - The buffer to read data from.
     /// * `source_offset` - The number of bytes from the start of `source_buffer` to read data from.
     /// * `num_bytes` - The number of bytes to copy.
-=======
-    /// Note: buffers you call this method on must _not_ be device local, because they must be
-    /// CPU-addressable
-    ///
-    /// * `destination_buffer` - The buffer to write data to
-    /// * `destination_offset` - The number of bytes from the start of `destination_buffer` to write to
-    /// * `source_buffer` - The buffer to read data from
-    /// * `source_offset` - The number of bytes from the start of `source_buffer` to read data from
-    /// * `num_bytes` - The number of bytes to copy
->>>>>>> [rhi] CommandPool => CommandAllocator
     fn copy_buffer(
         destination_buffer: Self::Buffer,
         destination_offset: u64,
