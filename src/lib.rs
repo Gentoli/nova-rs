@@ -24,6 +24,9 @@ pub mod settings;
 pub mod shaderpack;
 pub mod surface;
 
+#[macro_use]
+extern crate dxgi;
+
 #[cfg(test)]
 mod tests {
     #[test]
