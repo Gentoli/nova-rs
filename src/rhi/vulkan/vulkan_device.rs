@@ -4,6 +4,7 @@ use crate::rhi::vulkan::vulkan_memory::VulkanMemory;
 use crate::rhi::vulkan::vulkan_queue::VulkanQueue;
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use ash::version::DeviceV1_0;
 use ash::vk;
 use cgmath::Vector2;
@@ -44,7 +45,7 @@ impl Device for VulkanDevice {
     type Memory = VulkanMemory;
     type CommandAllocator = VulkanCommandAllocator;
     type Image = ();
-    type Renderpass = ();
+    type Renderpass = VulkanRenderPass;
     type Framebuffer = ();
     type PipelineInterface = ();
     type DescriptorPool = ();

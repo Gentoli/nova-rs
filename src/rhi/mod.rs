@@ -21,6 +21,7 @@ mod vulkan {
     mod vulkan_memory;
     mod vulkan_physical_device;
     mod vulkan_queue;
+    mod vulkan_renderpass;
 }
 
 // Re-exports
