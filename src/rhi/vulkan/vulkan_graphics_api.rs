@@ -4,7 +4,7 @@ use super::super::GraphicsApi;
 
 use super::vulkan_physical_device::{self, VulkanPhysicalDevice};
 use ash::{
-    version::{EntryV1_0, InstanceV1_0, InstanceV1_1},
+    version::{EntryV1_0, InstanceV1_0},
     vk,
 };
 use std::{
@@ -12,6 +12,7 @@ use std::{
     os::raw::{c_char, c_void},
 };
 
+use crate::rhi::PhysicalDevice;
 use ash::extensions::ext::DebugReport;
 use log::debug;
 
@@ -39,6 +40,7 @@ pub enum VulkanGraphicsApiCreationError {
 pub struct VulkanGraphicsApi {
     instance: ash::Instance,
     debug_callback: Option<vk::DebugReportCallbackEXT>,
+    entry: ash::Entry,
 }
 
 impl VulkanGraphicsApi {
@@ -130,6 +132,7 @@ impl VulkanGraphicsApi {
         Ok(VulkanGraphicsApi {
             instance,
             debug_callback,
+            entry,
         })
     }
 }
@@ -137,7 +140,22 @@ impl VulkanGraphicsApi {
 impl GraphicsApi for VulkanGraphicsApi {
     type PhysicalDevice = VulkanPhysicalDevice;
 
-    fn get_adapters() -> Vec<VulkanPhysicalDevice> {
-        let mut devices = Vec::<VulkanPhysicalDevice>::new();
+    fn get_adapters(&self) -> Vec<VulkanPhysicalDevice> {
+        let mut devices = {
+            let devices = unsafe { self.instance.enumerate_physical_devices() };
+            if devices.is_err() {
+                // TODO: The current trait doesn't allow us to return an error, what to do?
+                return Vec::new();
+            }
+
+            devices
+                .unwrap()
+                .iter()
+                .map(|d| VulkanPhysicalDevice::new(self.instance.handle(), *d))
+                .filter(|d| d.can_be_used_by_nova())
+                .collect()
+        };
+
+        devices
     }
 }
