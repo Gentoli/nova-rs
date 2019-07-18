@@ -22,6 +22,7 @@ pub struct VulkanDevice {
     memory_properties: vk::PhysicalDeviceMemoryProperties,
 
     allocated_memory: Vec<VulkanMemory>,
+    swapchain: vk::SwapchainKHR,
 }
 
 impl VulkanDevice {
@@ -42,10 +43,13 @@ impl VulkanDevice {
             memory_properties,
 
             allocated_memory: Vec::new(),
+            swapchain: 0u64 as vk::SwapchainKHR,
         };
 
         Ok(device)
     }
+
+    fn create_swapchain(&mut self) {}
 
     fn find_memory_by_flags(&self, memory_flags: vk::MemoryPropertyFlags, exact: bool) -> Option<u32> {
         self.memory_properties
