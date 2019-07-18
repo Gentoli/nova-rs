@@ -14,7 +14,15 @@
 #![warn(missing_docs)]
 #![warn(unused)]
 
+<<<<<<< HEAD
 pub mod core;
+=======
+extern crate d3d12;
+
+#[macro_use]
+extern crate log;
+
+>>>>>>> [rhi::dx12] D X 1 2
 pub mod debugging;
 pub mod fs;
 pub mod loading;
