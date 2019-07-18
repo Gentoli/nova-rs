@@ -169,19 +169,20 @@ impl PhysicalDevice for VulkanPhysicalDevice {
             .build();
 
         (unsafe { self.instance.create_device(self.phys_device, &device_create_info, None) })
-            .map(|device| VulkanDevice {
-                instance: self.instance.clone(),
-                device,
-                graphics_queue_family_index: self.graphics_queue_family_index as u32,
-                transfer_queue_family_index: self.transfer_queue_family_index as u32,
-                compute_queue_family_index: if self.compute_queue_family_index != std::usize::MAX {
-                    Some(self.compute_queue_family_index as u32)
-                } else {
-                    None
-                },
-                memory_properties: unsafe { self.instance.get_physical_device_memory_properties(self.phys_device) },
-            })
             .map_err(|_| DeviceCreationError::Failed)
+            .and_then(|device| {
+                VulkanDevice::new(
+                    self.instance.clone(),
+                    device,
+                    self.graphics_queue_family_index as u32,
+                    self.transfer_queue_family_index as u32,
+                    match self.compute_queue_family_index {
+                        std::usize::MAX => None,
+                        v => v as u32,
+                    },
+                    unsafe { self.instance.get_physical_device_memory_properties(self.phys_device) },
+                )
+            })
     }
 
     fn get_free_memory(&self) -> u64 {

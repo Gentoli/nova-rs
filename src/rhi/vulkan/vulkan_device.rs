@@ -25,6 +25,28 @@ pub struct VulkanDevice {
 }
 
 impl VulkanDevice {
+    pub fn new(
+        instance: ash::Instance,
+        device: ash::Device,
+        graphics_queue_family_index: u32,
+        transfer_queue_family_index: u32,
+        compute_queue_family_index: Option<u32>,
+        memory_properties: vk::PhysicalDeviceMemoryProperties,
+    ) -> Result<VulkanDevice, DeviceCreationError> {
+        let device = VulkanDevice {
+            instance,
+            device,
+            graphics_queue_family_index,
+            transfer_queue_family_index,
+            compute_queue_family_index,
+            memory_properties,
+
+            allocated_memory: Vec::new(),
+        };
+
+        Ok(device)
+    }
+
     fn find_memory_by_flags(&self, memory_flags: vk::MemoryPropertyFlags, exact: bool) -> Option<u32> {
         self.memory_properties
             .memory_types
