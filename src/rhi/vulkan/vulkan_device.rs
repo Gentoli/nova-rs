@@ -1,4 +1,5 @@
 use crate::rhi::shaderpack::*;
+use crate::rhi::vulkan::vulkan_command_allocator::VulkanCommandAllocator;
 use crate::rhi::vulkan::vulkan_memory::VulkanMemory;
 use crate::rhi::vulkan::vulkan_queue::VulkanQueue;
 use crate::rhi::*;
@@ -18,6 +19,8 @@ pub struct VulkanDevice {
     compute_queue_family_index: Option<u32>,
 
     memory_properties: vk::PhysicalDeviceMemoryProperties,
+
+    allocated_memory: Vec<VulkanMemory>,
 }
 
 impl VulkanDevice {
@@ -39,7 +42,7 @@ impl VulkanDevice {
 impl Device for VulkanDevice {
     type Queue = VulkanQueue;
     type Memory = VulkanMemory;
-    type CommandAllocator = ();
+    type CommandAllocator = VulkanCommandAllocator;
     type Image = ();
     type Renderpass = ();
     type Framebuffer = ();
@@ -143,7 +146,6 @@ impl Device for VulkanDevice {
                         };
                     }
                     Ok(mem) => Ok(VulkanMemory {
-                        // TODO: Save allocated memory!
                         device: self.device.clone(),
                         memory: allocated,
                     }),
@@ -160,7 +162,7 @@ impl Device for VulkanDevice {
         &self,
         create_info: CommandAllocatorCreateInfo,
     ) -> Result<Self::CommandAllocator, MemoryError> {
-        unimplemented!()
+        Ok(VulkanCommandAllocator {})
     }
 
     fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {

@@ -1,6 +1,7 @@
 use crate::rhi::*;
 use ash::vk;
 
+#[derive(Clone)]
 pub struct VulkanMemory {
     device: ash::Device,
     memory: vk::DeviceMemory,
