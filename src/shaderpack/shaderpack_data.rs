@@ -1,6 +1,9 @@
 //! Structs that represent shaderpack data
 
-use std::{collections::HashMap, path::PathBuf};
+use cgmath::Vector2;
+use serde::Deserialize;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct ShaderpackData {
@@ -11,7 +14,8 @@ pub struct ShaderpackData {
     resources: ShaderpackResourceData,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PipelineCreationInfo {
     /// The name of this pipeline
     name: String,
@@ -32,33 +36,48 @@ pub struct PipelineCreationInfo {
     /// The material to use if this one's shaders can't be found
     fallback: Option<String>,
     /// A bias to apply to the depth
+    #[serde(default = "PipelineCreationInfo::default_depth_bias")]
     depth_bias: f32,
     /// The depth bias, scaled by slope I guess?
+    #[serde(default = "PipelineCreationInfo::default_slope_scaled_depth_bias")]
     slope_scaled_depth_bias: f32,
     /// The reference value to use for the stencil test
+    #[serde(default = "PipelineCreationInfo::default_stencil_ref")]
     stencil_ref: u32,
     /// The mask to use when reading from the stencil buffer
+    #[serde(default = "PipelineCreationInfo::default_stencil_read_mask")]
     stencil_read_mask: u32,
     /// The mask to use when writing to the stencil buffer
+    #[serde(default = "PipelineCreationInfo::default_stencil_write_mask")]
     stencil_write_mask: u32,
     /// How to handle MSAA for this state
+    #[serde(default = "PipelineCreationInfo::default_msaa_support")]
     msaa_support: MSAASupport,
     /// Decides how the vertices are rendered
+    #[serde(default = "PipelineCreationInfo::default_primitive_mode")]
     primitive_mode: PrimitiveTopology,
     /// Where to get the blending factor for the soource
+    #[serde(default = "PipelineCreationInfo::default_src_blend_factor")]
     src_blend_factor: BlendFactor,
     /// Where to get the blending factor for the destination
+    #[serde(default = "PipelineCreationInfo::default_dst_blend_factor")]
     dst_blend_factor: BlendFactor,
     /// How to get the source alpha in a blend
+    #[serde(default = "PipelineCreationInfo::default_alpha_src")]
     alpha_src: BlendFactor,
     /// How to get the destination alpha in a blend
+    #[serde(rename = "alphaDest")]
+    #[serde(default = "PipelineCreationInfo::default_alpha_dst")]
     alpha_dst: BlendFactor,
     /// The function to use for the depth test
+    #[serde(default = "PipelineCreationInfo::default_depth_func")]
     depth_func: CompareOp,
     /// The render queue that this pass belongs to
     /// This may or may not be removed depending on what is actually needed by Nova
+    #[serde(default = "PipelineCreationInfo::default_render_queue")]
     render_queue: RenderQueue,
     /// Vertex shader to use
+    #[serde(default = "PipelineCreationInfo::default_vertex_shader")]
     vertex_shader: ShaderSource,
     /// Geometry shader to use
     geometry_shader: Option<ShaderSource>,
@@ -71,6 +90,52 @@ pub struct PipelineCreationInfo {
 }
 
 impl PipelineCreationInfo {
+    fn default_depth_bias() -> f32 {
+        0.0
+    }
+    fn default_slope_scaled_depth_bias() -> f32 {
+        0.0
+    }
+    fn default_stencil_ref() -> u32 {
+        0
+    }
+    fn default_stencil_read_mask() -> u32 {
+        0
+    }
+    fn default_stencil_write_mask() -> u32 {
+        0
+    }
+    fn default_msaa_support() -> MSAASupport {
+        MSAASupport::None
+    }
+    fn default_primitive_mode() -> PrimitiveTopology {
+        PrimitiveTopology::Triangles
+    }
+    fn default_src_blend_factor() -> BlendFactor {
+        BlendFactor::One
+    }
+    fn default_dst_blend_factor() -> BlendFactor {
+        BlendFactor::Zero
+    }
+    fn default_alpha_src() -> BlendFactor {
+        BlendFactor::One
+    }
+    fn default_alpha_dst() -> BlendFactor {
+        BlendFactor::Zero
+    }
+    fn default_depth_func() -> CompareOp {
+        CompareOp::Less
+    }
+    fn default_render_queue() -> RenderQueue {
+        RenderQueue::Opaque
+    }
+    fn default_vertex_shader() -> ShaderSource {
+        ShaderSource {
+            filename: PathBuf::from("<NAME_MISSING>"),
+            source: Vec::new(),
+        }
+    }
+
     pub fn merge_with_parent(&self, _other: &PipelineCreationInfo) -> Self {
         unimplemented!()
     }
@@ -93,9 +158,11 @@ impl PipelineCreationInfo {
 /// change per frame, a UBO for per-model data like the model matrix, and the virtual texture atlases. The default
 /// resources.json file sets up sixteen framebuffer color attachments for ping-pong buffers, a depth attachment,
 /// some shadow maps, etc
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RenderPassCreationInfo {
     /// The name of this render pass
+    #[serde(default = "RenderPassCreationInfo::default_name")]
     name: String,
     /// The materials that MUST execute before this one
     dependencies: Vec<String>,
@@ -111,65 +178,120 @@ pub struct RenderPassCreationInfo {
     output_buffers: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+impl RenderPassCreationInfo {
+    fn default_name() -> String {
+        String::from("<NAME_MISSING>")
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MaterialData {
     name: String,
     passes: Vec<MaterialPass>,
     geometry_filter: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ShaderpackResourceData {
     textures: Vec<TextureCreateInfo>,
     samplers: Vec<SamplerCreateInfo>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VertexFieldData {
     semantic_name: String,
     field: VertexField,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StencilOpState {
+    #[serde(default = "StencilOpState::default_fail_op")]
     fail_op: StencilOp,
+    #[serde(default = "StencilOpState::default_pass_op")]
     pass_op: StencilOp,
+    #[serde(default = "StencilOpState::default_depth_fail_op")]
     depth_fail_op: StencilOp,
-    compare_op: StencilOp,
+    #[serde(default = "StencilOpState::default_compare_op")]
+    compare_op: CompareOp,
+    #[serde(default = "StencilOpState::default_compare_mask")]
     compare_mask: u32,
+    #[serde(default = "StencilOpState::default_write_mask")]
     write_mask: u32,
 }
 
-#[derive(Debug, Clone)]
+impl StencilOpState {
+    fn default_fail_op() -> StencilOp {
+        StencilOp::Keep
+    }
+    fn default_pass_op() -> StencilOp {
+        StencilOp::Keep
+    }
+    fn default_depth_fail_op() -> StencilOp {
+        StencilOp::Keep
+    }
+    fn default_compare_op() -> CompareOp {
+        CompareOp::Equal
+    }
+    fn default_compare_mask() -> u32 {
+        0
+    }
+    fn default_write_mask() -> u32 {
+        0
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ShaderSource {
     filename: PathBuf,
+    #[serde(skip)]
     source: Vec<u32>,
 }
 
 ///  A description of a texture that a render pass outputs to
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextureAttachmentInfo {
     ///  The name of the texture
     name: String,
     /// Pixel format of the texture
+    #[serde(default = "TextureAttachmentInfo::default_pixel_format")]
     pixel_format: PixelFormat,
     ///  Whether to clear the texture
     ///
     /// If the texture is a depth buffer, it gets cleared to 1
     /// If the texture is a stencil buffer, it gets cleared to 0xFFFFFFFF
     /// If the texture is a color buffer, it gets cleared to (0, 0, 0, 0)
+    #[serde(default = "TextureAttachmentInfo::default_clear")]
     clear: bool,
 }
 
-#[derive(Debug, Clone)]
+impl TextureAttachmentInfo {
+    fn default_pixel_format() -> PixelFormat {
+        PixelFormat::RGBA8
+    }
+    fn default_clear() -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MaterialPass {
     name: String,
+    // This is not populated until a post-processing pass _after_ deserialization and comes from
+    // the parent struct MaterialData
+    #[serde(default)]
     material_name: String,
     pipeline: String,
     bindings: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextureCreateInfo {
     ///  The name of the texture
     ///
@@ -209,32 +331,78 @@ pub struct TextureCreateInfo {
 
 ///  Defines a sampler to use for a texture
 ///
-/// At the time of writing I'm not sure how this is corellated with a texture, but all well
-#[derive(Debug, Clone)]
+/// At the time of writing I'm not sure how this is correlated with a texture, but all well
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SamplerCreateInfo {
+    #[serde(default = "SamplerCreateInfo::default_name")]
     name: String,
     ///  What kind of texture filter to use
     ///
     /// texel_aa does something that I don't want to figure out right now. Bilinear is your regular bilinear filter,
     /// and point is the point filter. Aniso isn't an option and I kinda hope it stays that way
+    #[serde(default = "SamplerCreateInfo::default_filter")]
     filter: TextureFilter,
     ///  How the texture should wrap at the edges
+    #[serde(default = "SamplerCreateInfo::default_wrap_mode")]
     wrap_mode: WrapMode,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl SamplerCreateInfo {
+    fn default_name() -> String {
+        String::new()
+    }
+    fn default_filter() -> TextureFilter {
+        TextureFilter::Point
+    }
+    fn default_wrap_mode() -> WrapMode {
+        WrapMode::Clamp
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextureFormat {
     ///  The format of the texture
+    #[serde(default = "TextureFormat::default_pixel_format")]
     pixel_format: PixelFormat,
     ///  How to interpret the dimensions of this texture
+    #[serde(default = "TextureFormat::default_dimension_type")]
     dimension_type: TextureDimensionType,
     ///  The width, in pixels, of the texture
+    #[serde(default = "TextureFormat::default_width")]
     width: f32,
     ///  The height, in pixels, of the texture
+    #[serde(default = "TextureFormat::default_height")]
     height: f32,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+impl TextureFormat {
+    fn default_pixel_format() -> PixelFormat {
+        PixelFormat::RGBA8
+    }
+    fn default_dimension_type() -> TextureDimensionType {
+        TextureDimensionType::ScreenRelative
+    }
+    fn default_width() -> f32 {
+        0.0
+    }
+    fn default_height() -> f32 {
+        0.0
+    }
+
+    pub fn get_size_in_pixels(&self, screen_size: Vector2<f32>) -> Vector2<f32> {
+        let (width, height) = match self.dimension_type {
+            TextureDimensionType::ScreenRelative => (self.width * screen_size.x, self.height * screen_size.y),
+            TextureDimensionType::Absolute => (self.width, self.height),
+        };
+
+        Vector2::new(width.round(), height.round())
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum RasterizerState {
     /// Enable blending for this material state
     Blending,
@@ -258,20 +426,23 @@ pub enum RasterizerState {
     DisableAlphaWrite,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum MSAASupport {
     MSAA,
     Both,
     None,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum PrimitiveTopology {
     Triangles,
     Lines,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum BlendFactor {
     One,
     Zero,
@@ -285,7 +456,8 @@ pub enum BlendFactor {
     OneMinusDstAlpha,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum CompareOp {
     Never,
     Less,
@@ -297,14 +469,16 @@ pub enum CompareOp {
     Always,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum RenderQueue {
     Transparent,
     Opaque,
     Cutout,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum VertexField {
     ///  The vertex position
     ///
@@ -353,7 +527,8 @@ pub enum VertexField {
     McEntityId,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum StencilOp {
     Keep,
     Zero,
@@ -365,7 +540,8 @@ pub enum StencilOp {
     Invert,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum PixelFormat {
     RGBA8,
     RGBA16F,
@@ -374,26 +550,30 @@ pub enum PixelFormat {
     DepthStencil,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum TextureFilter {
     TexelAA,
     Bilinear,
     Point,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum WrapMode {
     Repeat,
     Clamp,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum TextureDimensionType {
     ScreenRelative,
     Absolute,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
+#[serde(untagged)]
 pub enum TextureLocation {
     ///  The texture is written to by a shader
     Dynamic,
