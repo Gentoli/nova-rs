@@ -1,3 +1,5 @@
+use failure::Fail;
+
 /// Represents an abstract Surface which provides the objects required for the rendering platform
 pub trait Surface<T, O> {
     /// Creates or retrieves the object of the type `T` required for the current platform
