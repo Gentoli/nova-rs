@@ -1,4 +1,4 @@
-//! Structs that represent shaderpack data
+//! Data and utilities for working with shaderpacks
 
 use cgmath::Vector2;
 use serde::Deserialize;
