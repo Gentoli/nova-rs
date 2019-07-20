@@ -24,9 +24,9 @@ use winapi::{
     um::d3d12 as d3d12_raw,
 };
 
-pub struct Dx12Device {
+pub struct Dx12Device<'a> {
     /// Graphics adapter that we're using
-    phys_device: &Dx12PhysicalDevice,
+    phys_device: &'a Dx12PhysicalDevice,
 
     /// D3D12 device that we're wrapping
     device: d3d12::Device,
@@ -126,6 +126,23 @@ impl Device for Dx12Device {
 
         // Ensure we have enough free memory for the requested allocation
         let free_memory = self.phys_device.get_free_memory();
+        if free_memory < size {
+            if memory_usage == MemoryUsage::StagingBuffer {
+                Err(AllocationError::OutOfHostMemory)
+            }
+            Err(AllocationError::OutOfDeviceMemory)
+        } else {
+            let (heap, hr) = self.device.create_heap(size, heap_properties, 64, heap_flags);
+            if winerror::SUCCEEDED(hr) {
+                Ok(Dx12Memory::new(heap, size))
+            } else {
+                if memory_usage == MemoryUsage::StagingBuffer {
+                    Err(AllocationError::OutOfHostMemory)
+                } else {
+                    Err(AllocationError::OutOfDeviceMemory)
+                }
+            }
+        }
     }
 
     fn create_command_allocator(
