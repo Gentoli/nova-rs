@@ -14,12 +14,13 @@ use crate::{
     shaderpack,
 };
 use cgmath::Vector2;
+use d3d12::heap;
 use std::{
     collections::{hash_map::RandomState, HashMap},
     mem,
 };
 use winapi::{
-    shared::{dxgi1_2, dxgi1_4},
+    shared::{dxgi1_2, dxgi1_4, winerror},
     um::d3d12 as d3d12_raw,
 };
 
@@ -78,7 +79,7 @@ impl Device for Dx12Device {
             d3d12::queue::CommandQueueFlags::empty(),
             0,
         );
-        if winerror::SUCCESS(hr) {
+        if winerror::SUCCEEDED(hr) {
             Ok(Dx12Queue::new(queue))
         } else {
             Err(QueueGettingError::OutOfMemory)
@@ -92,37 +93,35 @@ impl Device for Dx12Device {
         allowed_objects: ObjectType,
     ) -> Result<Dx12Memory, AllocationError> {
         let heap_properties = match memory_usage {
-            MemoryUsage::DeviceOnly => d3d12_raw::D3D12_HEAP_PROPERTIES {
-                Type: d3d12_raw::D3D12_HEAP_TYPE_DEFAULT,
-                CPUPageProperty: d3d12_raw::D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE,
-                MemoryPoolPreference: d3d12_raw::D3D12_MEMORY_POOL_L1, // TODO: Find a way to handle UMA
-                CreationNodeMask: 0,
-                VisibleNodeMask: 0,
-            },
-            MemoryUsage::LowFrequencyUpload => d3d12_raw::D3D12_HEAP_PROPERTIES {
-                Type: d3d12_raw::D3D12_HEAP_TYPE_UPLOAD,
-                CPUPageProperty: d3d12_raw::D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE,
-                MemoryPoolPreference: d3d12_raw::D3D12_MEMORY_POOL_L1, // TODO: Find a way to handle UMA
-                CreationNodeMask: 0,
-                VisibleNodeMask: 0,
-            },
-            MemoryUsage::StagingBuffer => d3d12_raw::D3D12_HEAP_PROPERTIES {
-                Type: d3d12_raw::D3D12_HEAP_TYPE_UPLOAD,
-                CPUPageProperty: d3d12_raw::D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE,
-                MemoryPoolPreference: d3d12_raw::D3D12_MEMORY_POOL_L0,
-                CreationNodeMask: 0,
-                VisibleNodeMask: 0,
-            },
+            MemoryUsage::DeviceOnly => heap::Properties::new(
+                heap::Type::Default,
+                heap::CpuPageProperty::NotAvailable,
+                heap::MemoryPool::L1,
+                0,
+                0,
+            ),
+            MemoryUsage::LowFrequencyUpload => heap::Properties::new(
+                heap::Type::Upload,
+                heap::CpuPageProperty::WriteCombine,
+                heap::MemoryPool::L1,
+                0,
+                0,
+            ),
+            MemoryUsage::StagingBuffer => heap::Properties::new(
+                heap::Type::Upload,
+                heap::CpuPageProperty::WriteCombine,
+                heap::MemoryPool::L0,
+                0,
+                0,
+            ),
         };
 
         let heap_flags = match allowed_objects {
-            ObjectType::Buffer => d3d12_raw::D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS,
-            ObjectType::Texture => d3d12_raw::D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES,
-            ObjectType::Attachment => d3d12_raw::D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
-            ObjectType::SwapchainSurface => {
-                d3d12_raw::D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES | d3d12_raw::D3D12_HEAP_FLAG_ALLOW_DISPLAY
-            }
-            ObjectType::Any => d3d12_raw::D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            ObjectType::Buffer => heap::Flags::AllowOnlyBuffers,
+            ObjectType::Texture => heap::Flags::AllowOnlyNonRtDsTextures,
+            ObjectType::Attachment => heap::Flags::AllowOnlyNonRtDsTextures,
+            ObjectType::SwapchainSurface => heap::Flags::AllowOnlyRtDsTextures | heap::Flags::AllowDisplay,
+            ObjectType::Any => heap::Flags::AllowAllBuffersAndTextures,
         };
 
         // Ensure we have enough free memory for the requested allocation
