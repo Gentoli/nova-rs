@@ -6,17 +6,21 @@
 //! pack loader will also be able to read resource packs in either filesystem folders or a zip folder. It should be
 //! constructed in a way that will allow support for other zip formats
 
-use failure::Error;
+use failure::{Error, Fail};
 use futures::Future;
 use std::path::Path;
 
-trait FileTree<'a> {
+mod dir;
+
+pub use dir::*;
+
+pub trait FileTree<'a> {
     type CreateResult: FileTree<'a>;
     type DirIter: Iterator<Item = &'a Path>;
 
     /// Create a file tree from the path provided.
     /// May be expensive depending on the target you are opening.
-    fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, Error>>>;
+    fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>;
 
     /// Checks is file path exists within the current file tree.
     fn exists(&self, path: &Path) -> bool;
@@ -54,4 +58,14 @@ trait FileTree<'a> {
     ///
     /// Fails if file doesn't exist or isn't readable.
     fn read_text(&self, path: &Path) -> Box<dyn Future<Output = Result<String, Error>>>;
+}
+
+#[derive(Debug, Fail)]
+pub enum LoadingError {
+    #[fail(display = "Path doesn't exist.")]
+    PathNotFound,
+    #[fail(display = "Expected directory.")]
+    NotDirectory,
+    #[fail(display = "Expected file.")]
+    NotFile,
 }
