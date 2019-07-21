@@ -14,23 +14,33 @@ use ash::extensions::khr::Win32Surface;
 use crate::rhi::{
     vulkan::vulkan_device::VulkanDevice, PhysicalDeviceManufacturer, PhysicalDeviceType, VulkanGraphicsApi,
 };
-use ash::version::InstanceV1_0;
+use crate::surface::Surface;
+use ash::version::{InstanceV1_0, InstanceV1_1};
+use std::rc::Rc;
 
 pub struct VulkanPhysicalDevice {
     instance: ash::Instance,
-
     phys_device: vk::PhysicalDevice,
+    surface: vk::SurfaceKHR,
 
+    surface_loader: ash::extensions::khr::Surface,
     graphics_queue_family_index: usize,
     compute_queue_family_index: usize,
     transfer_queue_family_index: usize,
 }
 
 impl VulkanPhysicalDevice {
-    pub fn new(instance: ash::Instance, phys_device: vk::PhysicalDevice) -> VulkanPhysicalDevice {
+    pub fn new(
+        instance: ash::Instance,
+        phys_device: vk::PhysicalDevice,
+        surface: vk::SurfaceKHR,
+        entry: ash::Entry,
+    ) -> VulkanPhysicalDevice {
         let mut dev = VulkanPhysicalDevice {
             instance,
             phys_device,
+            surface,
+            surface_loader: ash::extensions::khr::Surface::new(&entry, &instance),
             graphics_queue_family_index: std::usize::MAX,
             compute_queue_family_index: std::usize::MAX,
             transfer_queue_family_index: std::usize::MAX,
@@ -46,11 +56,12 @@ impl VulkanPhysicalDevice {
         };
 
         for (index, props) in queue_family_props.iter().enumerate() {
-            // TODO: At this stage we can't check if a surface is supported since we didn't create one yet
-            // let supports_present = self.instance.get_physical_device_queue_family_properties()
-            // if !supports_present {
-            // continue;
-            // }
+            if !unsafe {
+                self.surface_loader
+                    .get_physical_device_surface_support(self.phys_device, index as u32, self.surface)
+            } {
+                continue;
+            }
 
             if self.graphics_queue_family_index == std::usize::MAX
                 && props.queue_flags & vk::QueueFlags::GRAPHICS != 0u32

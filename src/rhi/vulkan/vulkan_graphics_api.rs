@@ -4,12 +4,14 @@ use crate::rhi::vulkan::vulkan_physical_device::VulkanPhysicalDevice;
 use crate::rhi::PhysicalDevice;
 use crate::rhi::*;
 
+use crate::surface::Surface;
 use ash::extensions::ext::DebugReport;
 use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
 use log::debug;
 use std::ffi;
 use std::os::raw;
+use std::rc::Rc;
 
 unsafe extern "system" fn vulkan_debug_callback(
     _: vk::DebugReportFlagsEXT,
@@ -36,6 +38,7 @@ pub struct VulkanGraphicsApi {
     instance: ash::Instance,
     debug_callback: Option<vk::DebugReportCallbackEXT>,
     entry: ash::Entry,
+    surface: Rc<Surface<vk::SurfaceKHR>>,
 }
 
 impl VulkanGraphicsApi {
@@ -53,6 +56,7 @@ impl VulkanGraphicsApi {
     pub fn new(
         application_name: String,
         application_version: (u32, u32, u32),
+        surface: Rc<Surface<vk::SurfaceKHR>>,
     ) -> Result<VulkanGraphicsApi, VulkanGraphicsApiCreationError> {
         let layer_names_raw = VulkanGraphicsApi::get_layer_names().as_slice();
 
@@ -121,12 +125,14 @@ impl VulkanGraphicsApi {
             instance,
             debug_callback,
             entry,
+            surface,
         })
     }
 }
 
 impl GraphicsApi for VulkanGraphicsApi {
     type PhysicalDevice = VulkanPhysicalDevice;
+    type PlatformSurface = vk::SurfaceKHR;
 
     fn get_adapters(&self) -> Vec<VulkanPhysicalDevice> {
         let devices = unsafe { self.instance.enumerate_physical_devices() };
@@ -138,8 +144,12 @@ impl GraphicsApi for VulkanGraphicsApi {
         devices
             .unwrap()
             .iter()
-            .map(|d| VulkanPhysicalDevice::new(self.instance, *d))
+            .map(|d| VulkanPhysicalDevice::new(self.instance, *d, self.surface.clone(), self.entry.clone()))
             .filter(|d| d.can_be_used_by_nova())
             .collect()
+    }
+
+    fn get_surface(&self) -> Rc<Surface<Self::PlatformSurface>> {
+        unimplemented!()
     }
 }
