@@ -6,10 +6,10 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct CommandAllocatorCreateInfo {
     /// The type of command lists which will be allocated by this command allocator
-    command_list_type: QueueType,
+    pub command_list_type: QueueType,
 
     // A bitmask of the GPU that the new command allocator will allocate commands for. Only one GPU mey be used
-    node_mask: u32,
+    pub node_mask: u32,
 }
 
 /// Information about a physical device!
@@ -20,15 +20,15 @@ pub struct CommandAllocatorCreateInfo {
 /// number, etc
 #[derive(Debug, Clone)]
 pub struct PhysicalDeviceProperties {
-    manufacturer: PhysicalDeviceManufacturer,
+    pub manufacturer: PhysicalDeviceManufacturer,
 
-    device_id: u32,
+    pub device_id: u32,
 
-    device_name: Box<str>,
+    pub device_name: Box<str>,
 
-    device_type: PhysicalDeviceType,
+    pub device_type: PhysicalDeviceType,
 
-    max_color_attachments: u32,
+    pub max_color_attachments: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -39,21 +39,21 @@ pub enum ResourceSpecificData {
 
 #[derive(Clone)]
 pub struct ResourceBarrier {
-    resource: Arc<dyn Resource>,
+    pub resource: Arc<dyn Resource>,
 
-    initial_state: ResourceState,
+    pub initial_state: ResourceState,
 
-    final_state: ResourceState,
+    pub final_state: ResourceState,
 
-    access_before_barrier: ResourceAccessFlags,
+    pub access_before_barrier: ResourceAccessFlags,
 
-    access_after_barrier: ResourceAccessFlags,
+    pub access_after_barrier: ResourceAccessFlags,
 
-    source_queue: QueueType,
+    pub source_queue: QueueType,
 
-    destination_queue: QueueType,
+    pub destination_queue: QueueType,
 
-    resource_info: ResourceSpecificData,
+    pub resource_info: ResourceSpecificData,
 }
 
 #[derive(Clone)]
@@ -67,38 +67,38 @@ pub enum DescriptorUpdateInfo {
 
 #[derive(Clone)]
 pub struct DescriptorSetWrite {
-    set: Arc<dyn DescriptorSet>,
+    pub set: Arc<dyn DescriptorSet>,
 
-    binding: u32,
+    pub binding: u32,
 
-    update_info: DescriptorUpdateInfo,
+    pub update_info: DescriptorUpdateInfo,
 }
 
 #[derive(Debug, Clone)]
 pub struct ResourceBindingDescription {
     /// Descriptor set that his binding belongs to
-    set: u32,
+    pub set: u32,
 
     /// Binding of this resource binding
-    binding: u32,
+    pub binding: u32,
 
     /// Number of bindings. Useful if you have an array of descriptors
-    count: u32,
+    pub count: u32,
 
     /// The type of object that will be bound
-    descriptor_type: DescriptorType,
+    pub descriptor_type: DescriptorType,
 
     /// The shader stages that need access to this binding
-    stages: ShaderStageFlags,
+    pub stages: ShaderStageFlags,
 }
 
 #[derive(Debug, Clone)]
 pub struct BufferCreateInfo {
-    size: usize,
+    pub size: usize,
 
-    buffer_usage: BufferUsage,
+    pub buffer_usage: BufferUsage,
 
-    allocation: DeviceMemoryAllocation,
+    pub allocation: DeviceMemoryAllocation,
 }
 
 #[derive(Debug, Clone)]
