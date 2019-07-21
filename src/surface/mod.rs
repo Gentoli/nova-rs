@@ -11,7 +11,7 @@ use failure::Fail;
 /// `Surface<HWND>`
 pub trait Surface<T> {
     /// Creates or retrieves the object of the type `T` required for the current platform
-    fn platform_object() -> Result<T, SurfaceError>;
+    fn platform_object(&mut self) -> Result<T, SurfaceError>;
 }
 
 /// Errors that can occur during creation/access of the underlying platform object
