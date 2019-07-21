@@ -15,8 +15,8 @@ impl Dx12PhysicalDevice {
     }
 }
 
-impl PhysicalDevice for Dx12PhysicalDevice {
-    type Device = Dx12Device;
+impl<'a> PhysicalDevice<'a> for Dx12PhysicalDevice {
+    type Device = Dx12Device<'a>;
 
     fn get_properties(&self) -> PhysicalDeviceProperties {
         unimplemented!()

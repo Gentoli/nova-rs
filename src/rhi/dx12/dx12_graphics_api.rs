@@ -11,11 +11,11 @@ use crate::rhi::{GraphicsApi, PhysicalDevice};
 use super::dx12_physical_device::Dx12PhysicalDevice;
 
 #[derive(Debug, Clone)]
-pub struct Dx12GraphicsApi<'a> {
+pub struct Dx12GraphicsApi {
     factory: d3d12::WeakPtr<dxgi1_4::IDXGIFactory4>,
 }
 
-impl<'a> Dx12GraphicsApi<'a> {
+impl Dx12GraphicsApi {
     fn new() -> Self {
         let factory_flags = dxgi1_3::DXGI_CREATE_FACTORY_DEBUG;
 
@@ -32,11 +32,11 @@ impl<'a> Dx12GraphicsApi<'a> {
     }
 }
 
-impl<'a> GraphicsApi for Dx12GraphicsApi<'a> {
-    type PhysicalDevice = Dx12PhysicalDevice<'a>;
+impl<'a> GraphicsApi<'a> for Dx12GraphicsApi {
+    type PhysicalDevice = Dx12PhysicalDevice;
 
-    fn get_adapters<'b>(&self) -> Vec<Dx12PhysicalDevice<'b>> {
-        let mut adapters: Vec<Dx12PhysicalDevice<'b>> = vec![];
+    fn get_adapters(&self) -> Vec<Dx12PhysicalDevice> {
+        let mut adapters: Vec<Dx12PhysicalDevice> = vec![];
 
         let mut cur_adapter = 0;
         loop {

@@ -5,6 +5,12 @@ use crate::rhi::{
 
 pub struct Dx12Queue {}
 
+impl Dx12Queue {
+    pub fn new(queue: d3d12::CommandQueue) -> &Self {
+        unimplemented!()
+    }
+}
+
 impl Queue for Dx12Queue {
     type CommandList = Dx12CommandList;
     type Fence = Dx12Fence;

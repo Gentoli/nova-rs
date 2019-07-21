@@ -15,12 +15,18 @@ use crate::surface::Surface;
 use cgmath::Vector2;
 use std::rc::Rc;
 
+<<<<<<< HEAD
 /// Top-level trait for functions that don't belong to any specific device object.
 pub trait GraphicsApi {
     /// Corresponding physical device.
     type PhysicalDevice: PhysicalDevice;
 
     /// Corresponding platform surface.
+=======
+/// Top-level trait for functions that don't belong to any specific device object
+pub trait GraphicsApi<'a> {
+    type PhysicalDevice: PhysicalDevice<'a>;
+>>>>>>> [rhi::dx12] Give some traits a lifetime
     type PlatformSurface;
 
     /// Gets a list of all available graphics adapters.
@@ -30,11 +36,17 @@ pub trait GraphicsApi {
     fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
 }
 
+<<<<<<< HEAD
 /// An implementation of the rendering API for a specific device.
 ///
 /// This will probably be a GPU card, but a software implementation of either Vulkan or Direct3D 12 is possible.
 pub trait PhysicalDevice {
     /// The logical device that this physical device provides.
+=======
+/// An implementation of the rendering API. This will probably be a GPU card, but a software
+/// implementation of either Vulkan or Direct3D 12 is possible
+pub trait PhysicalDevice<'a> {
+>>>>>>> [rhi::dx12] Give some traits a lifetime
     type Device: Device;
 
     /// Accesses all properties of the physical device.

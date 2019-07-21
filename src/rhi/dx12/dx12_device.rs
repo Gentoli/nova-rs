@@ -26,7 +26,7 @@ use winapi::{
 
 pub struct Dx12Device<'a> {
     /// Graphics adapter that we're using
-    phys_device: &'a Dx12PhysicalDevice<'a>,
+    phys_device: &'a Dx12PhysicalDevice,
 
     /// D3D12 device that we're wrapping
     device: d3d12::Device,
@@ -39,10 +39,10 @@ pub struct Dx12Device<'a> {
 }
 
 impl<'a> Dx12Device<'a> {
-    pub fn new(phys_device: &'a Dx12PhysicalDevice<'a>, device: d3d12::Device) -> Self {
-        let rtv_descriptor_size = device.get_descriptor_handle_increment_size(d3d12::descriptor::HeapType::Rtv);
+    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: d3d12::Device) -> Self {
+        let rtv_descriptor_size = device.get_descriptor_increment_size(d3d12::descriptor::HeapType::Rtv);
         let shader_resource_descriptor_size =
-            device.get_descriptor_handle_increment_size(d3d12::descriptor::HeapType::CbvSrvUav);
+            device.get_descriptor_increment_size(d3d12::descriptor::HeapType::CbvSrvUav);
 
         Dx12Device {
             phys_device,
