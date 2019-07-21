@@ -24,7 +24,7 @@ pub trait GraphicsApi {
     fn get_adapters(&self) -> Vec<Self::PhysicalDevice>;
 
     /// Gets the surface this API was created with
-    fn get_surface(&self) -> Rc<Surface<Self::PlatformSurface>>;
+    fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
 }
 
 /// An implementation of the rendering API. This will probably be a GPU card, but a software
