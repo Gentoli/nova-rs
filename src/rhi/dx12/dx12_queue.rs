@@ -6,7 +6,7 @@ use crate::rhi::{
 pub struct Dx12Queue {}
 
 impl Dx12Queue {
-    pub fn new(queue: d3d12::CommandQueue) -> &Self {
+    pub fn new(queue: d3d12::CommandQueue) -> Self {
         unimplemented!()
     }
 }

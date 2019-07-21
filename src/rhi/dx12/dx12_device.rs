@@ -117,11 +117,11 @@ impl<'a> Device for Dx12Device<'a> {
         };
 
         let heap_flags = match allowed_objects {
-            ObjectType::Buffer => heap::Flags::AllowOnlyBuffers,
-            ObjectType::Texture => heap::Flags::AllowOnlyNonRtDsTextures,
-            ObjectType::Attachment => heap::Flags::AllowOnlyNonRtDsTextures,
-            ObjectType::SwapchainSurface => heap::Flags::AllowOnlyRtDsTextures | heap::Flags::AllowDisplay,
-            ObjectType::Any => heap::Flags::AllowAllBuffersAndTextures,
+            ObjectType::Buffer => heap::Flags::ALLOW_ONLY_BUFFERS,
+            ObjectType::Texture => heap::Flags::ALLOW_ONLY_NON_RT_DS_TEXTURES,
+            ObjectType::Attachment => heap::Flags::ALLOW_ONLY_RT_DS_TEXTURES,
+            ObjectType::SwapchainSurface => heap::Flags::ALLOW_ONLY_RT_DS_TEXTURES | heap::Flags::ALLOW_DISPLAY,
+            ObjectType::Any => heap::Flags::ALLOW_ALL_BUFFERS_AND_TEXTURES,
         };
 
         // Ensure we have enough free memory for the requested allocation
@@ -129,8 +129,9 @@ impl<'a> Device for Dx12Device<'a> {
         if free_memory < size {
             if memory_usage == MemoryUsage::StagingBuffer {
                 Err(AllocationError::OutOfHostMemory)
+            } else {
+                Err(AllocationError::OutOfDeviceMemory)
             }
-            Err(AllocationError::OutOfDeviceMemory)
         } else {
             let (heap, hr) = self.device.create_heap(size, heap_properties, 64, heap_flags);
             if winerror::SUCCEEDED(hr) {

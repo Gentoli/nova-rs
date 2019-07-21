@@ -30,7 +30,7 @@ impl<'a> PhysicalDevice<'a> for Dx12PhysicalDevice {
         }
     }
 
-    fn create_logical_device(&self) -> Result<Dx12Device<'a>, DeviceCreationError> {
+    fn create_logical_device(&'a self) -> Result<Dx12Device<'a>, DeviceCreationError> {
         let (device, hr) = d3d12::Device::create(self.adapter, d3d12::FeatureLevel::L11_0);
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12Device::new(self, device))
