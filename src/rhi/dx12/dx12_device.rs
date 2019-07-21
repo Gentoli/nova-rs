@@ -1,3 +1,4 @@
+use crate::rhi::dx12::dx12_command_list::Dx12CommandList;
 use crate::{
     rhi::{
         dx12::{
@@ -14,6 +15,7 @@ use crate::{
     shaderpack,
 };
 use cgmath::Vector2;
+use d3d12::command_list::CmdListType;
 use d3d12::heap;
 use std::{
     collections::{hash_map::RandomState, HashMap},
@@ -150,9 +152,18 @@ impl<'a> Device for Dx12Device<'a> {
         &self,
         create_info: CommandAllocatorCreateInfo,
     ) -> Result<Dx12CommandAllocator, MemoryError> {
-        let command_allocator_type = match create_info.command_list_type {};
+        let command_allocator_type = match create_info.command_list_type {
+            QueueType::Graphics => CmdListType::Direct,
+            QueueType::Compute => CmdListType::Compute,
+            QueueType::Copy => CmdListType::Copy,
+        };
 
-        unimplemented!()
+        let (allocator, hr) = self.device.create_command_allocator(command_allocator_type);
+        if winerror::SUCCEEDED(hr) {
+            Ok(Dx12CommandAllocator::new(allocator))
+        } else {
+            Err(MemoryError::OutOfHostMemory)
+        }
     }
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
