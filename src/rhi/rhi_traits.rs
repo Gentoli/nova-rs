@@ -11,14 +11,20 @@ use std::collections::HashMap;
 
 use super::{rhi_enums::*, rhi_structs::*};
 use crate::shaderpack;
+use crate::surface::Surface;
 use cgmath::Vector2;
+use std::rc::Rc;
 
 /// Top-level trait for functions that don't belong to any specific device object
 pub trait GraphicsApi {
     type PhysicalDevice: PhysicalDevice;
+    type PlatformSurface;
 
     /// Gets a list of all available graphics adapters
     fn get_adapters(&self) -> Vec<Self::PhysicalDevice>;
+
+    /// Gets the surface this API was created with
+    fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
 }
 
 /// An implementation of the rendering API. This will probably be a GPU card, but a software
