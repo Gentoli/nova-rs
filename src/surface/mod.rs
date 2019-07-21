@@ -3,7 +3,11 @@
 use cgmath::Vector2;
 use failure::Fail;
 
-/// Represents an abstract Surface which provides the objects required for the rendering platform.
+mod win32_surface;
+
+pub use win32_surface::Win32Surface;
+
+/// Represents an abstract Surface which provides the objects required for the rendering platform
 ///
 /// For windows this would very likely be a `HWND` (window handle), for Vulkan a `SurfaceKHR`.
 /// In the end however it is up to the render engine what it requests, but the 2 shipped with Nova

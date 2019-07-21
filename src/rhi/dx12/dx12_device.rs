@@ -150,6 +150,8 @@ impl<'a> Device for Dx12Device<'a> {
         &self,
         create_info: CommandAllocatorCreateInfo,
     ) -> Result<Dx12CommandAllocator, MemoryError> {
+        let command_allocator_type = match create_info.command_list_type {};
+
         unimplemented!()
     }
 

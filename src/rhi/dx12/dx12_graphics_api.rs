@@ -9,6 +9,8 @@ use log::error;
 use crate::rhi::{GraphicsApi, PhysicalDevice};
 
 use super::dx12_physical_device::Dx12PhysicalDevice;
+use crate::surface::{Surface, Win32Surface};
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Dx12GraphicsApi {
@@ -34,6 +36,7 @@ impl Dx12GraphicsApi {
 
 impl<'a> GraphicsApi<'a> for Dx12GraphicsApi {
     type PhysicalDevice = Dx12PhysicalDevice;
+    type PlatformSurface = Win32Surface;
 
     fn get_adapters(&self) -> Vec<Dx12PhysicalDevice> {
         let mut adapters: Vec<Dx12PhysicalDevice> = vec![];
@@ -65,5 +68,9 @@ impl<'a> GraphicsApi<'a> for Dx12GraphicsApi {
         }
 
         adapters
+    }
+
+    fn get_surface(&self) -> Rc<dyn Surface<Win32Surface>> {
+        unimplemented!()
     }
 }
