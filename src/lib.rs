@@ -6,6 +6,7 @@
 #![deny(rust_2018_idioms)]
 #![warn(unused)]
 
+pub mod core;
 pub mod debugging;
 pub mod loading;
 pub mod logging;
