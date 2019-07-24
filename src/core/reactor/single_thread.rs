@@ -79,12 +79,12 @@ where
     fn run<A: Fn(S) -> R + Send + 'static>(&self, action: A) {
         loop {
             match self.receiver.recv() {
+                Err(_) => break,
                 Ok(datagram) => {
                     let result = action(datagram.data);
-                    datagram.waker.wake();
                     let _ = datagram.sender.send(result);
+                    datagram.waker.wake();
                 }
-                Err(_) => break,
             }
         }
     }
