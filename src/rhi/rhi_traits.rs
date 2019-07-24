@@ -148,7 +148,7 @@ pub trait Device {
     fn create_pipeline_interface(
         &self,
         bindings: &HashMap<String, ResourceBindingDescription>,
-        color_attachments: &Vec<shaderpack::TextureAttachmentInfo>,
+        color_attachments: &[shaderpack::TextureAttachmentInfo],
         depth_texture: &Option<shaderpack::TextureAttachmentInfo>,
     ) -> Result<Self::PipelineInterface, MemoryError>;
 
