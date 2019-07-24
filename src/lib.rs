@@ -1,5 +1,6 @@
 #![feature(async_await)]
 #![feature(async_closure)]
+#![feature(seek_convenience)]
 #![feature(test)]
 #![deny(nonstandard_style)]
 #![deny(future_incompatible)]
