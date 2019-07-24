@@ -23,41 +23,41 @@ pub trait FileTree<'a> {
     fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>;
 
     /// Checks is file path exists within the current file tree.
-    fn exists(&self, path: &Path) -> bool;
+    fn exists(&'a self, path: &Path) -> bool;
 
     /// Checks if the path points to a file.
     ///
     /// File Exists -> `Some(true)`
     /// Exists but isn't file -> `Some(false)`
     /// Path doesn't exist -> `None`
-    fn is_file(&self, path: &Path) -> Option<bool>;
+    fn is_file(&'a self, path: &Path) -> Option<bool>;
 
     /// Checks if the path points to a directory.
     ///
     /// Directory Exists -> `Some(true)`
     /// Exists but isn't directory -> `Some(false)`
     /// Path doesn't exist -> `None`
-    fn is_dir(&self, path: &Path) -> Option<bool>;
+    fn is_dir(&'a self, path: &Path) -> Option<bool>;
 
     /// Returns an iterator over all paths in the specified directory.
     ///
     /// Fails if the directory doesn't exist, or is unreadable.
-    fn read_dir(&self, path: &Path) -> Result<Self::DirIter, Error>;
+    fn read_dir(&'a self, path: &Path) -> Result<Self::DirIter, LoadingError>;
 
     /// Reads a file into a vector of u8.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read(&self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u8>, Error>>>;
+    fn read(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_u32(&self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u32>, Error>>>;
+    fn read_u32(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_text(&self, path: &Path) -> Box<dyn Future<Output = Result<String, Error>>>;
+    fn read_text(&'a self, path: &Path) -> Box<dyn Future<Output = Result<String, LoadingError>>>;
 }
 
 #[derive(Debug, Fail)]
@@ -68,4 +68,9 @@ pub enum LoadingError {
     NotDirectory,
     #[fail(display = "Expected file.")]
     NotFile,
+    #[fail(display = "Error inside filesystem.")]
+    FileSystemError {
+        #[fail(cause)]
+        sub_error: Error,
+    },
 }
