@@ -12,6 +12,7 @@ enum FileSystemOp {
 
 enum FileSystemOpResult {
     RecursiveEnumerate(DirectoryCache),
+    Other,
 }
 
 pub enum DirectoryEntry {
@@ -59,14 +60,16 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
 
             let future = reactor.send_async(FileSystemOp::RecursiveEnumerate(path));
 
-            let FileSystemOpResult::RecursiveEnumerate(cache) = future.await;
-
-            Ok(Self { cache, reactor })
+            if let FileSystemOpResult::RecursiveEnumerate(cache) = future.await {
+                Ok(Self { cache, reactor })
+            } else {
+                panic!("Incorrect directory action response received")
+            }
         })
     }
 
     fn exists(&self, path: &Path) -> bool {
-        unimplemented!()
+        self.cache.file_map.contains_key(&path.canonicalize().unwrap())
     }
 
     fn is_file(&self, path: &Path) -> Option<bool> {
