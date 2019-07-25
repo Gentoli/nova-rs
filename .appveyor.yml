@@ -78,4 +78,5 @@ install:
 build: false
 
 test_script:
+  - cargo build --verbose --all %cargoflags%
   - cargo test --verbose --all %cargoflags%
