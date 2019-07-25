@@ -37,29 +37,17 @@ os: Visual Studio 2017
 environment:
   matrix:
 
-    ### MSVC Toolchains ###
-
-    # Stable 64-bit MSVC
-#    - channel: stable
-#      target: x86_64-pc-windows-msvc
-    # Beta 64-bit MSVC
-#    - channel: beta
-#      target: x86_64-pc-windows-msvc
     # Nightly 64-bit MSVC
     - channel: nightly
       target: x86_64-pc-windows-msvc
+    - channel: nightly-2019-07-19
+      target: x86_64-pc-windows-msvc
       #cargoflags: --features "unstable"
 
-    ### GNU Toolchains ###
-
-    # Stable 64-bit GNU
-#    - channel: stable
-#      target: x86_64-pc-windows-gnu
-    # Beta 64-bit GNU
-#    - channel: beta
-#      target: x86_64-pc-windows-gnu
     # Nightly 64-bit GNU
     - channel: nightly
+      target: x86_64-pc-windows-gnu
+    - channel: nightly-2019-07-19
       target: x86_64-pc-windows-gnu
       #cargoflags: --features "unstable"
 
@@ -68,10 +56,9 @@ environment:
 # See Appveyor documentation for specific details. In short, place any channel or targets you wish
 # to allow build failures on (usually nightly at least is a wise choice). This will prevent a build
 # or test failure in the matching channels/targets from failing the entire build.
-#matrix:
-#  allow_failures:
-#    - channel: beta
-#    - channel: nightly
+matrix:
+  allow_failures:
+    - channel: nightly
 
 ## Install Script ##
 
