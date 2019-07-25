@@ -102,3 +102,35 @@ where
     R: Send,
 {
 }
+
+#[cfg(test)]
+mod test {
+    use crate::core::reactor::SingleThreadReactor;
+    use futures::executor::LocalPool;
+    use futures::task::LocalSpawnExt;
+
+    #[test]
+    fn remote_doubler() {
+        let mut pool = LocalPool::new();
+        let mut spawner = pool.spawner();
+
+        let mut spawner2 = spawner.clone();
+
+        spawner
+            .spawn_local(async move {
+                let reactor: SingleThreadReactor<i32, i32> = SingleThreadReactor::from_action(|x| x * 2);
+
+                let mut array: Vec<_> = (0..100)
+                    .map(|v| reactor.send_async(v))
+                    .map(|f| spawner2.spawn_local_with_handle(f).expect("couldn't spawn future"))
+                    .collect();
+
+                for (i, f) in array.drain(0..).enumerate() {
+                    assert_eq!(f.await, (i * 2) as i32);
+                }
+            })
+            .expect("Spawn error");
+
+        pool.run();
+    }
+}
