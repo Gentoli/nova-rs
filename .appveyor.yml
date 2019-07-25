@@ -80,3 +80,4 @@ build: false
 test_script:
   - cargo build --verbose --all %cargoflags%
   - cargo test --verbose --all %cargoflags%
+  - cargo doc --verbose --all --no-deps %cargoflags%
