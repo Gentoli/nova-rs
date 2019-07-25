@@ -77,6 +77,12 @@ install:
 
 build: false
 
+cache:
+  - '%USERPROFILE%\.cache\sccache -> rust-toolchain,.appveyor.yml'
+  - '%USERPROFILE%\.cargo -> rust-toolchain,.appveyor.yml'
+  - '%USERPROFILE%\.rustup -> rust-toolchain,.appveyor.yml'
+  - 'target -> rust-toolchain,.appveyor.yml'
+
 test_script:
   - cargo build --verbose --all %cargoflags%
   - cargo test --verbose --all %cargoflags%
