@@ -85,6 +85,6 @@ cache:
   - 'target -> rust-toolchain,.appveyor.yml'
 
 test_script:
-  - cargo build --verbose --all %cargoflags%
-  - cargo test --verbose --all %cargoflags%
-  - cargo doc --verbose --all --no-deps %cargoflags%
+  - cargo build --verbose --all --all-targets --all-features %cargoflags%
+  - cargo test --verbose --all --all-targets --all-features %cargoflags%
+  - cargo doc --verbose --all --all-features --no-deps %cargoflags%

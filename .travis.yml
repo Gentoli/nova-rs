@@ -20,11 +20,11 @@ install:
     fi
 
 script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
-  - cargo doc --verbose --all --no-deps
+  - cargo build --verbose --all --all-targets --all-features
+  - cargo test --verbose --all --all-targets --all-features
+  - cargo doc --verbose --all --all-features --no-deps
   - |
     if [[ "$TRAVIS_PULL_REQUEST" == "true" ]] | [[ "$TRAVIS_BRANCH" == "master" ]]; then
-        cargo clippy --verbose --all -- -D warnings;
+        cargo clippy --verbose --all --all-targets --all-features -- -D warnings;
         cargo fmt --verbose --all -- --check;
     fi
