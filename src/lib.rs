@@ -9,6 +9,7 @@
 
 pub mod core;
 pub mod debugging;
+pub mod fs;
 pub mod loading;
 pub mod logging;
 pub mod rhi;

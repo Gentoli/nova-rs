@@ -1,4 +1,5 @@
 use crate::core::reactor::SingleThreadReactor;
+use crate::fs;
 use crate::loading::{FileTree, LoadingError};
 use futures::Future;
 use matches::matches;
@@ -244,20 +245,6 @@ fn recursive_enumerate_directory(root: &Path) -> Result<DirectoryCache, io::Erro
     })
 }
 
-fn read_stream_u32<R>(mut reader: R) -> Result<Vec<u32>, io::Error>
-where
-    R: io::Read + io::Seek,
-{
-    let u32_length = reader.stream_len()? as usize;
-    let mut array = Vec::new();
-    array.reserve(u32_length);
-    let mut tmp = [0_u8; 4];
-    while reader.read(&mut tmp)? == 4 {
-        array.push(u32::from_le_bytes(tmp));
-    }
-    Ok(array)
-}
-
 fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
     match op {
         FileSystemOp::RecursiveEnumerate(path) => match recursive_enumerate_directory(&path) {
@@ -272,7 +259,7 @@ fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
             let file = std::fs::File::create(path);
             let buffered = file.map(|f| io::BufReader::with_capacity(64 * 1024, f));
             match buffered {
-                Ok(reader) => match read_stream_u32(reader) {
+                Ok(reader) => match fs::file::read_stream_u32(reader) {
                     Ok(result) => FileSystemOpResult::FileReadU32(result),
                     Err(err) => FileSystemOpResult::Error(err),
                 },
