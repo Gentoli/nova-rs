@@ -90,19 +90,6 @@ where
     }
 }
 
-unsafe impl<S, R> Send for SingleThreadedReactorImpl<S, R>
-where
-    S: Send,
-    R: Send,
-{
-}
-unsafe impl<S, R> Sync for SingleThreadedReactorImpl<S, R>
-where
-    S: Send,
-    R: Send,
-{
-}
-
 #[cfg(test)]
 mod test {
     use crate::core::reactor::SingleThreadReactor;

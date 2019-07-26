@@ -5,6 +5,7 @@
 #![deny(nonstandard_style)]
 #![deny(future_incompatible)]
 #![deny(rust_2018_idioms)]
+#![deny(unsafe_code)]
 #![warn(unused)]
 
 pub mod core;
