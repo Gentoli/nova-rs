@@ -40,6 +40,7 @@ mod dx12 {
     mod dx12_queue;
     mod dx12_renderpass;
     mod dx12_semaphore;
+    mod dx12_system_info;
 }
 
 // Re-exports

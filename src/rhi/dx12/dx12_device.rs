@@ -1,4 +1,5 @@
 use crate::rhi::dx12::dx12_command_list::Dx12CommandList;
+use crate::rhi::dx12::dx12_system_info::{Dx12SystemInfo, Release};
 use crate::{
     rhi::{
         dx12::{
@@ -15,15 +16,13 @@ use crate::{
     shaderpack,
 };
 use cgmath::Vector2;
-use d3d12::command_list::CmdListType;
-use d3d12::heap;
 use std::{
     collections::{hash_map::RandomState, HashMap},
     mem,
 };
 use winapi::{
     shared::{dxgi1_2, dxgi1_4, winerror},
-    um::d3d12 as d3d12_raw,
+    um::d3d12::*,
 };
 
 pub struct Dx12Device<'a> {
@@ -31,17 +30,20 @@ pub struct Dx12Device<'a> {
     phys_device: &'a Dx12PhysicalDevice,
 
     /// D3D12 device that we're wrapping
-    device: d3d12::Device,
+    device: ID3D12Device,
 
     /// Increment size of an RTV descriptor
     rtv_descriptor_size: u32,
 
     /// Increment size of a CBV, UAV, or SRV descriptor
     shader_resource_descriptor_size: u32,
+
+    /// Various information about the system we're running on
+    system_info: Dx12SystemInfo,
 }
 
 impl<'a> Dx12Device<'a> {
-    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: d3d12::Device) -> Self {
+    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: ID3D12Device) -> Self {
         let rtv_descriptor_size = device.get_descriptor_increment_size(d3d12::descriptor::HeapType::Rtv);
         let shader_resource_descriptor_size =
             device.get_descriptor_increment_size(d3d12::descriptor::HeapType::CbvSrvUav);
@@ -51,6 +53,9 @@ impl<'a> Dx12Device<'a> {
             device,
             rtv_descriptor_size,
             shader_resource_descriptor_size,
+            system_info: Dx12SystemInfo {
+                supported_version: Release::Four,
+            },
         }
     }
 }
@@ -95,27 +100,27 @@ impl<'a> Device for Dx12Device<'a> {
         allowed_objects: ObjectType,
     ) -> Result<Dx12Memory, AllocationError> {
         let heap_properties = match memory_usage {
-            MemoryUsage::DeviceOnly => heap::Properties::new(
-                heap::Type::Default,
-                heap::CpuPageProperty::NotAvailable,
-                heap::MemoryPool::L1,
-                0,
-                0,
-            ),
-            MemoryUsage::LowFrequencyUpload => heap::Properties::new(
-                heap::Type::Upload,
-                heap::CpuPageProperty::WriteCombine,
-                heap::MemoryPool::L1,
-                0,
-                0,
-            ),
-            MemoryUsage::StagingBuffer => heap::Properties::new(
-                heap::Type::Upload,
-                heap::CpuPageProperty::WriteCombine,
-                heap::MemoryPool::L0,
-                0,
-                0,
-            ),
+            MemoryUsage::DeviceOnly => D3D12_HEAP_PROPERTIES {
+                Type: D3D12_HEAP_TYPE_DEFAULT,
+                CPUPageProperty: D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE,
+                MemoryPoolPreference: D3D12_MEMORY_POOL_L1,
+                CreationNodeMask: 0,
+                VisibleNodeMask: 0,
+            },
+            MemoryUsage::LowFrequencyUpload => D3D12_HEAP_PROPERTIES {
+                Type: D3D12_HEAP_TYPE_UPLOAD,
+                CPUPageProperty: D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE,
+                MemoryPoolPreference: D3D12_MEMORY_POOL_L1,
+                CreationNodeMask: 0,
+                VisibleNodeMask: 0,
+            },
+            MemoryUsage::StagingBuffer => D3D12_HEAP_PROPERTIES {
+                Type: D3D12_HEAP_TYPE_UPLOAD,
+                CPUPageProperty: D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE,
+                MemoryPoolPreference: D3D12_MEMORY_POOL_L0,
+                CreationNodeMask: 0,
+                VisibleNodeMask: 0,
+            },
         };
 
         let heap_flags = match allowed_objects {
@@ -153,9 +158,9 @@ impl<'a> Device for Dx12Device<'a> {
         create_info: CommandAllocatorCreateInfo,
     ) -> Result<Dx12CommandAllocator, MemoryError> {
         let command_allocator_type = match create_info.command_list_type {
-            QueueType::Graphics => CmdListType::Direct,
-            QueueType::Compute => CmdListType::Compute,
-            QueueType::Copy => CmdListType::Copy,
+            QueueType::Graphics => D3D12_COMMAND_LIST_TYPE_DIRECT,
+            QueueType::Compute => D3D12_COMMAND_LIST_TYPE_COMPUTE,
+            QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
         };
 
         let (allocator, hr) = self.device.create_command_allocator(command_allocator_type);
