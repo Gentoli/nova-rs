@@ -1,3 +1,5 @@
+//! Event loop reactors to turn blocking operations into async operations.
+
 use crossbeam::channel::{Receiver, Sender};
 use futures::task::{Context, Waker};
 use futures::{Future, Poll};
@@ -21,6 +23,11 @@ where
     Finished,
 }
 
+/// Future representing a computation happening on a [`SingleThreadReactor`].
+///
+/// First time poll is called, sets up the computation, then will return pending until the answer arrives.
+/// Currently only supports the [`SingleThreadReactor`].
+/// This will be changed in the future.
 pub struct ReactorFuture<S, R>
 where
     S: Send + 'static,

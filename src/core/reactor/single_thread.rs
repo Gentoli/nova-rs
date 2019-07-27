@@ -6,7 +6,7 @@ use std::thread;
 
 /// Single threaded reactor type. Designed to be used to turn an otherwise synchronous api
 /// into an async api through having a sacrificial thread do the work. Construct with
-/// [`from_action`](#method.from_action)
+/// [`from_action`](#method.from_action).
 pub struct SingleThreadReactor<S, R>
 where
     S: Send + 'static,
@@ -21,6 +21,15 @@ where
     S: Send + 'static,
     R: Send + 'static,
 {
+    /// Construct a reactor from a function that processes every input into an output.
+    ///
+    /// ```edition2018
+    /// # use nova_rs::core::reactor::SingleThreadReactor;
+    /// // Reactor will double all inputs given to it.
+    /// // This operation is generally non-cpu intensive
+    /// // and otherwise "blocking".
+    /// let reactor: SingleThreadReactor<i32, i32> = SingleThreadReactor::from_action(|x| x * 2);
+    /// ```
     pub fn from_action<A: (Fn(S) -> R) + Send + 'static>(f: A) -> Self {
         let (send, recv) = unbounded();
         let reactor = Arc::new(SingleThreadedReactorImpl { receiver: recv });
@@ -31,6 +40,20 @@ where
         SingleThreadReactor { sender: send, reactor }
     }
 
+    /// Send an input to the reactor for processing.
+    ///
+    /// ```edition2018
+    /// # #![feature(async_await)]
+    /// # use futures::executor::block_on;
+    /// # use nova_rs::core::reactor::SingleThreadReactor;
+    /// # block_on(
+    /// # async {
+    /// let reactor = SingleThreadReactor::from_action(|x| x * 2);
+    /// let answer = reactor.send_async(3).await;
+    /// assert_eq!(answer, 6);
+    /// # }
+    /// # )
+    /// ```
     pub fn send_async(&self, data: S) -> ReactorFuture<S, R> {
         ReactorFuture {
             data: ReactorFutureData::Unsent(data, self.clone()),
