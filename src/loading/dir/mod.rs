@@ -30,7 +30,7 @@ impl DirectoryFileTree {
                 DirectoryEntry::File => {
                     return None;
                 }
-                DirectoryEntry::Directory(map) => {
+                DirectoryEntry::Directory { entries: map } => {
                     node = match map.get(component.as_os_str()) {
                         Some(v) => v,
                         None => return None,
@@ -82,13 +82,13 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
 
     fn is_dir(&'a self, path: &Path) -> Option<bool> {
         self.get_node_at_location(path)
-            .map(|v| matches!(v, DirectoryEntry::Directory(_)))
+            .map(|v| matches!(v, DirectoryEntry::Directory { .. }))
     }
 
     fn read_dir(&'a self, path: &Path) -> Result<Self::DirIter, LoadingError> {
         match self.get_node_at_location(path) {
             Some(DirectoryEntry::File) => Err(LoadingError::NotDirectory),
-            Some(DirectoryEntry::Directory(map)) => Ok(map.keys().into()),
+            Some(DirectoryEntry::Directory { entries: map }) => Ok(map.keys().into()),
             None => Err(LoadingError::PathNotFound),
         }
     }
