@@ -20,12 +20,12 @@ pub enum FileSystemOpResult {
 
 pub fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
     match op {
-        FileSystemOp::RecursiveEnumerate(path) => match fs::dir::read_dir_recursive(&path) {
+        FileSystemOp::RecursiveEnumerate(path) => match fs::dir::read_recursive(&path) {
             Ok(cache) => FileSystemOpResult::RecursiveEnumerate(cache),
             Err(err) => FileSystemOpResult::Error(err),
         },
         FileSystemOp::FileRead(path) => {
-            let file = std::fs::File::create(path);
+            let file = std::fs::File::open(path);
             match file {
                 Ok(reader) => match fs::file::read_stream_u8(reader) {
                     Ok(result) => FileSystemOpResult::FileRead(result),
@@ -35,7 +35,7 @@ pub fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
             }
         }
         FileSystemOp::FileReadU32(path) => {
-            let file = std::fs::File::create(path);
+            let file = std::fs::File::open(path);
             match file {
                 Ok(reader) => match fs::file::read_stream_u32(reader) {
                     Ok(result) => FileSystemOpResult::FileReadU32(result),
@@ -45,7 +45,7 @@ pub fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
             }
         }
         FileSystemOp::FileReadText(path) => {
-            let file = std::fs::File::create(path);
+            let file = std::fs::File::open(path);
             match file {
                 Ok(reader) => match fs::file::read_stream_string(reader) {
                     Ok(result) => FileSystemOpResult::FileReadText(result),
