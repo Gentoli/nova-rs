@@ -31,7 +31,7 @@ pub struct Dx12Device<'a> {
     phys_device: &'a Dx12PhysicalDevice,
 
     /// D3D12 device that we're wrapping
-    device: ID3D12Device,
+    device: WeakPtr<ID3D12Device>,
 
     /// Increment size of an RTV descriptor
     rtv_descriptor_size: u32,
@@ -44,10 +44,9 @@ pub struct Dx12Device<'a> {
 }
 
 impl<'a> Dx12Device<'a> {
-    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: ID3D12Device) -> Self {
-        let rtv_descriptor_size = device.get_descriptor_increment_size(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        let shader_resource_descriptor_size =
-            device.get_descriptor_increment_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: WeakPtr<ID3D12Device>) -> Self {
+        let rtv_descriptor_size = device.GetDescriptorIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        let shader_resource_descriptor_size = device.GetDescriptorIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         Dx12Device {
             phys_device,
@@ -131,11 +130,11 @@ impl<'a> Device for Dx12Device<'a> {
         };
 
         let heap_flags = match allowed_objects {
-            ObjectType::Buffer => heap::Flags::ALLOW_ONLY_BUFFERS,
-            ObjectType::Texture => heap::Flags::ALLOW_ONLY_NON_RT_DS_TEXTURES,
-            ObjectType::Attachment => heap::Flags::ALLOW_ONLY_RT_DS_TEXTURES,
-            ObjectType::SwapchainSurface => heap::Flags::ALLOW_ONLY_RT_DS_TEXTURES | heap::Flags::ALLOW_DISPLAY,
-            ObjectType::Any => heap::Flags::ALLOW_ALL_BUFFERS_AND_TEXTURES,
+            ObjectType::Buffer => D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS,
+            ObjectType::Texture => D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES,
+            ObjectType::Attachment => D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
+            ObjectType::SwapchainSurface => D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES | D3D12_HEAP_FLAG_ALLOW_DISPLAY,
+            ObjectType::Any => D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES,
         };
 
         // Ensure we have enough free memory for the requested allocation
@@ -147,7 +146,18 @@ impl<'a> Device for Dx12Device<'a> {
                 Err(AllocationError::OutOfDeviceMemory)
             }
         } else {
-            let (heap, hr) = self.device.create_heap(size, heap_properties, 64, heap_flags);
+            let mut heap = WeakPtr::<ID3D12Heap>::null();
+            let heap_create_info = D3D12_HEAP_DESC {
+                SizeInBytes: size,
+                Properties: heap_properties,
+                Alignment: 64,
+                Flags: heap_flags,
+            };
+
+            let hr = unsafe {
+                self.device
+                    .CreateHeap(heap_create_info, ID3D12Heap::uuidof(), heap.mut_void())
+            };
             if winerror::SUCCEEDED(hr) {
                 Ok(Dx12Memory::new(heap, size))
             } else {
