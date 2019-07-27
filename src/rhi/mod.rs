@@ -24,6 +24,7 @@ mod vulkan {
 mod dx12 {
     pub mod dx12_graphics_api;
 
+    mod com;
     mod dx12_buffer;
     mod dx12_command_allocator;
     mod dx12_command_list;

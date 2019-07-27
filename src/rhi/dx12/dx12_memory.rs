@@ -1,6 +1,6 @@
 use crate::rhi::{dx12::dx12_buffer::Dx12Buffer, BufferCreateInfo, Memory, MemoryError};
-use d3d12::Heap;
 use winapi::shared::ntdef::UNICODE_STRING_MAX_BYTES;
+use winapi::um::d3d12::*;
 
 pub struct Dx12Memory {}
 

@@ -1,3 +1,4 @@
+use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::dx12::dx12_command_list::Dx12CommandList;
 use crate::rhi::dx12::dx12_system_info::{Dx12SystemInfo, Release};
 use crate::{
@@ -44,9 +45,9 @@ pub struct Dx12Device<'a> {
 
 impl<'a> Dx12Device<'a> {
     pub fn new(phys_device: &'a Dx12PhysicalDevice, device: ID3D12Device) -> Self {
-        let rtv_descriptor_size = device.get_descriptor_increment_size(d3d12::descriptor::HeapType::Rtv);
+        let rtv_descriptor_size = device.get_descriptor_increment_size(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         let shader_resource_descriptor_size =
-            device.get_descriptor_increment_size(d3d12::descriptor::HeapType::CbvSrvUav);
+            device.get_descriptor_increment_size(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         Dx12Device {
             phys_device,
@@ -75,17 +76,23 @@ impl<'a> Device for Dx12Device<'a> {
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Dx12Queue, QueueGettingError> {
         let queue_type = match queue_type {
-            QueueType::Graphics => d3d12::command_list::CmdListType::Direct,
-            QueueType::Compute => d3d12::command_list::CmdListType::Compute,
-            QueueType::Copy => d3d12::command_list::CmdListType::Copy,
+            QueueType::Graphics => D3D12_COMMAND_LIST_TYPE_DIRECT,
+            QueueType::Compute => D3D12_COMMAND_LIST_TYPE_COMPUTE,
+            QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
         };
 
-        let (queue, hr) = self.device.create_command_queue(
-            queue_type,
-            d3d12::queue::Priority::Normal,
-            d3d12::queue::CommandQueueFlags::empty(),
-            0,
-        );
+        let mut queue = WeakPtr::<ID3D12CommandQueue>::null();
+        let queue_desc = D3D12_COMMAND_QUEUE_DESC {
+            Type: queue_type,
+            Priority: D3D12_COMMAND_QUEUE_PRIORITY_NORMAL as _,
+            Flags: D3D12_COMMAND_QUEUE_FLAG_NONE,
+            NodeMask: 0,
+        };
+
+        let hr = unsafe {
+            self.device
+                .CreateCommandQueue(*queue_desc, ID3D12CommandQueue::uuidof(), queue.mut_void())
+        };
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12Queue::new(queue))
         } else {

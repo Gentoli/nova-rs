@@ -1,11 +1,13 @@
+use super::com::WeakPtr;
 use crate::rhi::{dx12::dx12_command_list::Dx12CommandList, CommandAllocator, MemoryError};
+use winapi::um::d3d12::*;
 
 pub struct Dx12CommandAllocator {
-    allocator: d3d12::CommandAllocator,
+    allocator: WeakPtr<ID3D12CommandAllocator>,
 }
 
 impl Dx12CommandAllocator {
-    pub fn new(allocator: d3d12::CommandAllocator) -> Self {
+    pub fn new(allocator: WeakPtr<ID3D12CommandAllocator>) -> Self {
         Dx12CommandAllocator { allocator }
     }
 }

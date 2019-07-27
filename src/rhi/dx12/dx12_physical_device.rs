@@ -32,8 +32,13 @@ impl<'a> PhysicalDevice<'a> for Dx12PhysicalDevice {
 
     fn create_logical_device(&'a self) -> Result<Dx12Device<'a>, DeviceCreationError> {
         unsafe {
-            let mut device: ID3D12Device;
-            let hr = D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, ID3D12Device::uuifof(), *device);
+            let mut device: com::WeakPtr<ID3D12Device>::null();
+            let hr = D3D12CreateDevice(
+                adapter,
+                D3D_FEATURE_LEVEL_11_0,
+                ID3D12Device::uuifof(),
+                device.mut_void(),
+            );
             if winerror::SUCCEEDED(hr) {
                 Ok(Dx12Device::new(self, device))
             } else {

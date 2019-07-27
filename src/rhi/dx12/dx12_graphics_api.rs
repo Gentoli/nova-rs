@@ -1,6 +1,6 @@
-use d3d12;
 use winapi::{
     shared::{dxgi, dxgi1_2, dxgi1_3, dxgi1_4, winerror},
+    um::d3d12::*,
     Interface,
 };
 
@@ -9,19 +9,20 @@ use log::error;
 use crate::rhi::{GraphicsApi, PhysicalDevice};
 
 use super::dx12_physical_device::Dx12PhysicalDevice;
+use crate::rhi::dx12::com::WeakPtr;
 use crate::surface::{Surface, Win32Surface};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Dx12GraphicsApi {
-    factory: d3d12::WeakPtr<dxgi1_4::IDXGIFactory4>,
+    factory: WeakPtr<dxgi1_4::IDXGIFactory4>,
 }
 
 impl Dx12GraphicsApi {
     fn new() -> Self {
         let factory_flags = dxgi1_3::DXGI_CREATE_FACTORY_DEBUG;
 
-        let mut factory = d3d12::WeakPtr::<dxgi1_4::IDXGIFactory4>::null();
+        let mut factory = WeakPtr::<dxgi1_4::IDXGIFactory4>::null();
         let hr = unsafe {
             dxgi1_3::CreateDXGIFactory2(factory_flags, &dxgi1_4::IDXGIFactory4::uuidof(), factory.mut_void())
         };
@@ -43,7 +44,7 @@ impl<'a> GraphicsApi<'a> for Dx12GraphicsApi {
 
         let mut cur_adapter = 0;
         loop {
-            let mut adapter = d3d12::WeakPtr::<dxgi::IDXGIAdapter1>::null();
+            let mut adapter = WeakPtr::<dxgi::IDXGIAdapter1>::null();
             let hr = unsafe {
                 self.factory
                     .EnumAdapters1(cur_adapter, adapter.mut_void() as *mut *mut _)
