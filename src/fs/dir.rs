@@ -1,20 +1,34 @@
+//! Directory reading/writing
+
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
 
+/// A fully loaded directory tree. Result of calling [`read_recursive`] on a directory path.
 pub struct DirectoryTree {
+    /// Root of the directory tree. This is always an absolute path.
     pub root: PathBuf,
+    /// Tree of directory entries.
+    ///
+    /// It is possible for this directory tree to be only a single file, indicating
+    /// that [`root`](DirectoryTree::root) is a path to a file.
     pub entry: DirectoryEntry,
 }
 
+/// A single directory entry.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DirectoryEntry {
-    Directory(HashMap<OsString, DirectoryEntry>),
+    /// The entry is a directory.
+    Directory {
+        /// All entries inside this directory.
+        entries: HashMap<OsString, DirectoryEntry>,
+    },
+    /// The entry is a file.
     File,
 }
 
-fn read_dir_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntry, io::Error> {
+fn read_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntry, io::Error> {
     let real_path = {
         let mut p = root.to_path_buf();
         p.push(relative);
@@ -33,17 +47,19 @@ fn read_dir_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntr
                 p.push(file_name);
                 p
             };
-            map.insert(entry.file_name(), read_dir_recursive_impl(root, &new_path)?);
+            map.insert(entry.file_name(), read_recursive_impl(root, &new_path)?);
         }
-        Ok(DirectoryEntry::Directory(map))
+        Ok(DirectoryEntry::Directory { entries: map })
     }
 }
 
-pub fn read_dir_recursive(root: &Path) -> Result<DirectoryTree, io::Error> {
-    let entry = read_dir_recursive_impl(root, Path::new("/"))?;
+/// Reads a given path recursively. Succeeds on both files and directories.
+pub fn read_recursive(root: &Path) -> Result<DirectoryTree, io::Error> {
+    let root = std::fs::canonicalize(root)?;
+    let entry = read_recursive_impl(&root, Path::new("/"))?;
 
     Ok(DirectoryTree {
-        root: root.to_path_buf(),
+        root: std::fs::canonicalize(root)?,
         entry,
     })
 }
