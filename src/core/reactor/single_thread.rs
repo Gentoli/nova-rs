@@ -4,10 +4,11 @@ use futures::task::Waker;
 use std::sync::Arc;
 use std::thread;
 
-/// Single threaded reactor type. Designed to be used to turn an otherwise synchronous api
-/// into an async api through having a sacrificial thread do the work. Construct with
-/// [`from_action`](#method.from_action). Is a thin layer around the internal reactor.
-/// Is trivially clonable.
+/// Single threaded reactor type.
+///
+/// Designed to be used to turn an otherwise synchronous api into an async api through having a sacrificial thread do
+/// the work. Construct with [`from_action`](#method.from_action). Is a thin layer around the internal reactor. Is
+/// trivially clonable.
 pub struct SingleThreadReactor<S, R>
 where
     S: Send + 'static,
@@ -33,7 +34,10 @@ where
     /// // and otherwise "blocking".
     /// let reactor: SingleThreadReactor<i32, i32> = SingleThreadReactor::from_action(|x| x * 2);
     /// ```
-    pub fn from_action<A: (Fn(S) -> R) + Send + 'static>(f: A) -> Self {
+    pub fn from_action<A>(f: A) -> Self
+    where
+        A: (Fn(S) -> R) + Send + 'static,
+    {
         let (send, recv) = unbounded();
         let reactor = Arc::new(SingleThreadedReactorImpl { receiver: recv });
         {
@@ -65,7 +69,7 @@ where
         }
     }
 
-    pub(crate) fn send(&self, data: S, waker: Waker) -> Receiver<R> {
+    pub(in crate::core::reactor) fn send(&self, data: S, waker: Waker) -> Receiver<R> {
         let (result_send, result_recv) = bounded(1);
         let _ = self.sender.send((data, waker, result_send).into());
 
@@ -106,7 +110,10 @@ where
     R: Send + 'static,
 {
     /// Runs loop that runs the loop until the channel is hung up.
-    fn run<A: Fn(S) -> R + Send + 'static>(&self, action: A) {
+    fn run<A>(&self, action: A)
+    where
+        A: Fn(S) -> R + Send + 'static,
+    {
         loop {
             match self.receiver.recv() {
                 Err(_) => break,

@@ -13,9 +13,11 @@ mod reactor;
 pub use iter::*;
 use reactor::*;
 
-/// Root file tree structure. It is a thin [`Arc`](std::sync::Arc) wrapper around the actual
-/// internal [`DirectoryFileTreeData`](loading::dir::DirectoryFileTreeData) structure.
-struct DirectoryFileTree(Arc<DirectoryFileTreeData>);
+/// File tree structure representing a filesystem directory.
+///
+/// It is a thin [`Arc`](std::sync::Arc) wrapper around the actual
+/// internal [`DirectoryFileTreeData`](DirectoryFileTreeData) structure.
+pub struct DirectoryFileTree(Arc<DirectoryFileTreeData>);
 
 /// Actual data-holding structure for a fs directory tree.
 struct DirectoryFileTreeData {

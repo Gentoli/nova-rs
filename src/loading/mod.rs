@@ -14,8 +14,10 @@ mod dir;
 
 pub use dir::*;
 
-/// View over a directory tree with many possible backing stores. Used to abstract over the actual backend being used to
-/// allow a wider variety of formats.
+/// View over an abstract tree of directories and files.
+///
+/// Used to abstract over the actual backend being used to allow a wider variety of formats. Such examples could be a
+/// filesystem folder, a zip file, or a network store.
 pub trait FileTree<'a> {
     /// The result from creating a new file tree using [`from_path`](FileTree::from_path).
     ///

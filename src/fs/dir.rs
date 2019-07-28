@@ -46,7 +46,10 @@ impl DirectoryEntry {
     /// let d_entry = b_entry.get("c/d").unwrap();
     /// # Ok::<(), std::io::Error>(())
     /// ```
-    pub fn get<P: AsRef<Path>>(&self, path: P) -> Option<&DirectoryEntry> {
+    pub fn get<P>(&self, path: P) -> Option<&DirectoryEntry>
+    where
+        P: AsRef<Path>,
+    {
         let path_iter = path.as_ref().components().peekable();
 
         let mut node = self;
@@ -113,7 +116,10 @@ fn read_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntry, i
 ///
 /// # Ok::<(), std::io::Error>(())
 /// ```
-pub fn read_recursive<P: AsRef<Path>>(root: P) -> Result<DirectoryTree, io::Error> {
+pub fn read_recursive<P>(root: P) -> Result<DirectoryTree, io::Error>
+where
+    P: AsRef<Path>,
+{
     let root = std::fs::canonicalize(root)?;
     let entry = read_recursive_impl(&root, Path::new("/"))?;
 
