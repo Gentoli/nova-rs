@@ -17,7 +17,7 @@ pub use dir::*;
 /// View over a directory tree with many possible backing stores. Used to abstract over the actual backend being used to
 /// allow a wider variety of formats.
 pub trait FileTree<'a> {
-    /// The result from creating a new file tree using [`from_path`].
+    /// The result from creating a new file tree using [`from_path`](FileTree::from_path).
     ///
     /// This is often `Self`.
     type CreateResult: FileTree<'a>;
