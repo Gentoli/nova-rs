@@ -14,8 +14,14 @@ mod dir;
 
 pub use dir::*;
 
+/// View over a directory tree with many possible backing stores. Used to abstract over the actual backend being used to
+/// allow a wider variety of formats.
 pub trait FileTree<'a> {
+    /// The result from creating a new file tree using [`from_path`].
+    ///
+    /// This is often `Self`.
     type CreateResult: FileTree<'a>;
+    /// Iterator type to iterate over the members of a directory.
     type DirIter: Iterator<Item = &'a Path>;
 
     /// Create a file tree from the path provided.
@@ -60,16 +66,22 @@ pub trait FileTree<'a> {
     fn read_text(&'a self, path: &Path) -> Box<dyn Future<Output = Result<String, LoadingError>>>;
 }
 
+/// Error when trying to load a resource.
 #[derive(Debug, Fail)]
 pub enum LoadingError {
+    /// Path given is not found in the resource.
     #[fail(display = "Path doesn't exist.")]
     PathNotFound,
+    /// Expected a directory, but found a file.
     #[fail(display = "Expected directory.")]
     NotDirectory,
+    /// Expected a file, but found a directory.
     #[fail(display = "Expected file.")]
     NotFile,
+    /// Error within the filesystem.
     #[fail(display = "Error inside filesystem.")]
     FileSystemError {
+        /// Actual error
         #[fail(cause)]
         sub_error: Error,
     },

@@ -32,10 +32,13 @@ impl DirectoryEntry {
     /// Get [`DirectoryEntry`] corresponding with the path given. Path is relative
     /// to the node being called.
     ///
+    /// # Example
+    ///
     /// ```edition2018,no_run
     /// # use nova_rs::fs::dir::{read_recursive, DirectoryEntry};
     /// # use std::path::Path;
     /// let dir_entry = read_recursive(&"/path/to/some/dir")?;
+    ///
     /// // /path/to/some/dir/a/b
     /// let b_entry = dir_entry.entry.get("a/b").unwrap();
     ///
@@ -91,7 +94,26 @@ fn read_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntry, i
 }
 
 /// Reads a given path recursively. Succeeds on both files and directories.
-pub fn read_recursive(root: &Path) -> Result<DirectoryTree, io::Error> {
+///
+/// # Example
+///
+/// ```edition2018,no_run
+/// # use maplit::hashmap;
+/// # use nova_rs::fs::dir::{read_recursive, DirectoryEntry};
+/// # use std::path::Path;
+/// // dir
+/// // dir/a
+/// // dir/b
+/// // dir/c/d
+///
+/// let value = read_recursive(&"/path/to/dir")?;
+/// assert_eq!(value.entry.get("a"), Some(&DirectoryEntry::File));
+/// assert_eq!(value.entry.get("b"), Some(&DirectoryEntry::File));
+/// assert_eq!(value.entry.get("c"), Some(&DirectoryEntry::Directory { entries: hashmap!{"d".into() => DirectoryEntry::File} }));
+///
+/// # Ok::<(), std::io::Error>(())
+/// ```
+pub fn read_recursive<P: AsRef<Path>>(root: P) -> Result<DirectoryTree, io::Error> {
     let root = std::fs::canonicalize(root)?;
     let entry = read_recursive_impl(&root, Path::new("/"))?;
 

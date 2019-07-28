@@ -6,7 +6,8 @@ use std::thread;
 
 /// Single threaded reactor type. Designed to be used to turn an otherwise synchronous api
 /// into an async api through having a sacrificial thread do the work. Construct with
-/// [`from_action`](#method.from_action).
+/// [`from_action`](#method.from_action). Is a thin layer around the internal reactor.
+/// Is trivially clonable.
 pub struct SingleThreadReactor<S, R>
 where
     S: Send + 'static,
@@ -22,6 +23,8 @@ where
     R: Send + 'static,
 {
     /// Construct a reactor from a function that processes every input into an output.
+    ///
+    /// # Example
     ///
     /// ```edition2018
     /// # use nova_rs::core::reactor::SingleThreadReactor;
@@ -41,6 +44,8 @@ where
     }
 
     /// Send an input to the reactor for processing.
+    ///
+    /// # Example
     ///
     /// ```edition2018
     /// # #![feature(async_await)]
@@ -86,6 +91,7 @@ where
     }
 }
 
+/// Internal reactor. Contains only the receiver to receive new messages.
 struct SingleThreadedReactorImpl<S, R>
 where
     S: Send + 'static,
@@ -99,6 +105,7 @@ where
     S: Send + 'static,
     R: Send + 'static,
 {
+    /// Runs loop that runs the loop until the channel is hung up.
     fn run<A: Fn(S) -> R + Send + 'static>(&self, action: A) {
         loop {
             match self.receiver.recv() {

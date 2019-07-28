@@ -8,6 +8,8 @@ use std::io::{Read, Seek};
 /// Returns a result with an [`io::Error`](std::io::Error) if there is an issue reading.
 /// Wrapper around [`read_to_end`](std::io::Read::read_to_end).
 ///
+/// # Example
+///
 /// ```edition2018,no_run
 /// # use nova_rs::fs::file::read_stream_u8;
 /// let mut file = std::fs::File::open("my_file")?;
@@ -27,6 +29,8 @@ where
 ///
 /// Returns a result with an [`io::Error`](std::io::Error) if there is an issue reading. Uses a
 /// [`io::BufReader`](std::io::BufReader) internally due to needing many 4 byte reads.
+///
+/// # Example
 ///
 /// ```edition2018,no_run
 /// # use nova_rs::fs::file::read_stream_u32;
@@ -56,6 +60,8 @@ where
 ///
 /// Returns a result with an [`io::Error`](std::io::Error) if there is an issue reading.
 /// Wrapper around [`read_to_string`](std::io::Read::read_to_string).
+///
+/// # Example
 ///
 /// ```edition2018,no_run
 /// # use nova_rs::fs::file::read_stream_string;

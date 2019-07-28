@@ -12,6 +12,7 @@ mod single_thread;
 pub use multi_thread::*;
 pub use single_thread::*;
 
+/// Current state of the reactor.
 enum ReactorFutureData<S, R>
 where
     S: Send + 'static,
@@ -53,7 +54,7 @@ where
             }
             ReactorFutureData::Sent(receiver) => (
                 ReactorFutureData::Finished,
-                Poll::Ready(receiver.recv().expect("Expected reciever to have data")),
+                Poll::Ready(receiver.recv().expect("Expected receiver to have data")),
             ),
             _ => panic!("Incorrect state in reactor future. This is a bug."),
         };
@@ -69,6 +70,8 @@ where
 {
 }
 
+/// One message sent to the reactor. Contains the data, the waker to awake the waiting future,
+/// and the sender to send the data back.
 struct ReactorDatagram<S, R>
 where
     S: Send + 'static,
