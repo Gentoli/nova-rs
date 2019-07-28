@@ -15,7 +15,7 @@ cache: cargo
 
 install:
   - |
-    if [[ "$TRAVIS_PULL_REQUEST" == "true" ]] | [[ "$TRAVIS_BRANCH" == "master" ]]; then
+    if [[ "$TRAVIS_PULL_REQUEST" != "false" ]] || [[ "$TRAVIS_BRANCH" == "master" ]]; then
         rustup component add --toolchain $TRAVIS_RUST_VERSION clippy rustfmt;
     fi
 
@@ -24,7 +24,7 @@ script:
   - cargo test --verbose --all --all-targets --no-fail-fast
   - cargo doc --verbose --all --no-deps
   - |
-    if [[ "$TRAVIS_PULL_REQUEST" == "true" ]] | [[ "$TRAVIS_BRANCH" == "master" ]]; then
+    if [[ "$TRAVIS_PULL_REQUEST" != "false" ]] || [[ "$TRAVIS_BRANCH" == "master" ]]; then
         cargo clippy --verbose --all --all-targets -- -D warnings;
         cargo fmt --verbose --all -- --check;
     fi
