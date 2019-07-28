@@ -86,5 +86,5 @@ cache:
 
 test_script:
   - cargo build --verbose --all --all-targets %cargoflags%
-  - cargo test --verbose --all --all-targets %cargoflags%
+  - cargo test --verbose --all --all-targets --no-fail-fast %cargoflags%
   - cargo doc --verbose --all --no-deps %cargoflags%

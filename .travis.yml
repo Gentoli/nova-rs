@@ -21,7 +21,7 @@ install:
 
 script:
   - cargo build --verbose --all --all-targets
-  - cargo test --verbose --all --all-targets
+  - cargo test --verbose --all --all-targets --no-fail-fast
   - cargo doc --verbose --all --no-deps
   - |
     if [[ "$TRAVIS_PULL_REQUEST" == "true" ]] | [[ "$TRAVIS_BRANCH" == "master" ]]; then
