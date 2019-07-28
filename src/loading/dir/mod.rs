@@ -22,24 +22,7 @@ struct DirectoryFileTreeData {
 
 impl DirectoryFileTree {
     fn get_node_at_location(&self, path: &Path) -> Option<&DirectoryEntry> {
-        let path_iter = path.components().peekable();
-
-        let mut node = &self.0.cache.entry;
-        for component in path_iter {
-            match node {
-                DirectoryEntry::File => {
-                    return None;
-                }
-                DirectoryEntry::Directory { entries: map } => {
-                    node = match map.get(component.as_os_str()) {
-                        Some(v) => v,
-                        None => return None,
-                    }
-                }
-            }
-        }
-
-        Some(node)
+        self.0.cache.entry.get(path)
     }
 }
 

@@ -28,6 +28,43 @@ pub enum DirectoryEntry {
     File,
 }
 
+impl DirectoryEntry {
+    /// Get [`DirectoryEntry`] corresponding with the path given. Path is relative
+    /// to the node being called.
+    ///
+    /// ```edition2018,no_run
+    /// # use nova_rs::fs::dir::{read_recursive, DirectoryEntry};
+    /// # use std::path::Path;
+    /// let dir_entry = read_recursive(&"/path/to/some/dir")?;
+    /// // /path/to/some/dir/a/b
+    /// let b_entry = dir_entry.entry.get("a/b").unwrap();
+    ///
+    /// // /path/to/some/dir/a/b/c/d
+    /// let d_entry = b_entry.get("c/d").unwrap();
+    /// # Ok::<(), std::io::Error>(())
+    /// ```
+    pub fn get<P: AsRef<Path>>(&self, path: P) -> Option<&DirectoryEntry> {
+        let path_iter = path.as_ref().components().peekable();
+
+        let mut node = self;
+        for component in path_iter {
+            match node {
+                DirectoryEntry::File => {
+                    return None;
+                }
+                DirectoryEntry::Directory { entries: map } => {
+                    node = match map.get(component.as_os_str()) {
+                        Some(v) => v,
+                        None => return None,
+                    }
+                }
+            }
+        }
+
+        Some(node)
+    }
+}
+
 fn read_recursive_impl(root: &Path, relative: &Path) -> Result<DirectoryEntry, io::Error> {
     let real_path = {
         let mut p = root.to_path_buf();
