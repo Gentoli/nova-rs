@@ -1,3 +1,5 @@
+//! Display surface creation and management.
+
 use failure::Fail;
 
 /// Represents an abstract Surface which provides the objects required for the rendering platform
@@ -17,14 +19,21 @@ pub trait Surface<T> {
 /// Errors that can occur during creation/access of the underlying platform object
 #[derive(Fail, Debug, Clone, Eq, PartialEq)]
 pub enum SurfaceError {
-    #[fail(display = "Failed to create or access the underlying object")]
+    /// Failed to create or access the underlying platform object.
+    #[fail(display = "Failed to create or access the underlying object.")]
     CreationOrAccessFailed,
 
+    /// Invalid parameters passed to surface creation
     #[fail(display = "Invalid parameters passed: {}", details)]
-    InvalidParameters { details: String },
+    InvalidParameters {
+        /// Details on invalid parameters, platform specific.
+        details: String,
+    },
 
-    // This is a special case and will usually not occur with the implementations provided
-    // by Nova because the generics will prevent this
-    #[fail(display = "This Surface can not be used for creating this object")]
+    /// This Surface can not be used for creating this object.
+    ///
+    /// This is a special case and will usually not occur with the implementations provided
+    /// by Nova because the generics will prevent this
+    #[fail(display = "This Surface can not be used for creating this object.")]
     NotSupported,
 }
