@@ -46,6 +46,7 @@ pub enum ResourceSpecificData {
         /// The aspect of the image.
         aspect: ImageAspectFlags,
     },
+
     /// The resource is a buffer.
     Buffer {
         /// Offset into the underlying storage.
@@ -90,8 +91,10 @@ pub enum DescriptorUpdateInfo {
     Image {
         /// The image that will form the descriptor data.
         image: Arc<dyn Image>,
+
         /// The image format.
         format: shaderpack::TextureFormat,
+
         /// The sampling pattern to use.
         sampler: Arc<dyn Sampler>,
     },

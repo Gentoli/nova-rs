@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 pub struct DirectoryTree {
     /// Root of the directory tree. This is always an absolute path.
     pub root: PathBuf,
+
     /// Tree of directory entries.
     ///
     /// It is possible for this directory tree to be only a single file, indicating
@@ -24,6 +25,7 @@ pub enum DirectoryEntry {
         /// All entries inside this directory.
         entries: HashMap<OsString, DirectoryEntry>,
     },
+
     /// The entry is a file.
     File,
 }

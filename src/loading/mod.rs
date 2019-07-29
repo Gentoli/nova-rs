@@ -26,6 +26,7 @@ pub trait FileTree<'a> {
     ///
     /// This is often `Self`.
     type CreateResult: FileTree<'a>;
+
     /// Iterator type to iterate over the members of a directory.
     type DirIter: Iterator<Item = &'a Path>;
 

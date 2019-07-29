@@ -19,6 +19,7 @@ use std::rc::Rc;
 pub trait GraphicsApi {
     /// Corresponding physical device.
     type PhysicalDevice: PhysicalDevice;
+
     /// Corresponding platform surface.
     type PlatformSurface;
 
@@ -69,24 +70,34 @@ pub trait PhysicalDevice {
 pub trait Device {
     /// Device's queue type.
     type Queue: Queue;
+
     /// Device's memory type.
     type Memory: Memory;
+
     /// Device's command allocator type.
     type CommandAllocator: CommandAllocator;
+
     /// Device's image type.
     type Image: Image;
+
     /// Device's renderpass type.
     type Renderpass: Renderpass;
+
     /// Device's framebuffer type.
     type Framebuffer: Framebuffer;
+
     /// Device's pipeline interface type.
     type PipelineInterface: PipelineInterface;
+
     /// Device's descriptor pool type.
     type DescriptorPool: DescriptorPool;
+
     /// Device's pipeline type.
     type Pipeline: Pipeline;
+
     /// Device's semaphore type.
     type Semaphore: Semaphore;
+
     /// Device's fence type.
     type Fence: Fence;
 
@@ -214,7 +225,7 @@ pub trait Device {
     /// * `count` - The number of semaphores to create.
     fn create_semaphores(&self, count: u32) -> Result<Vec<Self::Semaphore>, MemoryError>;
 
-    /// Creates a new Fence.
+    /// Creates a new fence.
     fn create_fence(&self) -> Result<Self::Fence, MemoryError>;
 
     /// Creates the specified number of Fences.
@@ -250,8 +261,10 @@ pub trait Device {
 pub trait Queue {
     /// The queue's command list type.
     type CommandList: CommandList;
+
     /// The queue's fence type.
     type Fence: Fence;
+
     /// The queue's semaphore type.
     type Semaphore: Semaphore;
 
@@ -318,6 +331,7 @@ pub trait Sampler {}
 pub trait DescriptorPool {
     /// Descriptor pool's pipeline interface type.
     type PipelineInterface: PipelineInterface;
+
     /// Descriptor pool's descriptor set type.
     type DescriptorSet: DescriptorSet;
 
