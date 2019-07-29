@@ -63,14 +63,16 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
         self.get_node_at_location(path).is_some()
     }
 
-    fn is_file(&'a self, path: &Path) -> Option<bool> {
+    fn is_file(&'a self, path: &Path) -> Result<bool, LoadingError> {
         self.get_node_at_location(path)
             .map(|v| matches!(v, DirectoryEntry::File))
+            .ok_or(LoadingError::PathNotFound)
     }
 
-    fn is_dir(&'a self, path: &Path) -> Option<bool> {
+    fn is_dir(&'a self, path: &Path) -> Result<bool, LoadingError> {
         self.get_node_at_location(path)
             .map(|v| matches!(v, DirectoryEntry::Directory { .. }))
+            .ok_or(LoadingError::PathNotFound)
     }
 
     fn read_dir(&'a self, path: &Path) -> Result<Self::DirIter, LoadingError> {

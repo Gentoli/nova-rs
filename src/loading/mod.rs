@@ -35,17 +35,17 @@ pub trait FileTree<'a> {
 
     /// Checks if the path points to a file.
     ///
-    /// File Exists -> `Some(true)`
-    /// Exists but isn't file -> `Some(false)`
-    /// Path doesn't exist -> `None`
-    fn is_file(&'a self, path: &Path) -> Option<bool>;
+    /// File Exists -> `Ok(true)`
+    /// Exists but isn't file -> `Ok(false)`
+    /// Path doesn't exist -> [`LoadingError::PathNotFound`]
+    fn is_file(&'a self, path: &Path) -> Result<bool, LoadingError>;
 
     /// Checks if the path points to a directory.
     ///
-    /// Directory Exists -> `Some(true)`
-    /// Exists but isn't directory -> `Some(false)`
-    /// Path doesn't exist -> `None`
-    fn is_dir(&'a self, path: &Path) -> Option<bool>;
+    /// Directory Exists -> `Ok(true)`
+    /// Exists but isn't directory -> `Ok(false)`
+    /// Path doesn't exist -> [`LoadingError::PathNotFound`]
+    fn is_dir(&'a self, path: &Path) -> Result<bool, LoadingError>;
 
     /// Returns an iterator over all paths in the specified directory.
     ///
