@@ -1,3 +1,8 @@
+//! We set out to make a completely new renderer for Minecraft aimed at giving
+//! more control and vastly better tooling toshaderpack developers.
+//! This is a rewrite of the old [Nova Renderer](https://github.com/NovaMods/nova-renderer) project
+//! from C++ to Rust.
+
 #![feature(async_await)]
 #![feature(async_closure)]
 #![feature(seek_convenience)]
