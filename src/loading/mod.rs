@@ -18,6 +18,9 @@ pub use dir::*;
 ///
 /// Used to abstract over the actual backend being used to allow a wider variety of formats. Such examples could be a
 /// filesystem folder, a zip file, or a network store.
+///
+/// All paths passes in are relative to the `FileTree` root, and paths which go outside this `FileTree` are not allowed.
+/// The one exception is the [`from_path`](FileTree::from_path) method which accepts a path to the `FileTree` root.
 pub trait FileTree<'a> {
     /// The result from creating a new file tree using [`from_path`](FileTree::from_path).
     ///
@@ -27,6 +30,7 @@ pub trait FileTree<'a> {
     type DirIter: Iterator<Item = &'a Path>;
 
     /// Create a file tree from the path provided.
+    ///
     /// May be expensive depending on the target you are opening.
     fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>;
 
