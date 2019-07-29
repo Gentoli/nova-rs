@@ -2,7 +2,7 @@ use super::{rhi_enums::*, rhi_traits::*};
 use crate::shaderpack;
 use std::sync::Arc;
 
-/// Describes what kind of command allocator you want to create
+/// Describes what kind of command allocator you want to create.
 #[derive(Debug, Clone)]
 pub struct CommandAllocatorCreateInfo {
     /// The type of command lists which will be allocated by this command allocator
@@ -14,7 +14,7 @@ pub struct CommandAllocatorCreateInfo {
     pub node_mask: u32,
 }
 
-/// Information about a physical device!
+/// Information about a physical device.
 ///
 /// This information can come from multiple API calls, but I've merged all the information together here.
 ///
@@ -56,7 +56,7 @@ pub enum ResourceSpecificData {
     },
 }
 
-/// Barrier for resources
+/// Barrier for resources.
 #[derive(Clone)]
 pub struct ResourceBarrier {
     /// The resource the barrier is guarding.
@@ -132,7 +132,7 @@ pub struct ResourceBindingDescription {
     pub stages: ShaderStageFlags,
 }
 
-/// Data for buffer creation
+/// Data for buffer creation.
 #[derive(Debug, Clone)]
 pub struct BufferCreateInfo {
     /// Size of the buffer.
@@ -145,6 +145,6 @@ pub struct BufferCreateInfo {
     pub allocation: DeviceMemoryAllocation,
 }
 
-/// Memory allocation on a specific device
+/// Memory allocation on a specific device.
 #[derive(Debug, Clone)]
 pub struct DeviceMemoryAllocation;

@@ -1,4 +1,4 @@
-//! Directory reading/writing
+//! Directory reading/writing.
 
 use std::collections::HashMap;
 use std::ffi::OsString;

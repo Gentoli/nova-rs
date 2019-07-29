@@ -1,4 +1,4 @@
-//! File reading/writing
+//! File reading/writing.
 
 use std::io;
 use std::io::{Read, Seek};

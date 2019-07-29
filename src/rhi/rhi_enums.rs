@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use failure::Fail;
 
-/// Actual manufacturer of the gpu
+/// Actual manufacturer of the gpu.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PhysicalDeviceManufacturer {
     /// Made by Nvidia Corporation.
@@ -17,7 +17,7 @@ pub enum PhysicalDeviceManufacturer {
     Other,
 }
 
-/// The classification of a graphics device
+/// The classification of a graphics device.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PhysicalDeviceType {
     /// A physical GPU onboard the CPU.
@@ -36,7 +36,7 @@ pub enum PhysicalDeviceType {
     Other,
 }
 
-/// How a piece of memory will be used
+/// How a piece of memory will be used.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MemoryUsage {
     /// The memory will only be used by device.
@@ -96,7 +96,7 @@ pub enum CommandListLevel {
     Secondary,
 }
 
-/// Failure type for device creation
+/// Failure type for device creation.
 #[derive(Fail, Debug, Clone, Eq, PartialEq)]
 pub enum DeviceCreationError {
     /// Failed to create device.
@@ -248,7 +248,7 @@ pub enum DescriptorType {
     StorageBuffer,
 }
 
-/// Current use of a buffer
+/// Current use of a buffer.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BufferUsage {
     /// A buffer of uniform values.
@@ -265,7 +265,7 @@ pub enum BufferUsage {
 }
 
 bitflags! {
-    /// Pipeline Stage
+    /// Pipeline Stage.
     ///
     /// Documentation from [vulkan registry](https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkPipelineStageFlagBits.html).
     pub struct PipelineStageFlags: u32 {
@@ -435,9 +435,9 @@ bitflags! {
 }
 
 bitflags! {
-    /// Shader stage
+    /// Shader stage.
     pub struct ShaderStageFlags: u32 {
-        /// Vertex stage
+        /// Vertex stage.
         const VERTEX = 0x0001;
         /// Tessellation Control stage.
         const TESSELLATION_CONTROL = 0x0002;

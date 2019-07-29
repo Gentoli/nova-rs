@@ -30,8 +30,9 @@ pub trait GraphicsApi {
     fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
 }
 
-/// An implementation of the rendering API. This will probably be a GPU card, but a software
-/// implementation of either Vulkan or Direct3D 12 is possible.
+/// An implementation of the rendering API for a specific device.
+///
+/// This will probably be a GPU card, but a software implementation of either Vulkan or Direct3D 12 is possible.
 pub trait PhysicalDevice {
     /// The logical device that this physical device provides.
     type Device: Device;
