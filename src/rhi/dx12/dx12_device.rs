@@ -17,11 +17,13 @@ use crate::{
 };
 use cgmath::Vector2;
 use std::collections::HashMap;
+use std::rc::Rc;
 use winapi::{shared::winerror, um::d3d12::*};
+use winapi::Interface;
 
-pub struct Dx12Device<'a> {
+pub struct Dx12Device {
     /// Graphics adapter that we're using
-    phys_device: &'a Dx12PhysicalDevice,
+    phys_device: Rc<Dx12PhysicalDevice>,
 
     /// D3D12 device that we're wrapping
     device: WeakPtr<ID3D12Device>,
@@ -36,8 +38,8 @@ pub struct Dx12Device<'a> {
     system_info: Dx12SystemInfo,
 }
 
-impl<'a> Dx12Device<'a> {
-    pub fn new(phys_device: &'a Dx12PhysicalDevice, device: WeakPtr<ID3D12Device>) -> Self {
+impl Dx12Device {
+    pub fn new(phys_device: Rc<Dx12PhysicalDevice>, device: WeakPtr<ID3D12Device>) -> Self {
         let rtv_descriptor_size = device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         let shader_resource_descriptor_size =
             device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -56,7 +58,7 @@ impl<'a> Dx12Device<'a> {
     }
 }
 
-impl<'a> Device for Dx12Device<'a> {
+impl Device for Dx12Device {
     type Queue = Dx12Queue;
     type Memory = Dx12Memory;
     type CommandAllocator = Dx12CommandAllocator;
@@ -152,7 +154,7 @@ impl<'a> Device for Dx12Device<'a> {
 
             let hr = unsafe {
                 self.device
-                    .CreateHeap(heap_create_info, ID3D12Heap::uuidof(), heap.mut_void())
+                    .CreateHeap(&heap_create_info, ID3D12Heap::uuidof(), heap.mut_void())
             };
             if winerror::SUCCEEDED(hr) {
                 Ok(Dx12Memory::new(heap, size))
@@ -176,7 +178,8 @@ impl<'a> Device for Dx12Device<'a> {
             QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
         };
 
-        let (allocator, hr) = self.device.CreateCommandAllocator(command_allocator_type);
+        let mut allocator = WeakPtr::<ID3D12CommandAllocator>::null();
+        let hr = unsafe { self.device.CreateCommandAllocator(command_allocator_type, ID3D12CommandAllocator::uuidof(), allocator.mut_void()) };
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12CommandAllocator::new(allocator))
         } else {
@@ -203,7 +206,7 @@ impl<'a> Device for Dx12Device<'a> {
     fn create_pipeline_interface(
         &self,
         bindings: &HashMap<String, ResourceBindingDescription>,
-        color_attachments: &Vec<shaderpack::TextureAttachmentInfo>,
+        color_attachments: &[shaderpack::TextureAttachmentInfo],
         depth_texture: &Option<shaderpack::TextureAttachmentInfo>,
     ) -> Result<Dx12PipelineInterface, MemoryError> {
         unimplemented!()

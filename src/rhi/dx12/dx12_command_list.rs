@@ -9,8 +9,6 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
-use std::sync::Arc;
-use winapi::shared::winerror::SUCCEEDED;
 use winapi::um::d3d12::{
     ID3D12GraphicsCommandList, ID3D12GraphicsCommandList1, ID3D12GraphicsCommandList2, ID3D12GraphicsCommandList3,
     ID3D12GraphicsCommandList4, D3D12_RENDER_PASS_FLAG_NONE,

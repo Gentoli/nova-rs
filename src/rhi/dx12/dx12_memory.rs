@@ -1,6 +1,5 @@
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::{dx12::dx12_buffer::Dx12Buffer, BufferCreateInfo, Memory, MemoryError};
-use winapi::shared::ntdef::UNICODE_STRING_MAX_BYTES;
 use winapi::um::d3d12::*;
 
 pub struct Dx12Memory {}
