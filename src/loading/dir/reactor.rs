@@ -18,7 +18,8 @@ pub enum FileSystemOpResult {
     Error(io::Error),
 }
 
-pub fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
+/// Core operation of the file system reactor
+pub(in crate::loading::dir) fn file_system_reactor_core(op: FileSystemOp) -> FileSystemOpResult {
     match op {
         FileSystemOp::RecursiveEnumerate(path) => match fs::dir::read_recursive(&path) {
             Ok(cache) => FileSystemOpResult::RecursiveEnumerate(cache),
