@@ -186,9 +186,7 @@ impl<'a> Device for Dx12Device<'a> {
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
         let mut render_target_descs: Vec<D3D12_RENDER_PASS_RENDER_TARGET_DESC>;
-        for attachment_info in data.texture_inputs {
-
-        }
+        for attachment_info in data.texture_inputs {}
 
         unimplemented!()
     }

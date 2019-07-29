@@ -4,70 +4,70 @@ use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct ShaderpackData {
-    pipelines: Vec<PipelineCreationInfo>,
+    pub pipelines: Vec<PipelineCreationInfo>,
     /// All the renderpasses that this shaderpack needs, in submission order
-    passes: Vec<RenderPassCreationInfo>,
-    materials: Vec<MaterialData>,
-    resources: ShaderpackResourceData,
+    pub passes: Vec<RenderPassCreationInfo>,
+    pub materials: Vec<MaterialData>,
+    pub resources: ShaderpackResourceData,
 }
 
 #[derive(Debug, Clone)]
 pub struct PipelineCreationInfo {
     /// The name of this pipeline
-    name: String,
+    pub name: String,
     /// The pipeline that this pipeline inherits from
-    parent: Option<String>,
+    pub parent: Option<String>,
     /// The name of the pass that this pipeline belongs to
-    pass: String,
+    pub pass: String,
     /// All of the symbols in the shader that are defined by this state
-    defines: Vec<String>,
+    pub defines: Vec<String>,
     /// Defines the rasterizer state that's active for this pipeline
-    states: Vec<RasterizerState>,
+    pub states: Vec<RasterizerState>,
     /// Sets up the vertex fields that Nova will bind to this pipeline
-    vertex_fields: Vec<VertexFieldData>,
+    pub vertex_fields: Vec<VertexFieldData>,
     /// The stencil buffer operations to perform on the front faces
-    front_face: Option<StencilOpState>,
+    pub front_face: Option<StencilOpState>,
     /// The stencil buffer operations to perform on the back faces
-    back_face: Option<StencilOpState>,
+    pub back_face: Option<StencilOpState>,
     /// The material to use if this one's shaders can't be found
-    fallback: Option<String>,
+    pub fallback: Option<String>,
     /// A bias to apply to the depth
-    depth_bias: f32,
+    pub depth_bias: f32,
     /// The depth bias, scaled by slope I guess?
-    slope_scaled_depth_bias: f32,
+    pub slope_scaled_depth_bias: f32,
     /// The reference value to use for the stencil test
-    stencil_ref: u32,
+    pub stencil_ref: u32,
     /// The mask to use when reading from the stencil buffer
-    stencil_read_mask: u32,
+    pub stencil_read_mask: u32,
     /// The mask to use when writing to the stencil buffer
-    stencil_write_mask: u32,
+    pub stencil_write_mask: u32,
     /// How to handle MSAA for this state
-    msaa_support: MSAASupport,
+    pub msaa_support: MSAASupport,
     /// Decides how the vertices are rendered
-    primitive_mode: PrimitiveTopology,
+    pub primitive_mode: PrimitiveTopology,
     /// Where to get the blending factor for the soource
-    src_blend_factor: BlendFactor,
+    pub src_blend_factor: BlendFactor,
     /// Where to get the blending factor for the destination
-    dst_blend_factor: BlendFactor,
+    pub dst_blend_factor: BlendFactor,
     /// How to get the source alpha in a blend
-    alpha_src: BlendFactor,
+    pub alpha_src: BlendFactor,
     /// How to get the destination alpha in a blend
-    alpha_dst: BlendFactor,
+    pub alpha_dst: BlendFactor,
     /// The function to use for the depth test
-    depth_func: CompareOp,
+    pub depth_func: CompareOp,
     /// The render queue that this pass belongs to
     /// This may or may not be removed depending on what is actually needed by Nova
-    render_queue: RenderQueue,
+    pub render_queue: RenderQueue,
     /// Vertex shader to use
-    vertex_shader: ShaderSource,
+    pub vertex_shader: ShaderSource,
     /// Geometry shader to use
-    geometry_shader: Option<ShaderSource>,
+    pub geometry_shader: Option<ShaderSource>,
     /// Tessellation Control shader to use
-    tessellation_control_shader: Option<ShaderSource>,
+    pub tessellation_control_shader: Option<ShaderSource>,
     /// Tessellation Evaluation shader to use
-    tessellation_evaluation_shader: Option<ShaderSource>,
+    pub tessellation_evaluation_shader: Option<ShaderSource>,
     /// Fragment shader to use
-    fragment_shader: Option<ShaderSource>,
+    pub fragment_shader: Option<ShaderSource>,
 }
 
 impl PipelineCreationInfo {
@@ -96,77 +96,77 @@ impl PipelineCreationInfo {
 #[derive(Debug, Clone)]
 pub struct RenderPassCreationInfo {
     /// The name of this render pass
-    name: String,
+    pub name: String,
     /// The passes that MUST execute before this one
-    dependencies: Vec<String>,
+    pub dependencies: Vec<String>,
     /// The textures that this pass will read from
-    texture_inputs: Vec<String>,
+    pub texture_inputs: Vec<String>,
     /// The textures that this pass will write to
-    texture_outputs: Vec<TextureAttachmentInfo>,
+    pub texture_outputs: Vec<TextureAttachmentInfo>,
     /// The depth texture this pass will write to
-    depth_texture: Option<TextureAttachmentInfo>,
+    pub depth_texture: Option<TextureAttachmentInfo>,
     /// All the buffers that this renderpass reads from
-    input_buffers: Vec<String>,
+    pub input_buffers: Vec<String>,
     /// All the buffers that this renderpass writes to
-    output_buffers: Vec<String>,
+    pub output_buffers: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MaterialData {
-    name: String,
-    passes: Vec<MaterialPass>,
-    geometry_filter: String,
+    pub name: String,
+    pub passes: Vec<MaterialPass>,
+    pub geometry_filter: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct ShaderpackResourceData {
-    textures: Vec<TextureCreateInfo>,
-    samplers: Vec<SamplerCreateInfo>,
+    pub textures: Vec<TextureCreateInfo>,
+    pub samplers: Vec<SamplerCreateInfo>,
 }
 
 #[derive(Debug, Clone)]
 pub struct VertexFieldData {
-    semantic_name: String,
-    field: VertexField,
+    pub semantic_name: String,
+    pub field: VertexField,
 }
 
 #[derive(Debug, Clone)]
 pub struct StencilOpState {
-    fail_op: StencilOp,
-    pass_op: StencilOp,
-    depth_fail_op: StencilOp,
-    compare_op: StencilOp,
-    compare_mask: u32,
-    write_mask: u32,
+    pub fail_op: StencilOp,
+    pub pass_op: StencilOp,
+    pub depth_fail_op: StencilOp,
+    pub compare_op: StencilOp,
+    pub compare_mask: u32,
+    pub write_mask: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct ShaderSource {
-    filename: PathBuf,
-    source: Vec<u32>,
+    pub filename: PathBuf,
+    pub source: Vec<u32>,
 }
 
 ///  A description of a texture that a render pass outputs to
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextureAttachmentInfo {
     ///  The name of the texture
-    name: String,
+    pub name: String,
     /// Pixel format of the texture
-    pixel_format: PixelFormat,
+    pub pixel_format: PixelFormat,
     ///  Whether to clear the texture
     ///
     /// If the texture is a depth buffer, it gets cleared to 1
     /// If the texture is a stencil buffer, it gets cleared to 0xFFFFFFFF
     /// If the texture is a color buffer, it gets cleared to (0, 0, 0, 0)
-    clear: bool,
+    pub clear: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct MaterialPass {
-    name: String,
-    material_name: String,
-    pipeline: String,
-    bindings: HashMap<String, String>,
+    pub name: String,
+    pub material_name: String,
+    pub pipeline: String,
+    pub bindings: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -203,8 +203,8 @@ pub struct TextureCreateInfo {
     ///
     /// If you use one of the virtual textures, then all fields except the binding are ignored
     /// If you use `Backbuffer`, then all fields are ignored since the backbuffer is always bound to output location 0
-    name: String,
-    format: TextureFormat,
+    pub name: String,
+    pub format: TextureFormat,
 }
 
 ///  Defines a sampler to use for a texture
@@ -212,26 +212,26 @@ pub struct TextureCreateInfo {
 /// At the time of writing I'm not sure how this is corellated with a texture, but all well
 #[derive(Debug, Clone)]
 pub struct SamplerCreateInfo {
-    name: String,
+    pub name: String,
     ///  What kind of texture filter to use
     ///
     /// texel_aa does something that I don't want to figure out right now. Bilinear is your regular bilinear filter,
     /// and point is the point filter. Aniso isn't an option and I kinda hope it stays that way
-    filter: TextureFilter,
+    pub filter: TextureFilter,
     ///  How the texture should wrap at the edges
-    wrap_mode: WrapMode,
+    pub wrap_mode: WrapMode,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextureFormat {
     ///  The format of the texture
-    pixel_format: PixelFormat,
+    pub pixel_format: PixelFormat,
     ///  How to interpret the dimensions of this texture
-    dimension_type: TextureDimensionType,
+    pub dimension_type: TextureDimensionType,
     ///  The width, in pixels, of the texture
-    width: f32,
+    pub width: f32,
     ///  The height, in pixels, of the texture
-    height: f32,
+    pub height: f32,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

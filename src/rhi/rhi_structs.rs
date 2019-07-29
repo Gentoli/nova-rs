@@ -58,6 +58,9 @@ pub enum ResourceSpecificData {
 
 /// Barrier for resources.
 #[derive(Clone)]
+pub struct RenderPassCreationInfo {}
+
+#[derive(Clone)]
 pub struct ResourceBarrier {
     /// The resource the barrier is guarding.
     pub resource: Arc<dyn Resource>,
