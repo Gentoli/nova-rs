@@ -4,7 +4,7 @@ use futures::task::Waker;
 use std::sync::Arc;
 use std::thread;
 
-/// Single threaded reactor type.
+/// Single thread reactor type. Uses a single sacrificial thread to process work.
 ///
 /// Designed to be used to turn an otherwise synchronous api into an async api through having a sacrificial thread do
 /// the work. Construct with [`from_action`](#method.from_action). Is a thin layer around the internal reactor. Is
