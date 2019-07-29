@@ -21,6 +21,7 @@ impl CommandList for Dx12CommandList {
     type PipelineInterface = Dx12PipelineInterface;
 
     fn resource_barriers(
+        &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
         barriers: Vec<ResourceBarrier>,
@@ -29,6 +30,7 @@ impl CommandList for Dx12CommandList {
     }
 
     fn copy_buffer(
+        &self,
         destination_buffer: Dx12Buffer,
         destination_offset: u64,
         source_buffer: Dx12Buffer,
@@ -38,35 +40,35 @@ impl CommandList for Dx12CommandList {
         unimplemented!()
     }
 
-    fn execute_command_lists(lists: Vec<Dx12CommandList>) {
+    fn execute_command_lists(&self, lists: Vec<Dx12CommandList>) {
         unimplemented!()
     }
 
-    fn begin_renderpass(renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
+    fn begin_renderpass(&self, renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
         unimplemented!()
     }
 
-    fn end_renderpass() {
+    fn end_renderpass(&self) {
         unimplemented!()
     }
 
-    fn bind_pipeline(pipeline: Dx12Pipeline) {
+    fn bind_pipeline(&self, pipeline: Dx12Pipeline) {
         unimplemented!()
     }
 
-    fn bind_descriptor_sets(descriptor_sets: Vec<Dx12DescriptorSet>, pipeline_interface: Dx12PipelineInterface) {
+    fn bind_descriptor_sets(&self, descriptor_sets: Vec<Dx12DescriptorSet>, pipeline_interface: Dx12PipelineInterface) {
         unimplemented!()
     }
 
-    fn bind_vertex_buffers(buffers: Vec<Dx12Buffer>) {
+    fn bind_vertex_buffers(&self, buffers: Vec<Dx12Buffer>) {
         unimplemented!()
     }
 
-    fn bind_index_buffer(buffer: Dx12Buffer) {
+    fn bind_index_buffer(&self, buffer: Dx12Buffer) {
         unimplemented!()
     }
 
-    fn draw_indexed_mesh(num_indices: u32, num_instances: u32) {
+    fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32) {
         unimplemented!()
     }
 }
