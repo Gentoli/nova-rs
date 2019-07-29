@@ -1,6 +1,5 @@
 use winapi::{
     shared::{dxgi, dxgi1_2, dxgi1_3, dxgi1_4, winerror},
-    um::d3d12::*,
     Interface,
 };
 

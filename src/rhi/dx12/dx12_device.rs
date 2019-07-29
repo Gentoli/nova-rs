@@ -1,6 +1,5 @@
 use crate::rhi::dx12::com::WeakPtr;
-use crate::rhi::dx12::dx12_command_list::Dx12CommandList;
-use crate::rhi::dx12::dx12_system_info::{Dx12SystemInfo, Release};
+use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
 use crate::{
     rhi::{
         dx12::{
@@ -17,14 +16,8 @@ use crate::{
     shaderpack,
 };
 use cgmath::Vector2;
-use std::{
-    collections::{hash_map::RandomState, HashMap},
-    mem,
-};
-use winapi::{
-    shared::{dxgi1_2, dxgi1_4, winerror},
-    um::d3d12::*,
-};
+use std::collections::HashMap;
+use winapi::{shared::winerror, um::d3d12::*};
 
 pub struct Dx12Device<'a> {
     /// Graphics adapter that we're using
@@ -45,18 +38,21 @@ pub struct Dx12Device<'a> {
 
 impl<'a> Dx12Device<'a> {
     pub fn new(phys_device: &'a Dx12PhysicalDevice, device: WeakPtr<ID3D12Device>) -> Self {
-        let rtv_descriptor_size = device.GetDescriptorIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        let shader_resource_descriptor_size = device.GetDescriptorIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        let rtv_descriptor_size = device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        let shader_resource_descriptor_size =
+            device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         Dx12Device {
             phys_device,
             device,
             rtv_descriptor_size,
             shader_resource_descriptor_size,
-            system_info: Dx12SystemInfo {
-                supported_version: Release::Four,
-            },
+            system_info: Dx12SystemInfo { supported_version: 4 },
         }
+    }
+
+    pub fn get_api_version(&self) -> u32 {
+        self.system_info.supported_version
     }
 }
 
@@ -90,7 +86,7 @@ impl<'a> Device for Dx12Device<'a> {
 
         let hr = unsafe {
             self.device
-                .CreateCommandQueue(*queue_desc, ID3D12CommandQueue::uuidof(), queue.mut_void())
+                .CreateCommandQueue(&queue_desc, ID3D12CommandQueue::uuidof(), queue.mut_void())
         };
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12Queue::new(queue))
@@ -189,6 +185,8 @@ impl<'a> Device for Dx12Device<'a> {
     }
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
+        let mut render_target_descs: Vec<D3D12_RENDER_PASS_RENDER_TARGET_DESC>;
+
         unimplemented!()
     }
 

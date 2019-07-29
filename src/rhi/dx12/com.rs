@@ -80,7 +80,7 @@ impl<T> Deref for WeakPtr<T> {
 }
 
 impl<T> fmt::Debug for WeakPtr<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result {
         write!(f, "WeakPtr( ptr: {:?} )", self.0)
     }
 }

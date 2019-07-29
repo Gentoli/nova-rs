@@ -13,12 +13,13 @@ impl Dx12Queue {
     }
 }
 
-impl Queue for Dx12Queue {
+impl<'a> Queue for Dx12Queue {
     type CommandList = Dx12CommandList;
     type Fence = Dx12Fence;
     type Semaphore = Dx12Semaphore;
 
     fn submit_commands(
+        &self,
         commands: Dx12CommandList,
         fence_to_signal: Dx12Fence,
         wait_semaphores: Vec<Dx12Semaphore>,
