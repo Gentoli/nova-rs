@@ -17,7 +17,7 @@ if sys.version_info < (3, 5, 0):
     exit(1)
 
 if not os.path.exists(".nova-root"):
-    print("This script must be run inside nova's root directory")
+    print("This script must be run inside Nova's root directory")
     print("Cannot find .nova-root")
 
 sys.path.insert(0, "tools/update/")

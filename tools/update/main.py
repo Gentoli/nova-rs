@@ -59,7 +59,7 @@ def replace_in_file(file: str, pattern: typing.Pattern[str], replacement: str) -
 
 def validate_version(version: str) -> str:
     """
-    Verify that a string matches a valid nova version number.
+    Verify that a string matches a valid Nova version number.
 
     ex: 0.2.3-superbeta
     ex: 1.9.2
@@ -69,14 +69,14 @@ def validate_version(version: str) -> str:
     :raises argparse.ArgumentTypeError: When invalid
     """
     if version_simple_regex.match(version) is None:
-        msg = "\"{}\" is not a valid nova version. ex: 0.2.3-superbeta".format(version)
+        msg = "\"{}\" is not a valid Nova version. ex: 0.2.3-superbeta".format(version)
         raise argparse.ArgumentTypeError(msg)
     return version
 
 
 def replace_version(new_version: str) -> None:
     """
-    Replaces nova version in all files that need to updated.
+    Replaces Nova version in all files that need to updated.
 
     Currently:
     - Cargo.toml
