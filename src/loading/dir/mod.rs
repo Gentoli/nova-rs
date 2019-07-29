@@ -39,7 +39,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
         let path = path.to_path_buf();
         Box::new(async move {
             if !path.exists() {
-                return Err(LoadingError::PathNotFound);
+                return Err(LoadingError::ResourceNotFound);
             }
             if !path.is_dir() {
                 return Err(LoadingError::NotDirectory);

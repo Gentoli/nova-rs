@@ -71,8 +71,11 @@ pub trait FileTree<'a> {
 /// Error when trying to load a resource.
 #[derive(Debug, Fail)]
 pub enum LoadingError {
-    /// Path given is not found in the resource.
-    #[fail(display = "Path doesn't exist.")]
+    /// Given path to resource does not exist.
+    #[fail(display = "Given path to resource does not exist.")]
+    ResourceNotFound,
+    /// Path does not exist in resource.
+    #[fail(display = "Path does not exist in resource.")]
     PathNotFound,
     /// Expected a directory, but found a file.
     #[fail(display = "Expected directory.")]
