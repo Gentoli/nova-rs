@@ -62,6 +62,9 @@ pub trait PhysicalDevice {
 ///
 /// There may be multiple Devices in existence at once. Nova will eventually support multi-GPU
 /// rendering
+///
+/// Device isn't a low-level wrapper around an explicit API's concept of a logical device, it's an API for a device
+/// which can execute Nova's shaderpack
 pub trait Device {
     type Queue: Queue;
     type Memory: Memory;
