@@ -180,7 +180,7 @@ impl<'a> Device for Dx12Device<'a> {
             QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
         };
 
-        let (allocator, hr) = self.device.create_command_allocator(command_allocator_type);
+        let (allocator, hr) = self.device.CreateCommandAllocator(command_allocator_type);
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12CommandAllocator::new(allocator))
         } else {

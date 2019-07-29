@@ -5,6 +5,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::ptr;
 use winapi::ctypes::c_void;
+use winapi::shared::winerror::HRESULT;
 use winapi::um::unknwnbase::IUnknown;
 use winapi::Interface;
 
