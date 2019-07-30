@@ -12,6 +12,7 @@ mod reactor;
 
 pub use iter::*;
 use reactor::*;
+use std::pin::Pin;
 
 /// File tree structure representing a filesystem directory.
 ///
@@ -35,9 +36,9 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
     type CreateResult = Self;
     type DirIter = DirectoryIterator<'a>;
 
-    fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>> {
+    fn from_path(path: &Path) -> Pin<Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>> {
         let path = path.to_path_buf();
-        Box::new(async move {
+        Pin::from(Box::new(async move {
             if !path.exists() {
                 return Err(LoadingError::ResourceNotFound);
             }
@@ -56,20 +57,20 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
                 FileSystemOpResult::Error(err) => Err(LoadingError::FileSystemError { sub_error: err.into() }),
                 _ => panic!("Incorrect directory action response received"),
             }
-        })
+        }))
     }
 
-    fn exists(&'a self, path: &Path) -> bool {
+    fn exists(&self, path: &Path) -> bool {
         self.get_node_at_location(path).is_some()
     }
 
-    fn is_file(&'a self, path: &Path) -> Result<bool, LoadingError> {
+    fn is_file(&self, path: &Path) -> Result<bool, LoadingError> {
         self.get_node_at_location(path)
             .map(|v| matches!(v, DirectoryEntry::File))
             .ok_or(LoadingError::PathNotFound)
     }
 
-    fn is_dir(&'a self, path: &Path) -> Result<bool, LoadingError> {
+    fn is_dir(&self, path: &Path) -> Result<bool, LoadingError> {
         self.get_node_at_location(path)
             .map(|v| matches!(v, DirectoryEntry::Directory { .. }))
             .ok_or(LoadingError::PathNotFound)
@@ -83,10 +84,10 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
         }
     }
 
-    fn read(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>> {
+    fn read(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>> {
         let path = path.to_path_buf();
         let data = self.0.clone();
-        Box::new(async move {
+        Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();
                 p.push(path);
@@ -104,13 +105,13 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
                 FileSystemOpResult::FileRead(data) => Ok(data),
                 _ => panic!("Incorrect file read action response received."),
             }
-        })
+        }))
     }
 
-    fn read_u32(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>> {
+    fn read_u32(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>> {
         let path = path.to_path_buf();
         let data = self.0.clone();
-        Box::new(async move {
+        Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();
                 p.push(path);
@@ -128,13 +129,13 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
                 FileSystemOpResult::FileReadU32(data) => Ok(data),
                 _ => panic!("Incorrect file read action response received."),
             }
-        })
+        }))
     }
 
-    fn read_text(&'a self, path: &Path) -> Box<dyn Future<Output = Result<String, LoadingError>>> {
+    fn read_text(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<String, LoadingError>>>> {
         let path = path.to_path_buf();
         let data = self.0.clone();
-        Box::new(async move {
+        Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();
                 p.push(path);
@@ -152,6 +153,6 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
                 FileSystemOpResult::FileReadText(data) => Ok(data),
                 _ => panic!("Incorrect file read action response received."),
             }
-        })
+        }))
     }
 }

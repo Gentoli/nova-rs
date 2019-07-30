@@ -9,6 +9,7 @@
 use failure::{Error, Fail};
 use futures::Future;
 use std::path::Path;
+use std::pin::Pin;
 
 mod dir;
 
@@ -33,24 +34,24 @@ pub trait FileTree<'a> {
     /// Create a file tree from the path provided.
     ///
     /// May be expensive depending on the target you are opening.
-    fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>;
+    fn from_path(path: &Path) -> Pin<Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>>;
 
     /// Checks is file path exists within the current file tree.
-    fn exists(&'a self, path: &Path) -> bool;
+    fn exists(&self, path: &Path) -> bool;
 
     /// Checks if the path points to a file.
     ///
     /// File Exists -> `Ok(true)`
     /// Exists but isn't file -> `Ok(false)`
     /// Path doesn't exist -> [`LoadingError::PathNotFound`]
-    fn is_file(&'a self, path: &Path) -> Result<bool, LoadingError>;
+    fn is_file(&self, path: &Path) -> Result<bool, LoadingError>;
 
     /// Checks if the path points to a directory.
     ///
     /// Directory Exists -> `Ok(true)`
     /// Exists but isn't directory -> `Ok(false)`
     /// Path doesn't exist -> [`LoadingError::PathNotFound`]
-    fn is_dir(&'a self, path: &Path) -> Result<bool, LoadingError>;
+    fn is_dir(&self, path: &Path) -> Result<bool, LoadingError>;
 
     /// Returns an iterator over all paths in the specified directory.
     ///
@@ -60,17 +61,17 @@ pub trait FileTree<'a> {
     /// Reads a file into a vector of u8.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>;
+    fn read(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>>;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_u32(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>;
+    fn read_u32(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>>;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_text(&'a self, path: &Path) -> Box<dyn Future<Output = Result<String, LoadingError>>>;
+    fn read_text(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<String, LoadingError>>>>;
 }
 
 /// Error when trying to load a resource.
