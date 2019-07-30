@@ -11,7 +11,7 @@ pub struct ShaderpackData {
     /// Pipelines described by the shaderpack.
     pipelines: Vec<PipelineCreationInfo>,
 
-    /// All the renderpasses that this shaderpack needs, in submission order.
+    /// All the renderpasses that this shaderpack specifies, in submission order.
     passes: Vec<RenderPassCreationInfo>,
 
     /// All materials needed by this shaderpack.
@@ -509,7 +509,7 @@ impl TextureFormat {
     }
 }
 
-/// State of the fixed-function rasterizer.
+/// Rasterizer hardware features that shaderpacks can enable.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 #[serde(untagged)]
 pub enum RasterizerState {

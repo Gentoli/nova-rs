@@ -79,15 +79,19 @@ pub enum LoadingError {
     /// Given path to resource does not exist.
     #[fail(display = "Given path to resource does not exist.")]
     ResourceNotFound,
+
     /// Path does not exist in resource.
     #[fail(display = "Path does not exist in resource.")]
     PathNotFound,
+
     /// Expected a directory, but found a file.
     #[fail(display = "Expected directory.")]
     NotDirectory,
+
     /// Expected a file, but found a directory.
     #[fail(display = "Expected file.")]
     NotFile,
+
     /// Error within the filesystem.
     #[fail(display = "Error inside filesystem.")]
     FileSystemError {

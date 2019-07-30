@@ -57,19 +57,19 @@ pub enum MemoryUsage {
 /// Describes what kind of object you want to allocate from a new memory pool.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ObjectType {
-    /// A buffer for storing vertex or other data.
+    /// Allocate buffers for storing vertex data or other data.
     Buffer,
 
-    /// A texture to put in image in.
+    /// Allocate textures to put in images in.
     Texture,
 
-    /// A attachment between a texture and the renderer.
+    /// Allocate framebuffer attachments.
     Attachment,
 
-    /// A surface for the swapchain to render onto.
+    /// Allocate surfaces for the swapchain to render onto.
     SwapchainSurface,
 
-    /// Other
+    /// Allocate any object.
     Any,
 }
 
@@ -204,7 +204,8 @@ pub enum ResourceState {
     /// The resource may be used for anything you want, but it won't be optimal for anything.
     General,
 
-    /// Attached to the color attachment of a texture.
+    /// Attached to the color attachment of a texture. Optimized to be a framebuffer
+    /// color attachment.
     ColorAttachment,
 
     /// Attached to the depth-stencil attachment of a texture.
@@ -219,7 +220,7 @@ pub enum ResourceState {
     /// Attached to the depth-stencil attachment of a texture with _both_ **read only**.
     DepthStencilReadOnlyAttachment,
 
-    /// Attached to the active window to be presented
+    /// Can be presented to the active window
     PresentSource,
 
     /// Attached to a non-fragment shader in read-only mode.
@@ -235,7 +236,7 @@ pub enum ResourceState {
     TransferDestination,
 }
 
-/// Type of buffer current descriptor points to.
+/// Type of object current descriptor points to.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum DescriptorType {
     /// Handle to a combined image and image sampler.

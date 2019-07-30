@@ -319,13 +319,9 @@ pub trait Buffer {
 }
 
 /// An raw image with no sampler.
-///
-/// FIXME(dethraid): More description when this is ready for use.
 pub trait Image {}
 
 /// An image sampler.
-///
-/// FIXME(dethraid): More description when this is ready for use.
 pub trait Sampler {}
 
 /// A pool of descriptors.

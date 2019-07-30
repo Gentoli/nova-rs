@@ -95,7 +95,7 @@ pub enum DescriptorUpdateInfo {
         /// The image format.
         format: shaderpack::TextureFormat,
 
-        /// The sampling pattern to use.
+        /// The image sampler to use.
         sampler: Arc<dyn Sampler>,
     },
 }
