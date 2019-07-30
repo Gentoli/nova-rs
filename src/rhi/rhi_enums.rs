@@ -195,7 +195,8 @@ pub enum PipelineCreationError {
     InvalidShader,
 }
 
-/// The state of a resource.
+/// The state of a resource. The resource will be optimized for the given use case, though it may still be used in
+/// others.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ResourceState {
     /// The state is not defined. The GPU may or may not do _things_ with the resource.
@@ -204,35 +205,34 @@ pub enum ResourceState {
     /// The resource may be used for anything you want, but it won't be optimal for anything.
     General,
 
-    /// Attached to the color attachment of a texture. Optimized to be a framebuffer
-    /// color attachment.
+    /// Resource optimized to be a framebuffer color attachment.
     ColorAttachment,
 
-    /// Attached to the depth-stencil attachment of a texture.
+    /// Resource optimized to be a depth-stencil attachment of a texture.
     DepthStencilAttachment,
 
-    /// Attached to the depth-stencil attachment of a texture with _depth_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a texture with _depth_ **read only**.
     DepthReadOnlyStencilAttachment,
 
-    /// Attached to the depth-stencil attachment of a texture with _stencil_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a texture with _stencil_ **read only**.
     DepthAttachmentStencilReadOnly,
 
-    /// Attached to the depth-stencil attachment of a texture with _both_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a texture with _both_ **read only**.
     DepthStencilReadOnlyAttachment,
 
-    /// Can be presented to the active window
+    /// Resource optimized to be presented to the active window
     PresentSource,
 
-    /// Attached to a non-fragment shader in read-only mode.
+    /// Resource optimized to be a non-fragment shader in read-only mode.
     NonFragmentShaderReadOnly,
 
-    /// Attached to a fragment shader in read-only mode.
+    /// Resource optimized to be a fragment shader in read-only mode.
     FragmentShaderReadOnly,
 
-    /// The source of a transfer.
+    /// Resource optimized to be the source of a transfer.
     TransferSource,
 
-    /// The destination of a transfer.
+    /// Resource optimized to be the destination of a transfer.
     TransferDestination,
 }
 
