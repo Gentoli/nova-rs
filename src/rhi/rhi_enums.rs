@@ -205,19 +205,19 @@ pub enum ResourceState {
     /// The resource may be used for anything you want, but it won't be optimal for anything.
     General,
 
-    /// Resource optimized to be a framebuffer color attachment.
+    /// Resource optimized to be a color attachment of a framebuffer.
     ColorAttachment,
 
-    /// Resource optimized to be a depth-stencil attachment of a texture.
+    /// Resource optimized to be a depth-stencil attachment of a framebuffer.
     DepthStencilAttachment,
 
-    /// Resource optimized to be a depth-stencil attachment of a texture with _depth_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a framebuffer with _depth_ **read only**.
     DepthReadOnlyStencilAttachment,
 
-    /// Resource optimized to be a depth-stencil attachment of a texture with _stencil_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a framebuffer with _stencil_ **read only**.
     DepthAttachmentStencilReadOnly,
 
-    /// Resource optimized to be a depth-stencil attachment of a texture with _both_ **read only**.
+    /// Resource optimized to be a depth-stencil attachment of a framebuffer with _both_ **read only**.
     DepthStencilReadOnlyAttachment,
 
     /// Resource optimized to be presented to the active window

@@ -8,7 +8,7 @@ use std::path::PathBuf;
 /// A fully parsed Nova Shaderpack
 #[derive(Debug, Clone)]
 pub struct ShaderpackData {
-    /// The pipeline that this shaderpack specifies.
+    /// The pipelines that this shaderpack specifies.
     pipelines: Vec<PipelineCreationInfo>,
 
     /// The renderpasses that this shaderpack specifies, in submission order.
