@@ -1,15 +1,15 @@
-//! Nova's logging abstraction
+//! Nova's logging abstraction.
 //!
-//! _Or maybe this will be Nova's implementation of a popular logging abstraction_
+//! _Or maybe this will be Nova's implementation of a popular logging abstraction_.
 //!
 //! Nova logs need to go _somewhere_. While Nova itself could maintain a log file, we decided instead that Nova should
 //! use the client application's logger. When Nova is initialized by the client, the client passes in callbacks for
-//! logging. All of Nova's logs go through these callbacks
+//! logging. All of Nova's logs go through these callbacks.
 //!
 //! Thanks to the logging crate we can simply log from everywhere in Nova's source. We however provide a very basic
-//! logger for tests and in case the application doesn't set one
+//! logger for tests and in case the application doesn't set one.
 
-/// Very basic logger struct, containing info if debug and trace level logs are enabled
+/// Very basic logger struct, containing info if debug and trace level logs are enabled.
 ///
 /// # Examples
 /// Example of using this logger:
@@ -30,19 +30,19 @@
 /// trace!("Reading char...");
 /// ```
 pub struct BasicLogger {
-    /// If debug level logs are enabled
+    /// If debug level logs are enabled.
     debug: bool,
 
-    /// If trace level logs are enabled
+    /// If trace level logs are enabled.
     trace: bool,
 }
 
-/// Implementation of the `BasicLogger` logging to the standard output streams
+/// Implementation of the `BasicLogger` logging to the standard output streams.
 impl BasicLogger {
-    /// Constructs a new `BasicLogger`
+    /// Constructs a new `BasicLogger`.
     ///
     /// Here the debug and trace levels can be enabled, all other levels are always enabled
-    /// with the `BasicLogger`
+    /// with the `BasicLogger`.
     pub fn new(debug: bool, trace: bool) -> BasicLogger {
         BasicLogger { debug, trace }
     }

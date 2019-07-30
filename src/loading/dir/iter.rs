@@ -3,7 +3,7 @@ use std::collections::hash_map;
 use std::ffi::OsString;
 use std::path::Path;
 
-/// Iterator over the contents of directory provided by [`DirectoryFileTree`](crate::loading::DirectoryFileTree)
+/// Iterator over the contents of directory provided by [`DirectoryFileTree`](crate::loading::DirectoryFileTree).
 pub struct DirectoryIterator<'a> {
     sub_iter: hash_map::Keys<'a, OsString, DirectoryEntry>,
 }

@@ -1,10 +1,10 @@
-//! Nova's file loading code
+//! Nova's file loading code.
 //!
 //! Implements a resource pack loader, which may be used for loading Optifine shaderpacks, Minecraft: Java Edition
 //! resourcepacks, Bedrock engine resourcepacks, and Nova shaderpacks. It will accomplish this by not knowing about any
 //! of those and will instead only take in file paths and will return either streams of bytes or strings. The resource
 //! pack loader will also be able to read resource packs in either filesystem folders or a zip folder. It should be
-//! constructed in a way that will allow support for other zip formats
+//! constructed in a way that will allow support for other zip formats.
 
 use failure::{Error, Fail};
 use futures::Future;
@@ -26,6 +26,7 @@ pub trait FileTree<'a> {
     ///
     /// This is often `Self`.
     type CreateResult: FileTree<'a>;
+
     /// Iterator type to iterate over the members of a directory.
     type DirIter: Iterator<Item = &'a Path>;
 
@@ -78,15 +79,19 @@ pub enum LoadingError {
     /// Given path to resource does not exist.
     #[fail(display = "Given path to resource does not exist.")]
     ResourceNotFound,
+
     /// Path does not exist in resource.
     #[fail(display = "Path does not exist in resource.")]
     PathNotFound,
+
     /// Expected a directory, but found a file.
     #[fail(display = "Expected directory.")]
     NotDirectory,
+
     /// Expected a file, but found a directory.
     #[fail(display = "Expected file.")]
     NotFile,
+
     /// Error within the filesystem.
     #[fail(display = "Error inside filesystem.")]
     FileSystemError {
