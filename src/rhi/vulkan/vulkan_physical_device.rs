@@ -11,6 +11,7 @@ use ash::extensions::khr::XlibSurface;
 #[cfg(windows)]
 use ash::extensions::khr::Win32Surface;
 
+use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::{
     vulkan::vulkan_device::VulkanDevice, PhysicalDeviceManufacturer, PhysicalDeviceType, VulkanGraphicsApi,
 };
@@ -179,6 +180,8 @@ impl PhysicalDevice for VulkanPhysicalDevice {
             .enabled_layer_names(VulkanGraphicsApi::get_layer_names().as_slice())
             .build();
 
+        let swapchain = VulkanSwapchain::new(self.phys_device, self.surface_loader.clone());
+
         (unsafe { self.instance.create_device(self.phys_device, &device_create_info, None) })
             .map_err(|_| DeviceCreationError::Failed)
             .and_then(|device| {
@@ -191,6 +194,7 @@ impl PhysicalDevice for VulkanPhysicalDevice {
                         std::usize::MAX => None,
                         v => v as u32,
                     },
+                    swapchain,
                     unsafe { self.instance.get_physical_device_memory_properties(self.phys_device) },
                 )
             })

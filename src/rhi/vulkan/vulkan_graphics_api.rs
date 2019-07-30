@@ -4,7 +4,8 @@ use crate::rhi::vulkan::vulkan_physical_device::VulkanPhysicalDevice;
 use crate::rhi::PhysicalDevice;
 use crate::rhi::*;
 
-use crate::surface::Surface;
+use crate::rhi::vulkan::vulkan_device::VulkanDevice;
+use crate::surface::{Surface, SurfaceError};
 use ash::extensions::ext::DebugReport;
 use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
@@ -31,6 +32,7 @@ unsafe extern "system" fn vulkan_debug_callback(
 pub enum VulkanGraphicsApiCreationError {
     VkFailedResult(vk::Result),
     LoadingError(Vec<String>),
+    SurfaceError(SurfaceError),
 }
 
 /// TODO(janrupf): docs
@@ -38,7 +40,8 @@ pub struct VulkanGraphicsApi {
     instance: ash::Instance,
     debug_callback: Option<vk::DebugReportCallbackEXT>,
     entry: ash::Entry,
-    surface: Rc<Surface<vk::SurfaceKHR>>,
+    surface: Rc<dyn Surface<vk::SurfaceKHR>>,
+    surface_object: vk::SurfaceKHR,
 }
 
 impl VulkanGraphicsApi {
@@ -56,7 +59,7 @@ impl VulkanGraphicsApi {
     pub fn new(
         application_name: String,
         application_version: (u32, u32, u32),
-        surface: Rc<Surface<vk::SurfaceKHR>>,
+        mut surface: Rc<dyn Surface<vk::SurfaceKHR>>,
     ) -> Result<VulkanGraphicsApi, VulkanGraphicsApiCreationError> {
         let layer_names_raw = VulkanGraphicsApi::get_layer_names().as_slice();
 
@@ -121,11 +124,17 @@ impl VulkanGraphicsApi {
             None
         };
 
+        let surface_object = match surface.platform_object() {
+            Err(error) => return Err(VulkanGraphicsApiCreationError::SurfaceError(error)),
+            Ok(v) => v,
+        };
+
         Ok(VulkanGraphicsApi {
             instance,
             debug_callback,
             entry,
             surface,
+            surface_object,
         })
     }
 }
@@ -149,7 +158,7 @@ impl GraphicsApi for VulkanGraphicsApi {
             .collect()
     }
 
-    fn get_surface(&self) -> Rc<Surface<Self::PlatformSurface>> {
-        unimplemented!()
+    fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>> {
+        self.surface.clone()
     }
 }

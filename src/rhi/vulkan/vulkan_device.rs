@@ -2,9 +2,10 @@ use crate::rhi::shaderpack::*;
 use crate::rhi::vulkan::vulkan_command_allocator::VulkanCommandAllocator;
 use crate::rhi::vulkan::vulkan_memory::VulkanMemory;
 use crate::rhi::vulkan::vulkan_queue::VulkanQueue;
+use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
+use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::*;
 
-use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use ash::version::DeviceV1_0;
 use ash::vk;
 use cgmath::Vector2;
@@ -20,9 +21,9 @@ pub struct VulkanDevice {
     compute_queue_family_index: Option<u32>,
 
     memory_properties: vk::PhysicalDeviceMemoryProperties,
+    swapchain: VulkanSwapchain,
 
     allocated_memory: Vec<VulkanMemory>,
-    swapchain: vk::SwapchainKHR,
 }
 
 impl VulkanDevice {
@@ -32,24 +33,23 @@ impl VulkanDevice {
         graphics_queue_family_index: u32,
         transfer_queue_family_index: u32,
         compute_queue_family_index: Option<u32>,
+        swapchain: VulkanSwapchain,
         memory_properties: vk::PhysicalDeviceMemoryProperties,
     ) -> Result<VulkanDevice, DeviceCreationError> {
-        let device = VulkanDevice {
+        let mut device = VulkanDevice {
             instance,
             device,
             graphics_queue_family_index,
             transfer_queue_family_index,
             compute_queue_family_index,
             memory_properties,
+            swapchain,
 
             allocated_memory: Vec::new(),
-            swapchain: 0u64 as vk::SwapchainKHR,
         };
 
         Ok(device)
     }
-
-    fn create_swapchain(&mut self) {}
 
     fn find_memory_by_flags(&self, memory_flags: vk::MemoryPropertyFlags, exact: bool) -> Option<u32> {
         self.memory_properties
