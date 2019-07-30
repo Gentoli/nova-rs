@@ -16,10 +16,11 @@ use crate::{
     shaderpack,
 };
 use cgmath::Vector2;
+use core::mem;
 use std::collections::HashMap;
 use std::rc::Rc;
-use winapi::{shared::winerror, um::d3d12::*};
 use winapi::Interface;
+use winapi::{shared::winerror, um::d3d12::*};
 
 pub struct Dx12Device {
     /// Graphics adapter that we're using
@@ -179,7 +180,13 @@ impl Device for Dx12Device {
         };
 
         let mut allocator = WeakPtr::<ID3D12CommandAllocator>::null();
-        let hr = unsafe { self.device.CreateCommandAllocator(command_allocator_type, ID3D12CommandAllocator::uuidof(), allocator.mut_void()) };
+        let hr = unsafe {
+            self.device.CreateCommandAllocator(
+                command_allocator_type,
+                ID3D12CommandAllocator::uuidof(),
+                allocator.mut_void(),
+            )
+        };
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12CommandAllocator::new(allocator))
         } else {
@@ -189,9 +196,61 @@ impl Device for Dx12Device {
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
         let mut render_target_descs: Vec<D3D12_RENDER_PASS_RENDER_TARGET_DESC>;
-        for attachment_info in data.texture_inputs {}
+        for attachment_name in data.texture_outputs {
+            let (beginning_access_type, ending_access_type) = match attachment_name.name.as_ref() {
+                "Backbuffer" => (
+                    D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR,
+                    D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
+                ),
+                _ => match attachment_name.clear {
+                    true => (
+                        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR,
+                        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
+                    ),
+                    false => (
+                        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
+                        D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
+                    ),
+                },
+            };
 
-        unimplemented!()
+            let mut beginning_access = D3D12_RENDER_PASS_BEGINNING_ACCESS {
+                Type: beginning_access_type,
+                ..unsafe { mem::zeroed() }
+            };
+
+            if beginning_access_type == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR {
+                let mut clear_value = D3D12_CLEAR_VALUE {
+                    Format: 0,
+                    ..unsafe { mem::zeroed() }
+                };
+
+                *unsafe { clear_value.u.Color_mut() } = [0.into(), 0.into(), 0.into(), 0.into()];
+
+                *unsafe { beginning_access.u.Clear_mut() } = D3D12_RENDER_PASS_BEGINNING_ACCESS_CLEAR_PARAMETERS {
+                    ClearValue: clear_value,
+                };
+            }
+
+            let mut ending_access = D3D12_RENDER_PASS_ENDING_ACCESS {
+                Type: ending_access_type,
+                ..unsafe { mem::zeroed() }
+            };
+
+            // TODO: Handle D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE when we actually support MSAA in a meaningful
+            // capacity
+
+            let render_target_desc = D3D12_RENDER_PASS_RENDER_TARGET_DESC {
+                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {},
+                BeginningAccess: beginning_access,
+                EndingAccess: ending_access,
+            };
+
+            render_target_descs.push(render_target_desc);
+        }
+
+        // Ok(Dx12Renderpass::new(render_target_descs, _))
+        Err(MemoryError::OutOfHostMemory)
     }
 
     fn create_framebuffer(
