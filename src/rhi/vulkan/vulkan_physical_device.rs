@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use super::super::{DeviceCreationError, PhysicalDevice, PhysicalDeviceProperties};
 
 use ash::{
@@ -15,9 +17,7 @@ use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::{
     vulkan::vulkan_device::VulkanDevice, PhysicalDeviceManufacturer, PhysicalDeviceType, VulkanGraphicsApi,
 };
-use crate::surface::Surface;
-use ash::version::{InstanceV1_0, InstanceV1_1};
-use std::rc::Rc;
+use ash::version::InstanceV1_0;
 
 pub struct VulkanPhysicalDevice {
     instance: ash::Instance,
@@ -180,7 +180,10 @@ impl PhysicalDevice for VulkanPhysicalDevice {
             .enabled_layer_names(VulkanGraphicsApi::get_layer_names().as_slice())
             .build();
 
-        let swapchain = VulkanSwapchain::new(self.phys_device, self.surface_loader.clone());
+        let swapchain = match VulkanSwapchain::new(self.phys_device, self.surface_loader.clone()) {
+            Err(_) => Err(DeviceCreationError::Failed),
+            Ok(v) => v,
+        };
 
         (unsafe { self.instance.create_device(self.phys_device, &device_create_info, None) })
             .map_err(|_| DeviceCreationError::Failed)

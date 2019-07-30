@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use crate::rhi::shaderpack::*;
 use crate::rhi::vulkan::vulkan_command_allocator::VulkanCommandAllocator;
 use crate::rhi::vulkan::vulkan_memory::VulkanMemory;
@@ -164,14 +166,12 @@ impl Device for VulkanDevice {
                 };
 
                 match mapped {
-                    Err(result) => {
-                        return match result {
-                            vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(AllocationError::OutOfDeviceMemory),
-                            vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(AllocationError::OutOfHostMemory),
-                            vk::Result::ERROR_MEMORY_MAP_FAILED => Err(AllocationError::MappingFailed),
-                            result => unreachable!("Invalid vk result returned: {:?}", result),
-                        };
-                    }
+                    Err(result) => match result {
+                        vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(AllocationError::OutOfDeviceMemory),
+                        vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(AllocationError::OutOfHostMemory),
+                        vk::Result::ERROR_MEMORY_MAP_FAILED => Err(AllocationError::MappingFailed),
+                        result => unreachable!("Invalid vk result returned: {:?}", result),
+                    },
                     Ok(mem) => Ok(VulkanMemory {
                         device: self.device.clone(),
                         memory: allocated,

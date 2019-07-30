@@ -1,3 +1,4 @@
+use ash;
 use ash::vk;
 
 pub struct VulkanSwapchain {
@@ -9,7 +10,7 @@ impl VulkanSwapchain {
     pub fn new(
         phys_device: vk::PhysicalDevice,
         surface_loader: ash::extensions::khr::Surface,
-    ) -> ash::Result<VulkanSwapchain> {
+    ) -> Result<VulkanSwapchain, ()> {
         let mut swapchain = VulkanSwapchain {
             phys_device,
             surface_loader,
