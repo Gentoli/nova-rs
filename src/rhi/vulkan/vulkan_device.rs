@@ -66,6 +66,18 @@ impl VulkanDevice {
             })
             .map(|t| t.heap_index)
     }
+
+    pub fn get_graphics_queue_family_index(&self) -> u32 {
+        self.graphics_queue_family_index
+    }
+
+    pub fn get_transfer_queue_family_index(&self) -> u32 {
+        self.transfer_queue_family_index
+    }
+
+    pub fn get_compute_queue_family_index(&self) -> Option<u32> {
+        self.compute_queue_family_index
+    }
 }
 
 impl Device for VulkanDevice {
@@ -189,7 +201,7 @@ impl Device for VulkanDevice {
         &self,
         create_info: CommandAllocatorCreateInfo,
     ) -> Result<Self::CommandAllocator, MemoryError> {
-        Ok(VulkanCommandAllocator {})
+        VulkanCommandAllocator::new(create_info, &self, self.instance.clone(), self.device.clone())
     }
 
     fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {

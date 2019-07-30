@@ -17,6 +17,7 @@ mod vulkan {
     // But we have to bring this into the mod.rs file so other code can use it
 
     mod vulkan_command_allocator;
+    mod vulkan_command_list;
     mod vulkan_device;
     mod vulkan_memory;
     mod vulkan_physical_device;

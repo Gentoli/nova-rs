@@ -4,7 +4,6 @@ use crate::rhi::vulkan::vulkan_physical_device::VulkanPhysicalDevice;
 use crate::rhi::PhysicalDevice;
 use crate::rhi::*;
 
-use crate::rhi::vulkan::vulkan_device::VulkanDevice;
 use crate::surface::{Surface, SurfaceError};
 use ash::extensions::ext::DebugReport;
 use ash::version::{EntryV1_0, InstanceV1_0};
