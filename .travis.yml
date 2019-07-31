@@ -16,7 +16,7 @@ cache: cargo
 install:
   - |
     if ! hash cargo-install-update 2>/dev/null; then
-        cargo install cargo-install-update;
+        cargo install cargo-update;
     fi
   - cargo install-update --allow-no-update cargo-audit cargo-update
   - |
