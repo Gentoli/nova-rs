@@ -20,6 +20,7 @@ mod vulkan {
     mod vulkan_command_allocator;
     mod vulkan_command_list;
     mod vulkan_device;
+    mod vulkan_framebuffer;
     mod vulkan_image;
     mod vulkan_memory;
     mod vulkan_physical_device;

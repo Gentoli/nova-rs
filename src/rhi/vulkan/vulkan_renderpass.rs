@@ -1,5 +1,9 @@
 use crate::rhi::Renderpass;
 
-pub struct VulkanRenderPass;
+use ash::vk;
+
+pub struct VulkanRenderPass {
+    pub vk_renderpass: vk::RenderPass,
+}
 
 impl Renderpass for VulkanRenderPass {}

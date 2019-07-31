@@ -1,10 +1,12 @@
 #![allow(unsafe_code)]
 
-use crate::rhi::*;
-
 use crate::rhi::vulkan::vulkan_buffer::VulkanBuffer;
 use crate::rhi::vulkan::vulkan_device::VulkanDeviceQueueFamilies;
 use crate::rhi::vulkan::vulkan_image::VulkanImage;
+use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
+use crate::rhi::*;
+
+use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
 use ash;
 use ash::version::DeviceV1_0;
 use ash::vk;
@@ -75,8 +77,8 @@ impl VulkanCommandList {
 impl CommandList for VulkanCommandList {
     type Buffer = VulkanBuffer;
     type CommandList = VulkanCommandList;
-    type Renderpass = ();
-    type Framebuffer = ();
+    type Renderpass = VulkanRenderPass;
+    type Framebuffer = VulkanFramebuffer;
     type Pipeline = ();
     type DescriptorSet = ();
     type PipelineInterface = ();
@@ -180,11 +182,26 @@ impl CommandList for VulkanCommandList {
     }
 
     fn begin_renderpass(&self, renderpass: Self::Renderpass, framebuffer: Self::Framebuffer) {
-        unimplemented!()
+        let begin_info = vk::RenderPassBeginInfo::builder()
+            .render_pass(renderpass.vk_renderpass)
+            .framebuffer(framebuffer.vk_framebuffer)
+            .render_area(vk::Rect2D {
+                offset: vk::Offset2D { x: 0, y: 0 },
+                extent: vk::Extent2D {
+                    width: framebuffer.width,
+                    height: framebuffer.height,
+                },
+            })
+            .build();
+
+        unsafe {
+            self.device
+                .cmd_begin_render_pass(self.buffer, &begin_info, vk::SubpassContents::INLINE)
+        };
     }
 
     fn end_renderpass(&self) {
-        unimplemented!()
+        unsafe { self.device.cmd_end_render_pass(self.buffer) }
     }
 
     fn bind_pipeline(&self, pipeline: Self::Pipeline) {
