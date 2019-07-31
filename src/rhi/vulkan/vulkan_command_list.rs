@@ -250,7 +250,10 @@ impl CommandList for VulkanCommandList {
     }
 
     fn bind_index_buffer(&self, buffer: Self::Buffer) {
-        unimplemented!()
+        unsafe {
+            self.device
+                .cmd_bind_index_buffer(self.buffer, buffer.vk_buffer, 0, vk::IndexType::UINT32)
+        };
     }
 
     fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32) {
