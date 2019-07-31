@@ -367,7 +367,11 @@ pub trait CommandAllocator {
     type CommandList: CommandList;
 
     /// Allocate a single command list.
-    fn create_command_list() -> Result<Self::CommandList, MemoryError>;
+    ///
+    /// # Parameters
+    ///
+    /// * `secondary_list` - If the list is a secondary one which can be used from other command lists
+    fn create_command_list(&self, secondary_list: bool) -> Result<Self::CommandList, MemoryError>;
 }
 
 /// A CommandList is a sequence of commands which can be submitted to the GPU.
