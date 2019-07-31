@@ -14,6 +14,7 @@ use ash;
 use ash::version::DeviceV1_0;
 use ash::vk;
 use ash::vk::DependencyFlags;
+use futures::StreamExt;
 
 pub struct VulkanCommandList {
     instance: ash::Instance,
@@ -234,7 +235,18 @@ impl CommandList for VulkanCommandList {
     }
 
     fn bind_vertex_buffers(&self, buffers: Vec<Self::Buffer>) {
-        unimplemented!()
+        let mut buffers = Vec::new();
+        let mut offsets = Vec::new();
+
+        for (index, buffer) in buffers.iter().enumerate() {
+            buffers.push(buffer.vk_buffer);
+            offsets.push(index as vk::DeviceSize);
+        }
+
+        unsafe {
+            self.device
+                .cmd_bind_vertex_buffers(self.buffer, 0, buffers.as_slice(), offsets.as_slice())
+        };
     }
 
     fn bind_index_buffer(&self, buffer: Self::Buffer) {
