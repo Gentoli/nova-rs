@@ -19,12 +19,14 @@ mod vulkan {
     mod vulkan_buffer;
     mod vulkan_command_allocator;
     mod vulkan_command_list;
+    mod vulkan_descriptor_set;
     mod vulkan_device;
     mod vulkan_framebuffer;
     mod vulkan_image;
     mod vulkan_memory;
     mod vulkan_physical_device;
     mod vulkan_pipeline;
+    mod vulkan_pipeline_interface;
     mod vulkan_queue;
     mod vulkan_renderpass;
     mod vulkan_swapchain;

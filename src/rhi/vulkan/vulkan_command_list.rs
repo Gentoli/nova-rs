@@ -8,6 +8,8 @@ use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
 use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_descriptor_set::VulkanDescriptorSet;
+use crate::rhi::vulkan::vulkan_pipeline_interface::VulkanPipelineInterface;
 use ash;
 use ash::version::DeviceV1_0;
 use ash::vk;
@@ -81,8 +83,8 @@ impl CommandList for VulkanCommandList {
     type Renderpass = VulkanRenderPass;
     type Framebuffer = VulkanFramebuffer;
     type Pipeline = VulkanPipeline;
-    type DescriptorSet = ();
-    type PipelineInterface = ();
+    type DescriptorSet = VulkanDescriptorSet;
+    type PipelineInterface = VulkanPipelineInterface;
 
     fn resource_barriers(
         &self,
@@ -217,7 +219,18 @@ impl CommandList for VulkanCommandList {
         descriptor_sets: Vec<Self::DescriptorSet>,
         pipeline_interface: Self::PipelineInterface,
     ) {
-        unimplemented!()
+        for (index, descriptor_set) in descriptor_sets.iter().enumerate() {
+            unsafe {
+                self.device.cmd_bind_descriptor_sets(
+                    self.buffer,
+                    vk::PipelineBindPoint::GRAPHICS,
+                    pipeline_interface.vk_pipeline_layout,
+                    index as u32,
+                    &[descriptor_set.vk_descriptor_set],
+                    &[],
+                )
+            };
+        }
     }
 
     fn bind_vertex_buffers(&self, buffers: Vec<Self::Buffer>) {
