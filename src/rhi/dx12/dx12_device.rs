@@ -195,14 +195,14 @@ impl Device for Dx12Device {
     }
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
-        let mut render_target_descs: Vec<D3D12_RENDER_PASS_RENDER_TARGET_DESC>;
-        for attachment_name in data.texture_outputs {
-            let (beginning_access_type, ending_access_type) = match attachment_name.name.as_ref() {
+        let mut render_target_descs = Vec::<D3D12_RENDER_PASS_RENDER_TARGET_DESC>::new();
+        for attachment_info in data.texture_outputs {
+            let (beginning_access_type, ending_access_type) = match attachment_info.name.as_ref() {
                 "Backbuffer" => (
                     D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR,
                     D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
                 ),
-                _ => match attachment_name.clear {
+                _ => match attachment_info.clear {
                     true => (
                         D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR,
                         D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
@@ -249,8 +249,17 @@ impl Device for Dx12Device {
             render_target_descs.push(render_target_desc);
         }
 
-        // Ok(Dx12Renderpass::new(render_target_descs, _))
-        Err(MemoryError::OutOfHostMemory)
+        let depth_stencil_desc = data
+            .depth_texture
+            .map(|depth_info| D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
+                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {},
+                DepthBeginningAccess: D3D12_RENDER_PASS_BEGINNING_ACCESS {},
+                StencilBeginningAccess: D3D12_RENDER_PASS_BEGINNING_ACCESS {},
+                DepthEndingAccess: D3D12_RENDER_PASS_ENDING_ACCESS {},
+                StencilEndingAccess: D3D12_RENDER_PASS_ENDING_ACCESS {},
+            });
+
+        Ok(Dx12Renderpass::new(render_target_descs, depth_stencil_desc))
     }
 
     fn create_framebuffer(
