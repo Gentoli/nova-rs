@@ -69,7 +69,7 @@ impl VulkanCommandList {
 }
 
 impl CommandList for VulkanCommandList {
-    type Buffer = ();
+    type Buffer = VulkanBuffer;
     type CommandList = ();
     type Renderpass = ();
     type Framebuffer = ();
@@ -150,7 +150,20 @@ impl CommandList for VulkanCommandList {
         source_offset: u64,
         num_bytes: u64,
     ) {
-        unimplemented!()
+        let buffer_copy = vk::BufferCopy::builder()
+            .src_offset(source_offset)
+            .dst_offset(destination_offset)
+            .size(num_bytes)
+            .build();
+
+        unsafe {
+            self.device.cmd_copy_buffer(
+                self.buffer,
+                source_buffer.vk_buffer,
+                destination_buffer.vk_buffer,
+                &[buffer_copy],
+            )
+        };
     }
 
     fn execute_command_lists(&self, lists: Vec<Self::CommandList>) {
