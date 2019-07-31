@@ -15,11 +15,17 @@ cache: cargo
 
 install:
   - |
+    if ! hash cargo-install-update 2>/dev/null; then
+        cargo install cargo-update;
+    fi
+  - cargo install-update --allow-no-update cargo-audit cargo-update
+  - |
     if [[ "$TRAVIS_PULL_REQUEST" != "false" ]] || [[ "$TRAVIS_BRANCH" == "master" ]]; then
         rustup component add --toolchain $TRAVIS_RUST_VERSION clippy rustfmt;
     fi
 
 script:
+  - cargo audit
   - cargo build --verbose --all --all-targets
   - cargo test --verbose --all --all-targets --no-fail-fast
   - cargo doc --verbose --all --no-deps
