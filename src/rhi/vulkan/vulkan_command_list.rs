@@ -2,11 +2,12 @@
 
 use crate::rhi::vulkan::vulkan_buffer::VulkanBuffer;
 use crate::rhi::vulkan::vulkan_device::VulkanDeviceQueueFamilies;
+use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
 use crate::rhi::vulkan::vulkan_image::VulkanImage;
+use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
 use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use crate::rhi::*;
 
-use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
 use ash;
 use ash::version::DeviceV1_0;
 use ash::vk;
@@ -79,7 +80,7 @@ impl CommandList for VulkanCommandList {
     type CommandList = VulkanCommandList;
     type Renderpass = VulkanRenderPass;
     type Framebuffer = VulkanFramebuffer;
-    type Pipeline = ();
+    type Pipeline = VulkanPipeline;
     type DescriptorSet = ();
     type PipelineInterface = ();
 
@@ -205,7 +206,10 @@ impl CommandList for VulkanCommandList {
     }
 
     fn bind_pipeline(&self, pipeline: Self::Pipeline) {
-        unimplemented!()
+        unsafe {
+            self.device
+                .cmd_bind_pipeline(self.buffer, vk::PipelineBindPoint::GRAPHICS, pipeline.vk_pipeline)
+        }
     }
 
     fn bind_descriptor_sets(
