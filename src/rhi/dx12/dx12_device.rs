@@ -240,7 +240,7 @@ impl Device for Dx12Device {
             // capacity
 
             let render_target_desc = D3D12_RENDER_PASS_RENDER_TARGET_DESC {
-                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {},
+                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {}, // TODO: Fill in in `CommandList::begin_render_pass`
                 BeginningAccess: beginning_access,
                 EndingAccess: ending_access,
             };
@@ -274,7 +274,7 @@ impl Device for Dx12Device {
             };
 
             D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
-                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {},
+                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {}, // TODO: Fill in in `CommandList::begin_render_pass`
                 DepthBeginningAccess: depth_beginning_access,
                 StencilBeginningAccess: depth_beginning_access,
                 DepthEndingAccess: depth_ending_access,
