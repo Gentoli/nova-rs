@@ -19,6 +19,7 @@ use cgmath::Vector2;
 use core::mem;
 use std::collections::HashMap;
 use std::rc::Rc;
+use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
 
@@ -159,12 +160,10 @@ impl Device for Dx12Device {
             };
             if winerror::SUCCEEDED(hr) {
                 Ok(Dx12Memory::new(heap, size))
+            } else if memory_usage == MemoryUsage::StagingBuffer {
+                Err(AllocationError::OutOfHostMemory)
             } else {
-                if memory_usage == MemoryUsage::StagingBuffer {
-                    Err(AllocationError::OutOfHostMemory)
-                } else {
-                    Err(AllocationError::OutOfDeviceMemory)
-                }
+                Err(AllocationError::OutOfDeviceMemory)
             }
         }
     }
@@ -221,11 +220,11 @@ impl Device for Dx12Device {
 
             if beginning_access_type == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR {
                 let mut clear_value = D3D12_CLEAR_VALUE {
-                    Format: 0,
+                    Format: DXGI_FORMAT_R8G8B8A8_SNORM,
                     ..unsafe { mem::zeroed() }
                 };
 
-                *unsafe { clear_value.u.Color_mut() } = [0.into(), 0.into(), 0.into(), 0.into()];
+                *unsafe { clear_value.u.Color_mut() } = [0_f32, 0_f32, 0_f32, 0_f32];
 
                 *unsafe { beginning_access.u.Clear_mut() } = D3D12_RENDER_PASS_BEGINNING_ACCESS_CLEAR_PARAMETERS {
                     ClearValue: clear_value,
@@ -249,15 +248,39 @@ impl Device for Dx12Device {
             render_target_descs.push(render_target_desc);
         }
 
-        let depth_stencil_desc = data
-            .depth_texture
-            .map(|depth_info| D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
+        let depth_stencil_desc = data.depth_texture.map(|depth_info| {
+            let depth_beginning_access_type = match depth_info.clear {
+                true => D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR,
+                false => D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
+            };
+
+            let depth_beginning_access = D3D12_RENDER_PASS_BEGINNING_ACCESS {
+                Type: depth_beginning_access_type,
+                ..unsafe { mem::zeroed() }
+            };
+
+            let clear_value = D3D12_CLEAR_VALUE {
+                Format: DXGI_FORMAT_R8G8B8A8_SNORM,
+                ..unsafe { mem::zeroed() }
+            };
+
+            *unsafe { depth_beginning_access.u.Clear_mut() } = D3D12_RENDER_PASS_BEGINNING_ACCESS_CLEAR_PARAMETERS {
+                ClearValue: clear_value,
+            };
+
+            let depth_ending_access = D3D12_RENDER_PASS_ENDING_ACCESS {
+                Type: D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE,
+                ..unsafe { mem::zeroed() }
+            };
+
+            D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
                 cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {},
-                DepthBeginningAccess: D3D12_RENDER_PASS_BEGINNING_ACCESS {},
-                StencilBeginningAccess: D3D12_RENDER_PASS_BEGINNING_ACCESS {},
-                DepthEndingAccess: D3D12_RENDER_PASS_ENDING_ACCESS {},
-                StencilEndingAccess: D3D12_RENDER_PASS_ENDING_ACCESS {},
-            });
+                DepthBeginningAccess: depth_beginning_access,
+                StencilBeginningAccess: depth_beginning_access,
+                DepthEndingAccess: depth_ending_access,
+                StencilEndingAccess: depth_ending_access,
+            }
+        });
 
         Ok(Dx12Renderpass::new(render_target_descs, depth_stencil_desc))
     }
