@@ -18,22 +18,14 @@ use std::collections::HashMap;
 pub struct VulkanDeviceQueueFamilies {
     graphics_queue_family_index: u32,
     transfer_queue_family_index: u32,
-    compute_queue_family_index: Option<u32>,
+    compute_queue_family_index: u32,
 }
 
 impl VulkanDeviceQueueFamilies {
-    pub fn get_no_compute(&self, queue_type: QueueType) -> u32 {
+    pub fn get(&self, queue_type: QueueType) -> u32 {
         match queue_type {
             QueueType::Graphics => self.graphics_queue_family_index,
             QueueType::Copy => self.transfer_queue_family_index,
-            QueueType::Compute => panic!("Tried to call get_no_compute with compute family type"),
-        }
-    }
-
-    pub fn get(&self, queue_type: QueueType) -> Option<u32> {
-        match queue_type {
-            QueueType::Graphics => Some(self.graphics_queue_family_index),
-            QueueType::Copy => Some(self.transfer_queue_family_index),
             QueueType::Compute => self.compute_queue_family_index,
         }
     }
@@ -57,7 +49,7 @@ impl VulkanDevice {
         device: ash::Device,
         graphics_queue_family_index: u32,
         transfer_queue_family_index: u32,
-        compute_queue_family_index: Option<u32>,
+        compute_queue_family_index: u32,
         swapchain: VulkanSwapchain,
         memory_properties: vk::PhysicalDeviceMemoryProperties,
     ) -> Result<VulkanDevice, DeviceCreationError> {
@@ -111,16 +103,14 @@ impl Device for VulkanDevice {
     type Fence = ();
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Self::Queue, QueueGettingError> {
-        let queue_family_index = match self.queue_families.get(queue_type) {
-            None => Err(QueueGettingError::NotSupported),
-            Some(v) => v,
-        };
-
         if queue_index > 0 {
             // We only support queue index 0 at the moment
             Err(QueueGettingError::IndexOutOfRange)
         } else {
-            let queue = unsafe { self.device.get_device_queue(queue_family_index, queue_index) };
+            let queue = unsafe {
+                self.device
+                    .get_device_queue(self.queue_families.get(queue_type), queue_index)
+            };
             Ok(VulkanQueue { queue })
         }
     }

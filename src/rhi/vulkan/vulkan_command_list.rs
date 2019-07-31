@@ -96,16 +96,8 @@ impl CommandList for VulkanCommandList {
                         .dst_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_after_barrier))
                         .old_layout(self.nova_resource_state_to_vulkan_layout(barrier.initial_state))
                         .new_layout(self.nova_resource_state_to_vulkan_layout(barrier.final_state))
-                        .src_queue_family_index(
-                            self.queue_families
-                                .get(barrier.source_queue)
-                                .expect("Queue type not supported"),
-                        )
-                        .dst_queue_family_index(
-                            self.queue_families
-                                .get(barrier.source_queue)
-                                .expect("Queue type not supported"),
-                        )
+                        .src_queue_family_index(self.queue_families.get(barrier.source_queue))
+                        .dst_queue_family_index(self.queue_families.get(barrier.source_queue))
                         .image(image.vk_image)
                         .subresource_range(
                             vk::ImageSubresourceRange::builder()
@@ -125,16 +117,8 @@ impl CommandList for VulkanCommandList {
                     let vk_barrier = vk::BufferMemoryBarrier::builder()
                         .src_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_before_barrier))
                         .dst_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_after_barrier))
-                        .src_queue_family_index(
-                            self.queue_families
-                                .get(barrier.source_queue)
-                                .expect("Queue type not supported"),
-                        )
-                        .dst_queue_family_index(
-                            self.queue_families
-                                .get(barrier.source_queue)
-                                .expect("Queue type not supported"),
-                        )
+                        .src_queue_family_index(self.queue_families.get(barrier.source_queue))
+                        .dst_queue_family_index(self.queue_families.get(barrier.source_queue))
                         .buffer(buffer.vk_buffer)
                         .offset(offset)
                         .size(size)

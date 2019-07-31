@@ -23,19 +23,10 @@ impl VulkanCommandAllocator {
         instance: ash::Instance,
         device: ash::Device,
     ) -> Result<VulkanCommandAllocator, MemoryError> {
-        let queue_family_index = match create_info.command_list_type {
-            QueueType::Graphics => rhi_device.get_graphics_queue_family_index(),
-            QueueType::Copy => rhi_device.get_compute_queue_family_index(),
-            QueueType::Compute => match rhi_device.get_compute_queue_family_index() {
-                // TODO: We are not really out of device memory, just the device doesn't provide
-                //       the requested queue family
-                None => Err(MemoryError::OutOfDeviceMemory),
-                Some(v) => v,
-            },
-        };
+        let queue_families = rhi_device.get_queue_families();
 
         let create_info = vk::CommandPoolCreateInfo::builder()
-            .queue_family_index(queue_family_index)
+            .queue_family_index(queue_families.get(create_info.command_list_type))
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .build();
 
@@ -49,7 +40,7 @@ impl VulkanCommandAllocator {
                 instance,
                 device,
                 command_pool,
-                queue_families: rhi_device.get_queue_families(),
+                queue_families,
             }),
         }
     }

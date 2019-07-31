@@ -138,7 +138,9 @@ impl PhysicalDevice for VulkanPhysicalDevice {
             false
         }
 
-        self.graphics_queue_family_index != std::usize::MAX && self.transfer_queue_family_index != std::usize::MAX
+        self.graphics_queue_family_index != std::usize::MAX
+            && self.transfer_queue_family_index != std::usize::MAX
+            && self.compute_queue_family_index != std::usize::MAX
     }
 
     fn create_logical_device(&self) -> Result<Self::Device, DeviceCreationError> {
@@ -193,10 +195,7 @@ impl PhysicalDevice for VulkanPhysicalDevice {
                     device,
                     self.graphics_queue_family_index as u32,
                     self.transfer_queue_family_index as u32,
-                    match self.compute_queue_family_index {
-                        std::usize::MAX => None,
-                        v => v as u32,
-                    },
+                    self.compute_queue_family_index as u32,
                     swapchain,
                     unsafe { self.instance.get_physical_device_memory_properties(self.phys_device) },
                 )
