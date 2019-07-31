@@ -1,20 +1,69 @@
+#![allow(unsafe_code)]
+
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_buffer::VulkanBuffer;
+use crate::rhi::vulkan::vulkan_device::VulkanDeviceQueueFamilies;
+use crate::rhi::vulkan::vulkan_image::VulkanImage;
 use ash;
+use ash::version::DeviceV1_0;
 use ash::vk;
+use ash::vk::DependencyFlags;
 
 pub struct VulkanCommandList {
     instance: ash::Instance,
     device: ash::Device,
     buffer: vk::CommandBuffer,
+
+    queue_families: VulkanDeviceQueueFamilies,
 }
 
 impl VulkanCommandList {
-    pub fn new(instance: ash::Instance, device: ash::Device, buffer: vk::CommandBuffer) -> VulkanCommandList {
+    pub fn new(
+        instance: ash::Instance,
+        device: ash::Device,
+        buffer: vk::CommandBuffer,
+        queue_families: VulkanDeviceQueueFamilies,
+    ) -> VulkanCommandList {
         VulkanCommandList {
             instance,
             device,
             buffer,
+            queue_families,
+        }
+    }
+
+    #[inline]
+    fn nova_stage_flags_to_vulkan_flags(stage_flags: PipelineStageFlags) -> vk::PipelineStageFlags {
+        // Currently nova's stage flags match their vulkan counterparts
+        stage_flags as vk::PipelineStageFlags
+    }
+
+    #[inline]
+    fn nova_access_flags_to_vulkan_flags(access_flags: ResourceAccessFlags) -> vk::AccessFlags {
+        // Currently nova's access flags match their vulkan counterparts
+        access_flags as vk::AccessFlags
+    }
+
+    fn nova_resource_state_to_vulkan_layout(resource_state: ResourceState) -> vk::ImageLayout {
+        match resource_state {
+            ResourceState::Undefined => vk::ImageLayout::UNDEFINED,
+            ResourceState::General => vk::ImageLayout::GENERAL,
+            ResourceState::ColorAttachment => vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+            ResourceState::DepthStencilAttachment => vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            ResourceState::DepthReadOnlyStencilAttachment => {
+                vk::ImageLayout::DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL
+            }
+            ResourceState::DepthAttachmentStencilReadOnly => {
+                vk::ImageLayout::DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL
+            }
+            ResourceState::DepthStencilReadOnlyAttachment => vk::ImageLayout::DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            ResourceState::PresentSource => vk::ImageLayout::PRESENT_SRC_KHR,
+            ResourceState::NonFragmentShaderReadOnly | ResourceState::FragmentShaderReadOnly => {
+                vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL
+            }
+            ResourceState::TransferSource => vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            ResourceState::TransferDestination => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
         }
     }
 }
@@ -34,7 +83,79 @@ impl CommandList for VulkanCommandList {
         stages_after_barrier: PipelineStageFlags,
         barriers: Vec<ResourceBarrier>,
     ) {
-        unimplemented!()
+        let mut image_barriers = Vec::new();
+        let mut buffer_barriers = Vec::new();
+
+        for barrier in barriers {
+            match barrier.resource_info {
+                ResourceSpecificData::Image { .. } => {
+                    let image: VulkanImage = barrier.resource.downcast::<VulkanImage>().unwrap();
+
+                    let vk_barrier = vk::ImageMemoryBarrier::builder()
+                        .src_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_before_barrier))
+                        .dst_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_after_barrier))
+                        .old_layout(self.nova_resource_state_to_vulkan_layout(barrier.initial_state))
+                        .new_layout(self.nova_resource_state_to_vulkan_layout(barrier.final_state))
+                        .src_queue_family_index(
+                            self.queue_families
+                                .get(barrier.source_queue)
+                                .expect("Queue type not supported"),
+                        )
+                        .dst_queue_family_index(
+                            self.queue_families
+                                .get(barrier.source_queue)
+                                .expect("Queue type not supported"),
+                        )
+                        .image(image.vk_image)
+                        .subresource_range(
+                            vk::ImageSubresourceRange::builder()
+                            .base_mip_level(0) // TODO: also TODO in original nova
+                                               //       "Something smarter with mips"
+                            .level_count(1)
+                            .base_array_layer(0)
+                            .layer_count(1)
+                            .build(),
+                        )
+                        .build();
+                    image_barriers.push(vk_barrier);
+                }
+                ResourceSpecificData::Buffer { offset, size } => {
+                    let buffer: VulkanBuffer = barrier.resource.downcast::<VulkanBuffer>().unwrap();
+
+                    let vk_barrier = vk::BufferMemoryBarrier::builder()
+                        .src_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_before_barrier))
+                        .dst_access_mask(self.nova_access_flags_to_vulkan_flags(barrier.access_after_barrier))
+                        .src_queue_family_index(
+                            self.queue_families
+                                .get(barrier.source_queue)
+                                .expect("Queue type not supported"),
+                        )
+                        .dst_queue_family_index(
+                            self.queue_families
+                                .get(barrier.source_queue)
+                                .expect("Queue type not supported"),
+                        )
+                        .buffer(buffer.vk_buffer)
+                        .offset(offset)
+                        .size(size)
+                        .build();
+
+                    buffer_barriers.push(vk_barrier);
+                }
+            }
+        }
+
+        unsafe {
+            self.device.cmd_pipeline_barrier(
+                self.buffer,
+                self.nova_stage_flags_to_vulkan_flags(stages_before_barrier),
+                self.nova_stage_flags_to_vulkan_flags(stages_after_barrier),
+                0 as DependencyFlags,
+                &[],
+                buffer_barriers.as_slice(),
+                image_barriers.as_slice(),
+            )
+        }
     }
 
     fn copy_buffer(

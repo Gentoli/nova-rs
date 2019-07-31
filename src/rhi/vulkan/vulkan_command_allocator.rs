@@ -3,6 +3,7 @@
 use crate::rhi::vulkan::vulkan_command_list::VulkanCommandList;
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_device::VulkanDeviceQueueFamilies;
 use ash;
 use ash::version::DeviceV1_0;
 use ash::vk;
@@ -11,6 +12,8 @@ pub struct VulkanCommandAllocator {
     instance: ash::Instance,
     device: ash::Device,
     command_pool: vk::CommandPool,
+
+    queue_families: VulkanDeviceQueueFamilies,
 }
 
 impl VulkanCommandAllocator {
@@ -46,6 +49,7 @@ impl VulkanCommandAllocator {
                 instance,
                 device,
                 command_pool,
+                queue_families: rhi_device.get_queue_families(),
             }),
         }
     }
@@ -71,6 +75,7 @@ impl CommandAllocator for VulkanCommandAllocator {
                 self.instance.clone(),
                 self.device.clone(),
                 buffers.remove(0),
+                self.queue_families,
             )),
         }
     }

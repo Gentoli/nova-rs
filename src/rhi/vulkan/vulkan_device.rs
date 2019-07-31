@@ -14,13 +14,36 @@ use cgmath::Vector2;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 
+#[derive(Clone, Copy, Debug)]
+pub struct VulkanDeviceQueueFamilies {
+    graphics_queue_family_index: u32,
+    transfer_queue_family_index: u32,
+    compute_queue_family_index: Option<u32>,
+}
+
+impl VulkanDeviceQueueFamilies {
+    pub fn get_no_compute(&self, queue_type: QueueType) -> u32 {
+        match queue_type {
+            QueueType::Graphics => self.graphics_queue_family_index,
+            QueueType::Copy => self.transfer_queue_family_index,
+            QueueType::Compute => panic!("Tried to call get_no_compute with compute family type"),
+        }
+    }
+
+    pub fn get(&self, queue_type: QueueType) -> Option<u32> {
+        match queue_type {
+            QueueType::Graphics => Some(self.graphics_queue_family_index),
+            QueueType::Copy => Some(self.transfer_queue_family_index),
+            QueueType::Compute => self.compute_queue_family_index,
+        }
+    }
+}
+
 pub struct VulkanDevice {
     instance: ash::Instance,
     device: ash::Device,
 
-    graphics_queue_family_index: u32,
-    transfer_queue_family_index: u32,
-    compute_queue_family_index: Option<u32>,
+    queue_families: VulkanDeviceQueueFamilies,
 
     memory_properties: vk::PhysicalDeviceMemoryProperties,
     swapchain: VulkanSwapchain,
@@ -41,9 +64,11 @@ impl VulkanDevice {
         let mut device = VulkanDevice {
             instance,
             device,
-            graphics_queue_family_index,
-            transfer_queue_family_index,
-            compute_queue_family_index,
+            queue_families: VulkanDeviceQueueFamilies {
+                graphics_queue_family_index,
+                transfer_queue_family_index,
+                compute_queue_family_index,
+            },
             memory_properties,
             swapchain,
 
@@ -67,16 +92,8 @@ impl VulkanDevice {
             .map(|t| t.heap_index)
     }
 
-    pub fn get_graphics_queue_family_index(&self) -> u32 {
-        self.graphics_queue_family_index
-    }
-
-    pub fn get_transfer_queue_family_index(&self) -> u32 {
-        self.transfer_queue_family_index
-    }
-
-    pub fn get_compute_queue_family_index(&self) -> Option<u32> {
-        self.compute_queue_family_index
+    pub fn get_queue_families(&self) -> VulkanDeviceQueueFamilies {
+        self.queue_families
     }
 }
 
@@ -94,13 +111,9 @@ impl Device for VulkanDevice {
     type Fence = ();
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Self::Queue, QueueGettingError> {
-        let queue_family_index = match queue_type {
-            QueueType::Graphics => self.graphics_queue_family_index,
-            QueueType::Copy => self.transfer_queue_family_index,
-            QueueType::Compute => match self.compute_queue_family_index {
-                None => Err(QueueGettingError::NotSupported),
-                Some(i) => i,
-            },
+        let queue_family_index = match self.queue_families.get(queue_type) {
+            None => Err(QueueGettingError::NotSupported),
+            Some(v) => v,
         };
 
         if queue_index > 0 {
