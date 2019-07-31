@@ -257,6 +257,9 @@ impl CommandList for VulkanCommandList {
     }
 
     fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32) {
-        unimplemented!()
+        unsafe {
+            self.device
+                .cmd_draw_indexed(self.buffer, num_indices, num_instances, 0, 0, 0)
+        };
     }
 }
