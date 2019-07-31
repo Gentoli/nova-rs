@@ -66,11 +66,15 @@ impl VulkanCommandList {
             ResourceState::TransferDestination => vk::ImageLayout::TRANSFER_DST_OPTIMAL,
         }
     }
+
+    fn get_underlying_buffer(&self) -> vk::CommandBuffer {
+        self.buffer
+    }
 }
 
 impl CommandList for VulkanCommandList {
     type Buffer = VulkanBuffer;
-    type CommandList = ();
+    type CommandList = VulkanCommandList;
     type Renderpass = ();
     type Framebuffer = ();
     type Pipeline = ();
@@ -167,7 +171,12 @@ impl CommandList for VulkanCommandList {
     }
 
     fn execute_command_lists(&self, lists: Vec<Self::CommandList>) {
-        unimplemented!()
+        let mut buffers = Vec::new();
+        for list in lists {
+            buffers.push(list.get_underlying_buffer());
+        }
+
+        unsafe { self.device.cmd_execute_commands(self.buffer, buffers.as_slice()) }
     }
 
     fn begin_renderpass(&self, renderpass: Self::Renderpass, framebuffer: Self::Framebuffer) {
