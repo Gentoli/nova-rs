@@ -15,7 +15,7 @@ pub enum ShaderpackLoadingFailure {
     PathNotFound(PathBuf),
 
     #[fail(display = "Unsupported shaderpack extension {:?}", _0)]
-    UnsupportedExtension(OsString),
+    UnsupportedExtension(String),
 
     #[fail(display = "File {:?} not found in shaderpack.", _0)]
     MissingFile(OsString),
@@ -49,7 +49,11 @@ pub enum ShaderpackLoadingFailure {
 }
 
 pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, ShaderpackLoadingFailure> {
-    match (path.exists(), path.is_dir(), path.extension()) {
+    match (
+        path.exists(),
+        path.is_dir(),
+        path.extension().iter().flat_map(|s| s.to_str()).next(),
+    ) {
         (true, true, _) => {
             let file_tree_res: Result<DirectoryFileTree, _> = DirectoryFileTree::from_path(&path).await;
             let file_tree = file_tree_res.map_err(|err| match err {
@@ -61,7 +65,7 @@ pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, Shade
             })?;
             load_nova_shaderpack_impl(&file_tree).await
         }
-        (true, false, Some(ext)) if ext == "zip" => unimplemented!(),
+        (true, false, Some("zip")) => unimplemented!(),
         (true, false, Some(ext)) => Err(ShaderpackLoadingFailure::UnsupportedExtension(ext.to_owned())),
         (true, false, None) => Err(ShaderpackLoadingFailure::UnsupportedExtension("<blank>".into())),
         (false, _, _) => Err(ShaderpackLoadingFailure::PathNotFound(path)),
