@@ -428,55 +428,31 @@ pub trait CommandList {
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `lists` - The command lists to execute.
-    fn execute_command_lists(lists: Vec<Self::CommandList>);
-=======
     /// * `lists` - The command lists to execute
     fn execute_command_lists(&self, lists: Vec<Self::CommandList>);
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Records a command to begin a renderpass with a framebuffer.
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `renderpass` - The renderpass to begin.
-    /// * `framebuffer` - The framebuffer to begin the renderpass with.
-    fn begin_renderpass(renderpass: Self::Renderpass, framebuffer: Self::Framebuffer);
-
-    /// Records a command to end the current renderpass.
-    fn end_renderpass();
-=======
     /// * `renderpass` - The renderpass to begin
     /// * `framebuffer` - The framebuffer to begin the renderpass with
     fn begin_renderpass(&self, renderpass: Self::Renderpass, framebuffer: Self::Framebuffer);
 
     /// Records a command to end the current renderpass
     fn end_renderpass(&self);
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Binds a pipeline to the command list.
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `pipeline` - The pipeline to bind.
-    fn bind_pipeline(pipeline: Self::Pipeline);
-=======
     /// * `pipeline` - The pipeline to bind
     fn bind_pipeline(&self, pipeline: Self::Pipeline);
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Records a command to bind DescriptorSet to a PipelineInterface.
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `descriptor_sets` - The DescriptorSets to bind.
-    /// * `pipeline_interface` - The PipelineInterface to bind the descriptor sets to.
-    fn bind_descriptor_sets(descriptor_sets: Vec<Self::DescriptorSet>, pipeline_interface: Self::PipelineInterface);
-=======
     /// * `descriptor_sets` - The DescriptorSets to bind
     /// * `pipeline_interface` - The PipelineInterface to bind the descriptor sets to
     fn bind_descriptor_sets(
@@ -484,7 +460,6 @@ pub trait CommandList {
         descriptor_sets: Vec<Self::DescriptorSet>,
         pipeline_interface: Self::PipelineInterface,
     );
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Records a command to bind vertex buffers.
     ///
@@ -492,38 +467,22 @@ pub trait CommandList {
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `buffers` - The buffers to bind.
-    fn bind_vertex_buffers(buffers: Vec<Self::Buffer>);
-=======
     /// * `buffers` - The buffers to bind
     fn bind_vertex_buffers(&self, buffers: Vec<Self::Buffer>);
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Binds an index buffer.
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `buffer` - The buffer to bind as an index buffer.
-    fn bind_index_buffer(buffer: Self::Buffer);
-=======
     /// * `buffer` - The buffer to bind as an index buffer
     fn bind_index_buffer(&self, buffer: Self::Buffer);
->>>>>>> [rhi] CommandList methods are no longer static
 
     /// Records a drawcall to grab `num_indices` indices from the currently bound index buffer and
     /// draw them `num_instances` times.
     ///
     /// # Parameters
     ///
-<<<<<<< HEAD
-    /// * `num_indices` - The number of indices to draw from the currently bound index buffer.
-    /// * `num_instances` - How many times to draw the mesh.
-    fn draw_indexed_mesh(num_indices: u32, num_instances: u32);
-=======
     /// * `num_indices` - The number of indices to draw from the currently bound index buffer
     /// * `num_instances` - How many times to draw the mesh
     fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32);
->>>>>>> [rhi] CommandList methods are no longer static
 }
