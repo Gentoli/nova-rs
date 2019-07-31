@@ -1,6 +1,7 @@
 #![allow(unsafe_code)]
 
-use super::super::{DeviceCreationError, PhysicalDevice, PhysicalDeviceProperties};
+use crate::rhi::*;
+use crate::surface;
 
 use ash::{
     extensions::{ext::DebugReport, khr::Swapchain},
@@ -13,16 +14,15 @@ use ash::extensions::khr::XlibSurface;
 #[cfg(windows)]
 use ash::extensions::khr::Win32Surface;
 
+use crate::rhi::vulkan::vulkan_device::VulkanDevice;
 use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
-use crate::rhi::{
-    vulkan::vulkan_device::VulkanDevice, PhysicalDeviceManufacturer, PhysicalDeviceType, VulkanGraphicsApi,
-};
 use ash::version::InstanceV1_0;
+use std::rc::Rc;
 
 pub struct VulkanPhysicalDevice {
     instance: ash::Instance,
     phys_device: vk::PhysicalDevice,
-    surface: vk::SurfaceKHR,
+    surface: Rc<dyn surface::Surface<vk::SurfaceKHR>>,
 
     surface_loader: ash::extensions::khr::Surface,
     graphics_queue_family_index: usize,
@@ -182,7 +182,7 @@ impl PhysicalDevice for VulkanPhysicalDevice {
             .enabled_layer_names(VulkanGraphicsApi::get_layer_names().as_slice())
             .build();
 
-        let swapchain = match VulkanSwapchain::new(self.phys_device, self.surface_loader.clone()) {
+        let swapchain = match VulkanSwapchain::new(self.phys_device, self.surface_loader.clone(), self.surface) {
             Err(_) => Err(DeviceCreationError::Failed),
             Ok(v) => v,
         };

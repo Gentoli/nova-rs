@@ -8,6 +8,10 @@ use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
+use crate::rhi::vulkan::vulkan_image::VulkanImage;
+use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
+use crate::rhi::vulkan::vulkan_pipeline_interface::VulkanPipelineInterface;
 use ash::version::DeviceV1_0;
 use ash::vk;
 use cgmath::Vector2;
@@ -93,12 +97,12 @@ impl Device for VulkanDevice {
     type Queue = VulkanQueue;
     type Memory = VulkanMemory;
     type CommandAllocator = VulkanCommandAllocator;
-    type Image = ();
+    type Image = VulkanImage;
     type Renderpass = VulkanRenderPass;
-    type Framebuffer = ();
-    type PipelineInterface = ();
+    type Framebuffer = VulkanFramebuffer;
+    type PipelineInterface = VulkanPipelineInterface;
     type DescriptorPool = ();
-    type Pipeline = ();
+    type Pipeline = VulkanPipeline;
     type Semaphore = ();
     type Fence = ();
 
@@ -207,9 +211,7 @@ impl Device for VulkanDevice {
         VulkanCommandAllocator::new(create_info, &self, self.instance.clone(), self.device.clone())
     }
 
-    fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {
-        unimplemented!()
-    }
+    fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {}
 
     fn create_framebuffer(
         &self,
