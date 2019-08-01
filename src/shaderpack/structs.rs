@@ -162,10 +162,7 @@ impl PipelineCreationInfo {
         RenderQueue::Opaque
     }
     fn default_vertex_shader() -> ShaderSource {
-        ShaderSource {
-            filename: PathBuf::from("<NAME_MISSING>"),
-            source: Vec::new(),
-        }
+        ShaderSource::Path(String::from("<NAME_MISSING>"))
     }
 
     /// Merge a shaderpack with a "parent" shaderpack. Unimplemented.
@@ -312,16 +309,24 @@ impl StencilOpState {
     }
 }
 
-/// Shader source file as a compiled SPIR-V file.
+/// Shader source file.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", untagged)]
+pub enum ShaderSource {
+    /// Uncompiled shader with path to source
+    Path(String),
+    /// Compiled SPIR-V shader
+    Compiled(CompiledShader),
+}
+
+/// A fully compiled shader
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ShaderSource {
+pub struct CompiledShader {
     /// Filename of the shader source file.
-    pub filename: PathBuf,
-
+    pub filename: String,
     /// Compiled SPIR-V shader.
-    #[serde(skip)]
-    pub source: Vec<u32>,
+    pub spirv: Vec<u32>,
 }
 
 /// A description of a texture that a render pass outputs to.
