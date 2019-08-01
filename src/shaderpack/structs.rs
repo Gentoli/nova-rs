@@ -27,27 +27,33 @@ pub struct PipelineCreationInfo {
     pub name: String,
 
     /// The pipeline that this pipeline inherits from.
+    #[serde(default)]
     pub parent: Option<String>,
 
     /// The name of the pass that this pipeline belongs to.
     pub pass: String,
 
     /// All of the symbols in the shader that are defined by this state.
+    #[serde(default)]
     pub defines: Vec<String>,
 
     /// Defines the rasterizer state that's active for this pipeline.
+    #[serde(default)]
     pub states: Vec<RasterizerState>,
 
     /// Sets up the vertex fields that Nova will bind to this pipeline.
     pub vertex_fields: Vec<VertexFieldData>,
 
     /// The stencil buffer operations to perform on the front faces.
+    #[serde(default)]
     pub front_face: Option<StencilOpState>,
 
     /// The stencil buffer operations to perform on the back faces.
+    #[serde(default)]
     pub back_face: Option<StencilOpState>,
 
     /// The material to use if this one's shaders can't be found.
+    #[serde(default)]
     pub fallback: Option<String>,
 
     /// A bias to apply to the depth.
@@ -109,15 +115,19 @@ pub struct PipelineCreationInfo {
     pub vertex_shader: ShaderSource,
 
     /// Geometry shader to use.
+    #[serde(default)]
     pub geometry_shader: Option<ShaderSource>,
 
     /// Tessellation Control shader to use.
+    #[serde(default)]
     pub tessellation_control_shader: Option<ShaderSource>,
 
     /// Tessellation Evaluation shader to use.
+    #[serde(default)]
     pub tessellation_evaluation_shader: Option<ShaderSource>,
 
     /// Fragment shader to use.
+    #[serde(default)]
     pub fragment_shader: Option<ShaderSource>,
 }
 
@@ -200,21 +210,27 @@ pub struct RenderPassCreationInfo {
     pub name: String,
 
     /// The materials that MUST execute before this one.
+    #[serde(default)]
     pub dependencies: Vec<String>,
 
     /// The textures that this pass will read from.
+    #[serde(default)]
     pub texture_inputs: Vec<String>,
 
     /// The textures that this pass will write to.
+    #[serde(default)]
     pub texture_outputs: Vec<TextureAttachmentInfo>,
 
     /// The depth texture this pass will write to.
+    #[serde(default)]
     pub depth_texture: Option<TextureAttachmentInfo>,
 
     /// All the buffers that this renderpass reads from.
+    #[serde(default, rename = "bufferInputs")]
     pub input_buffers: Vec<String>,
 
     /// All the buffers that this renderpass writes to.
+    #[serde(default, rename = "bufferOutputs")]
     pub output_buffers: Vec<String>,
 }
 
@@ -235,6 +251,7 @@ pub struct MaterialData {
     pub passes: Vec<MaterialPass>,
 
     /// Name of the geometry filter to use.
+    #[serde(rename = "filter")]
     pub geometry_filter: String,
 }
 
@@ -253,6 +270,7 @@ pub struct ShaderpackResourceData {
 #[serde(rename_all = "camelCase")]
 pub struct VertexFieldData {
     /// Name of the vertex field.
+    #[serde(rename = "name")]
     pub semantic_name: String,
 
     /// Type of vertex data.
