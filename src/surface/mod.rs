@@ -1,5 +1,6 @@
 //! Display surface creation and management.
 
+use cgmath::Vector2;
 use failure::Fail;
 
 /// Represents an abstract Surface which provides the objects required for the rendering platform.
@@ -15,8 +16,8 @@ pub trait Surface<T> {
     /// Creates or retrieves the object of the type `T` required for the current platform.
     fn platform_object(&mut self) -> Result<T, SurfaceError>;
 
-    /// Retrieves the current surface size
-    fn get_current_size(&self) -> (u32, u32);
+    /// Retrieves the current surface size where x is width and y height
+    fn get_current_size(&self) -> Vector2<u32>;
 }
 
 /// Errors that can occur during creation/access of the underlying platform object.
