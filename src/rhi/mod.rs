@@ -19,6 +19,7 @@ mod vulkan {
     mod vulkan_buffer;
     mod vulkan_command_allocator;
     mod vulkan_command_list;
+    mod vulkan_descriptor_pool;
     mod vulkan_descriptor_set;
     mod vulkan_device;
     mod vulkan_framebuffer;

@@ -8,6 +8,7 @@ use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::*;
 
+use crate::rhi::vulkan::vulkan_descriptor_pool::VulkanDescriptorPool;
 use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
 use crate::rhi::vulkan::vulkan_image::VulkanImage;
 use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
@@ -181,7 +182,7 @@ impl Device for VulkanDevice {
     type Renderpass = VulkanRenderPass;
     type Framebuffer = VulkanFramebuffer;
     type PipelineInterface = VulkanPipelineInterface;
-    type DescriptorPool = ();
+    type DescriptorPool = VulkanDescriptorPool;
     type Pipeline = VulkanPipeline;
     type Semaphore = ();
     type Fence = ();
@@ -632,7 +633,37 @@ impl Device for VulkanDevice {
         num_samplers: u32,
         num_uniform_buffers: u32,
     ) -> Result<Vec<Self::DescriptorPool>, DescriptorPoolCreationError> {
-        unimplemented!()
+        let create_info = vk::DescriptorPoolCreateInfo::builder()
+            .max_sets(num_sampled_images + num_samplers + num_uniform_buffers)
+            .pool_sizes(&[
+                vk::DescriptorPoolSize {
+                    ty: vk::DescriptorType::SAMPLED_IMAGE,
+                    descriptor_count: num_sampled_images,
+                },
+                vk::DescriptorPoolSize {
+                    ty: vk::DescriptorType::SAMPLER,
+                    descriptor_count: num_samplers,
+                },
+                vk::DescriptorPoolSize {
+                    ty: vk::DescriptorType::UNIFORM_BUFFER,
+                    descriptor_count: num_uniform_buffers,
+                },
+            ])
+            .build();
+
+        Ok(vec![VulkanDescriptorPool {
+            vk_descriptor_pool: match unsafe { self.device.create_descriptor_pool(&create_info, None) } {
+                Err(result) => {
+                    return match result {
+                        vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(DescriptorPoolCreationError::OutOfHostMemory),
+                        vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(DescriptorPoolCreationError::OutOfDeviceMemory),
+                        vk::Result::ERROR_FRAGMENTATION_EXT => Err(DescriptorPoolCreationError::Fragmentation),
+                        _ => panic!("Invalid vk result returned: {:?}", result),
+                    };
+                }
+                Ok(v) => v,
+            },
+        }])
     }
 
     fn create_pipeline(
