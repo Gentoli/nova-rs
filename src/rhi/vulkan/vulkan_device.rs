@@ -401,7 +401,32 @@ impl Device for VulkanDevice {
         attachments: Vec<Self::Image>,
         framebuffer_size: Vector2<f32>,
     ) -> Result<Self::Framebuffer, MemoryError> {
-        unimplemented!()
+        let attachment_vies: Vec<vk::ImageView> = attachments.iter().map(|i| i.vk_image_view).collect();
+
+        let create_info = vk::FramebufferCreateInfo::builder()
+            .render_pass(renderpass.vk_renderpass)
+            .attachments(attachment_vies.as_slice())
+            .width(framebuffer_size.x as u32)
+            .height(framebuffer_size.y as u32)
+            .layers(1)
+            .build();
+
+        let vk_framebuffer = match unsafe { self.device.create_framebuffer(&create_info, None) } {
+            Err(result) => {
+                return match result {
+                    vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(MemoryError::OutOfHostMemory),
+                    vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(MemoryError::OutOfDeviceMemory),
+                    _ => panic!("Invalid vk result returned: {:?}", result),
+                };
+            }
+            Ok(v) => v,
+        };
+
+        Ok(VulkanFramebuffer {
+            vk_framebuffer,
+            width: framebuffer_size.x as u32,
+            height: framebuffer_size.y as u32,
+        })
     }
 
     fn create_pipeline_interface(
