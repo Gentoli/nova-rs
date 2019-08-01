@@ -7,16 +7,16 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub struct ShaderpackData {
     /// The pipelines that this shaderpack specifies.
-    pipelines: Vec<PipelineCreationInfo>,
+    pub pipelines: Vec<PipelineCreationInfo>,
 
     /// The renderpasses that this shaderpack specifies, in submission order.
-    passes: Vec<RenderPassCreationInfo>,
+    pub passes: Vec<RenderPassCreationInfo>,
 
     /// The materials that this shaderpack specifies.
-    materials: Vec<MaterialData>,
+    pub materials: Vec<MaterialData>,
 
     /// The resources that this shaderpack specifies.
-    resources: ShaderpackResourceData,
+    pub resources: ShaderpackResourceData,
 }
 
 /// Information needed to create a pipeline
@@ -24,101 +24,101 @@ pub struct ShaderpackData {
 #[serde(rename_all = "camelCase")]
 pub struct PipelineCreationInfo {
     /// The name of this pipeline.
-    name: String,
+    pub name: String,
 
     /// The pipeline that this pipeline inherits from.
-    parent: Option<String>,
+    pub parent: Option<String>,
 
     /// The name of the pass that this pipeline belongs to.
-    pass: String,
+    pub pass: String,
 
     /// All of the symbols in the shader that are defined by this state.
-    defines: Vec<String>,
+    pub defines: Vec<String>,
 
     /// Defines the rasterizer state that's active for this pipeline.
-    states: Vec<RasterizerState>,
+    pub states: Vec<RasterizerState>,
 
     /// Sets up the vertex fields that Nova will bind to this pipeline.
-    vertex_fields: Vec<VertexFieldData>,
+    pub vertex_fields: Vec<VertexFieldData>,
 
     /// The stencil buffer operations to perform on the front faces.
-    front_face: Option<StencilOpState>,
+    pub front_face: Option<StencilOpState>,
 
     /// The stencil buffer operations to perform on the back faces.
-    back_face: Option<StencilOpState>,
+    pub back_face: Option<StencilOpState>,
 
     /// The material to use if this one's shaders can't be found.
-    fallback: Option<String>,
+    pub fallback: Option<String>,
 
     /// A bias to apply to the depth.
     #[serde(default = "PipelineCreationInfo::default_depth_bias")]
-    depth_bias: f32,
+    pub depth_bias: f32,
 
     /// The depth bias, scaled by slope I guess?
     #[serde(default = "PipelineCreationInfo::default_slope_scaled_depth_bias")]
-    slope_scaled_depth_bias: f32,
+    pub slope_scaled_depth_bias: f32,
 
     /// The reference value to use for the stencil test.
     #[serde(default = "PipelineCreationInfo::default_stencil_ref")]
-    stencil_ref: u32,
+    pub stencil_ref: u32,
 
     /// The mask to use when reading from the stencil buffer.
     #[serde(default = "PipelineCreationInfo::default_stencil_read_mask")]
-    stencil_read_mask: u32,
+    pub stencil_read_mask: u32,
 
     /// The mask to use when writing to the stencil buffer.
     #[serde(default = "PipelineCreationInfo::default_stencil_write_mask")]
-    stencil_write_mask: u32,
+    pub stencil_write_mask: u32,
 
     /// How to handle MSAA for this state.
     #[serde(default = "PipelineCreationInfo::default_msaa_support")]
-    msaa_support: MSAASupport,
+    pub msaa_support: MSAASupport,
 
     /// Decides how the vertices are rendered.
     #[serde(default = "PipelineCreationInfo::default_primitive_mode")]
-    primitive_mode: PrimitiveTopology,
+    pub primitive_mode: PrimitiveTopology,
 
     /// Where to get the blending factor for the source.
     #[serde(default = "PipelineCreationInfo::default_src_blend_factor")]
-    src_blend_factor: BlendFactor,
+    pub src_blend_factor: BlendFactor,
 
     /// Where to get the blending factor for the destination.
     #[serde(default = "PipelineCreationInfo::default_dst_blend_factor")]
-    dst_blend_factor: BlendFactor,
+    pub dst_blend_factor: BlendFactor,
 
     /// How to get the source alpha in a blend.
     #[serde(default = "PipelineCreationInfo::default_alpha_src")]
-    alpha_src: BlendFactor,
+    pub alpha_src: BlendFactor,
 
     /// How to get the destination alpha in a blend.
     #[serde(rename = "alphaDest")]
     #[serde(default = "PipelineCreationInfo::default_alpha_dst")]
-    alpha_dst: BlendFactor,
+    pub alpha_dst: BlendFactor,
 
     /// The function to use for the depth test.
     #[serde(default = "PipelineCreationInfo::default_depth_func")]
-    depth_func: CompareOp,
+    pub depth_func: CompareOp,
 
     /// The render queue that this pass belongs to.
     /// This may or may not be removed depending on what is actually needed by Nova.
     #[serde(default = "PipelineCreationInfo::default_render_queue")]
-    render_queue: RenderQueue,
+    pub render_queue: RenderQueue,
 
     /// Vertex shader to use.
     #[serde(default = "PipelineCreationInfo::default_vertex_shader")]
-    vertex_shader: ShaderSource,
+    pub vertex_shader: ShaderSource,
 
     /// Geometry shader to use.
-    geometry_shader: Option<ShaderSource>,
+    pub geometry_shader: Option<ShaderSource>,
 
     /// Tessellation Control shader to use.
-    tessellation_control_shader: Option<ShaderSource>,
+    pub tessellation_control_shader: Option<ShaderSource>,
 
     /// Tessellation Evaluation shader to use.
-    tessellation_evaluation_shader: Option<ShaderSource>,
+    pub tessellation_evaluation_shader: Option<ShaderSource>,
 
     /// Fragment shader to use.
-    fragment_shader: Option<ShaderSource>,
+    pub fragment_shader: Option<ShaderSource>,
 }
 
 impl PipelineCreationInfo {
@@ -200,25 +200,25 @@ impl PipelineCreationInfo {
 pub struct RenderPassCreationInfo {
     /// The name of this render pass.
     #[serde(default = "RenderPassCreationInfo::default_name")]
-    name: String,
+    pub name: String,
 
     /// The materials that MUST execute before this one.
-    dependencies: Vec<String>,
+    pub dependencies: Vec<String>,
 
     /// The textures that this pass will read from.
-    texture_inputs: Vec<String>,
+    pub texture_inputs: Vec<String>,
 
     /// The textures that this pass will write to.
-    texture_outputs: Vec<TextureAttachmentInfo>,
+    pub texture_outputs: Vec<TextureAttachmentInfo>,
 
     /// The depth texture this pass will write to.
-    depth_texture: Option<TextureAttachmentInfo>,
+    pub depth_texture: Option<TextureAttachmentInfo>,
 
     /// All the buffers that this renderpass reads from.
-    input_buffers: Vec<String>,
+    pub input_buffers: Vec<String>,
 
     /// All the buffers that this renderpass writes to.
-    output_buffers: Vec<String>,
+    pub output_buffers: Vec<String>,
 }
 
 impl RenderPassCreationInfo {
@@ -232,23 +232,23 @@ impl RenderPassCreationInfo {
 #[serde(rename_all = "camelCase")]
 pub struct MaterialData {
     /// The name of the material.
-    name: String,
+    pub name: String,
 
     /// The information needed for each renderpass the material is in.
-    passes: Vec<MaterialPass>,
+    pub passes: Vec<MaterialPass>,
 
     /// Name of the geometry filter to use.
-    geometry_filter: String,
+    pub geometry_filter: String,
 }
 
 /// Holds all resources that are required by the shaderpack.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ShaderpackResourceData {
     /// Specification for needed textures.
-    textures: Vec<TextureCreateInfo>,
+    pub textures: Vec<TextureCreateInfo>,
 
     /// Specification for needed samplers.
-    samplers: Vec<SamplerCreateInfo>,
+    pub samplers: Vec<SamplerCreateInfo>,
 }
 
 /// Connects a [`VertexField`] with a semantic name.
@@ -256,10 +256,10 @@ pub struct ShaderpackResourceData {
 #[serde(rename_all = "camelCase")]
 pub struct VertexFieldData {
     /// Name of the vertex field.
-    semantic_name: String,
+    pub semantic_name: String,
 
     /// Type of vertex data.
-    field: VertexField,
+    pub field: VertexField,
 }
 
 /// State of all the stencil operations.
@@ -268,27 +268,27 @@ pub struct VertexFieldData {
 pub struct StencilOpState {
     /// Operation if stencil test fails.
     #[serde(default = "StencilOpState::default_fail_op")]
-    fail_op: StencilOp,
+    pub fail_op: StencilOp,
 
     /// Operation if stencil test passes.
     #[serde(default = "StencilOpState::default_pass_op")]
-    pass_op: StencilOp,
+    pub pass_op: StencilOp,
 
     /// Operation if depth test fails.
     #[serde(default = "StencilOpState::default_depth_fail_op")]
-    depth_fail_op: StencilOp,
+    pub depth_fail_op: StencilOp,
 
     /// Comparison with the stencil buffer.
     #[serde(default = "StencilOpState::default_compare_op")]
-    compare_op: CompareOp,
+    pub compare_op: CompareOp,
 
     /// Stencil buffer comparison mask.
     #[serde(default = "StencilOpState::default_compare_mask")]
-    compare_mask: u32,
+    pub compare_mask: u32,
 
     /// Stencil buffer write mask.
     #[serde(default = "StencilOpState::default_write_mask")]
-    write_mask: u32,
+    pub write_mask: u32,
 }
 
 impl StencilOpState {
@@ -317,11 +317,11 @@ impl StencilOpState {
 #[serde(rename_all = "camelCase")]
 pub struct ShaderSource {
     /// Filename of the shader source file.
-    filename: PathBuf,
+    pub filename: PathBuf,
 
     /// Compiled SPIR-V shader.
     #[serde(skip)]
-    source: Vec<u32>,
+    pub source: Vec<u32>,
 }
 
 /// A description of a texture that a render pass outputs to.
@@ -329,11 +329,11 @@ pub struct ShaderSource {
 #[serde(rename_all = "camelCase")]
 pub struct TextureAttachmentInfo {
     ///  The name of the texture.
-    name: String,
+    pub name: String,
 
     /// Pixel format of the texture.
     #[serde(default = "TextureAttachmentInfo::default_pixel_format")]
-    pixel_format: PixelFormat,
+    pub pixel_format: PixelFormat,
 
     /// Whether to clear the texture.
     ///
@@ -341,7 +341,7 @@ pub struct TextureAttachmentInfo {
     /// If the texture is a stencil buffer, it gets cleared to 0xFFFFFFFF.
     /// If the texture is a color buffer, it gets cleared to (0, 0, 0, 0).
     #[serde(default = "TextureAttachmentInfo::default_clear")]
-    clear: bool,
+    pub clear: bool,
 }
 
 impl TextureAttachmentInfo {
@@ -358,7 +358,7 @@ impl TextureAttachmentInfo {
 #[serde(rename_all = "camelCase")]
 pub struct MaterialPass {
     /// Name of the render pass.
-    name: String,
+    pub name: String,
 
     /// Name of the material itself.
     ///
@@ -366,13 +366,13 @@ pub struct MaterialPass {
     ///
     /// TODO(cwfitzgerald): Which function does that?
     #[serde(default)]
-    material_name: String,
+    pub material_name: String,
 
     /// Name of the pipeline.
-    pipeline: String,
+    pub pipeline: String,
 
     /// All named bindings for this renderpass.
-    bindings: HashMap<String, String>,
+    pub bindings: HashMap<String, String>,
 }
 
 /// Description of a texture
@@ -414,13 +414,13 @@ pub struct TextureCreateInfo {
     /// If you use `Backbuffer`, then all fields are ignored since the backbuffer is always bound to output location 0.
     ///
     /// TODO(cwfitzgerald): This can have a more elegant representation with an enum
-    name: String,
+    pub name: String,
 
     /// Texture format for the image.
     ///
     /// All members except the bindings are ignored if the texture is virtual. Everything is
     /// ignored if the texture is the BackBuffer.
-    format: TextureFormat,
+    pub format: TextureFormat,
 }
 
 /// Defines a sampler to use for a texture.
@@ -431,18 +431,18 @@ pub struct TextureCreateInfo {
 pub struct SamplerCreateInfo {
     /// String name of the sampler.
     #[serde(default = "SamplerCreateInfo::default_name")]
-    name: String,
+    pub name: String,
 
     /// What kind of texture filter to use.
     ///
     /// texel_aa does something that I don't want to figure out right now. Bilinear is your regular bilinear filter,
     /// and point is the point filter. Aniso isn't an option and I kinda hope it stays that way.
     #[serde(default = "SamplerCreateInfo::default_filter")]
-    filter: TextureFilter,
+    pub filter: TextureFilter,
 
     /// How the texture should wrap at the edges.
     #[serde(default = "SamplerCreateInfo::default_wrap_mode")]
-    wrap_mode: WrapMode,
+    pub wrap_mode: WrapMode,
 }
 
 impl SamplerCreateInfo {
@@ -463,19 +463,19 @@ impl SamplerCreateInfo {
 pub struct TextureFormat {
     /// The format of the texture.
     #[serde(default = "TextureFormat::default_pixel_format")]
-    pixel_format: PixelFormat,
+    pub pixel_format: PixelFormat,
 
     /// How to interpret the dimensions of this texture.
     #[serde(default = "TextureFormat::default_dimension_type")]
-    dimension_type: TextureDimensionType,
+    pub dimension_type: TextureDimensionType,
 
     /// The width, in pixels, of the texture.
     #[serde(default = "TextureFormat::default_width")]
-    width: f32,
+    pub width: f32,
 
     /// The height, in pixels, of the texture.
     #[serde(default = "TextureFormat::default_height")]
-    height: f32,
+    pub height: f32,
 }
 
 impl TextureFormat {
