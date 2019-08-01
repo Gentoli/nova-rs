@@ -17,6 +17,7 @@ use ash::vk;
 use cgmath::Vector2;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use std::process::exit;
 
 #[derive(Clone, Copy, Debug)]
 pub struct VulkanDeviceQueueFamilies {
@@ -38,6 +39,7 @@ impl VulkanDeviceQueueFamilies {
 pub struct VulkanDevice {
     instance: ash::Instance,
     device: ash::Device,
+    debug_utils: Option<ash::extensions::ext::DebugUtils>,
 
     queue_families: VulkanDeviceQueueFamilies,
 
@@ -51,6 +53,7 @@ impl VulkanDevice {
     pub fn new(
         instance: ash::Instance,
         device: ash::Device,
+        debug_utils: Option<ash::extensions::ext::DebugUtils>,
         graphics_queue_family_index: u32,
         transfer_queue_family_index: u32,
         compute_queue_family_index: u32,
@@ -60,6 +63,7 @@ impl VulkanDevice {
         let mut device = VulkanDevice {
             instance,
             device,
+            debug_utils,
             queue_families: VulkanDeviceQueueFamilies {
                 graphics_queue_family_index,
                 transfer_queue_family_index,
@@ -86,6 +90,18 @@ impl VulkanDevice {
                 }
             })
             .map(|t| t.heap_index)
+    }
+
+    fn nova_pixel_format_to_vulkan_format(pixel_format: shaderpack::PixelFormat) -> vk::Format {
+        match pixel_format {
+            shaderpack::PixelFormat::RGBA8 => vk::Format::R8G8B8A8_SNORM,
+            shaderpack::PixelFormat::RGBA16F => vk::Format::R16G16B16A16_SFLOAT,
+            shaderpack::PixelFormat::RGBA32F => vk::Format::R32G32B32A32_SFLOAT,
+            shaderpack::PixelFormat::Depth => vk::Format::D32_SFLOAT,
+            shaderpack::PixelFormat::DepthStencil => vk::Format::D24_UNORM_S8_UINT,
+            /* _ => vk::Format::R10X6G10X6_UNORM_2PACK16, */
+            /* FIXME: last arm found in Nova's C++ code, but unreachable here? */
+        }
     }
 
     pub fn get_queue_families(&self) -> VulkanDeviceQueueFamilies {
@@ -211,7 +227,173 @@ impl Device for VulkanDevice {
         VulkanCommandAllocator::new(create_info, &self, self.instance.clone(), self.device.clone())
     }
 
-    fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {}
+    fn create_renderpass(&self, data: RenderPassCreationInfo) -> Result<Self::Renderpass, MemoryError> {
+        let mut attachments = Vec::new();
+        let mut attachment_references = Vec::new();
+
+        let mut framebuffer_width = 0u32;
+        let mut framebuffer_height = 0u32;
+
+        let mut writes_to_backbuffer = false;
+        for attachment in data.texture_outputs {
+            match attachment.name.as_ref() {
+                "Backbuffer" => {
+                    writes_to_backbuffer = true;
+
+                    let attachment_description = vk::AttachmentDescription::builder()
+                        .format(self.swapchain.get_format())
+                        .samples(vk::SampleCountFlags::TYPE_1)
+                        .load_op(vk::AttachmentLoadOp::CLEAR)
+                        .store_op(vk::AttachmentStoreOp::STORE)
+                        .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                        .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                        .initial_layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .final_layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .build();
+
+                    attachments.push(attachment_description);
+
+                    let attachment_reference = vk::AttachmentReference::builder()
+                        .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .attachment((attachments.len() - 1) as u32)
+                        .build();
+
+                    attachment_references.push(attachment_reference);
+                    (framebuffer_width, framebuffer_height) = self.swapchain.get_size();
+
+                    break;
+                }
+                _ => {
+                    let attachment_description = vk::AttachmentDescription::builder()
+                        .format(self.nova_pixel_format_to_vulkan_format(attachment.pixel_format))
+                        .samples(vk::SampleCountFlags::TYPE_1)
+                        .load_op(match attachment.clear {
+                            true => vk::AttachmentLoadOp::CLEAR,
+                            false => vk::AttachmentLoadOp::LOAD,
+                        })
+                        .store_op(vk::AttachmentStoreOp::STORE)
+                        .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                        .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                        .initial_layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .final_layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .build();
+
+                    attachments.push(attachment_description);
+
+                    let attachment_reference = vk::AttachmentReference::builder()
+                        .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
+                        .attachment((attachments.len() - 1) as u32)
+                        .build();
+
+                    attachment_references.push(attachment_reference);
+                }
+            }
+        }
+
+        let depth_attachment_reference = data.depth_texture.map(|texture| {
+            let attachment_description = vk::AttachmentDescription::builder()
+                .format(self.nova_pixel_format_to_vulkan_format(texture.pixel_format))
+                .samples(vk::SampleCountFlags::TYPE_1)
+                .load_op(match texture.clear {
+                    true => vk::AttachmentLoadOp::CLEAR,
+                    false => vk::AttachmentLoadOp::LOAD,
+                })
+                .store_op(vk::AttachmentStoreOp::STORE)
+                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                .initial_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                .final_layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                .build();
+
+            attachments.push(attachment_description);
+
+            vk::AttachmentReference::builder()
+                .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                .attachment((attachments.len() - 1) as u32)
+                .build()
+        });
+
+        if framebuffer_width == 0 {
+            panic!(
+                "Framebuffer width for pass {} is 0. This is illegal! Make sure there is at least one attachment for this \
+                 render pass, and ensure that all attachments used by this have a non-zero width",
+                data.name
+            )
+        } else if framebuffer_height == 0 {
+            panic!(
+                "Framebuffer height for pass {} is 0. This is illegal! Make sure there is at least one attachment for this \
+                 render pass, and ensure that all attachments used by this have a non-zero width",
+                data.name
+            )
+        } else if writes_to_backbuffer && data.texture_outputs.len() > 1 {
+            panic!(
+                "Pass {} writes to the backbuffer and other textures. Passes that write to the backbuffer are not allowed to \
+                 write to any other textures.",
+                data.name
+            )
+        }
+
+        let subpass_description = (match depth_attachment_reference {
+            None => vk::SubpassDescription::builder(),
+            Some(attachment) => vk::SubpassDescription::builder().depth_stencil_attachment(&attachment),
+        })
+        .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+        .color_attachments(attachment_references.as_slice())
+        .build();
+
+        let image_available_dependency = vk::SubpassDependency::builder()
+            .src_subpass(vk::SUBPASS_EXTERNAL)
+            .dst_subpass(0)
+            .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+            .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
+            .build();
+
+        let create_info = vk::RenderPassCreateInfo::builder()
+            .subpasses(&[subpass_description])
+            .dependencies(&[image_available_dependency])
+            .attachments(attachments.as_slice())
+            .build();
+
+        let pass = VulkanRenderPass {
+            vk_renderpass: match unsafe { self.device.create_render_pass(&create_info, None) } {
+                Err(result) => {
+                    return match result {
+                        vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(MemoryError::OutOfHostMemory),
+                        vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(MemoryError::OutOfDeviceMemory),
+                        _ => panic!("Invalid result returned"),
+                    };
+                }
+                Ok(v) => v,
+            },
+            render_area: vk::Rect2D {
+                offset: vk::Offset2D { x: 0, y: 0 },
+                extent: vk::Extent2D {
+                    width: framebuffer_width,
+                    height: framebuffer_height,
+                },
+            },
+        };
+
+        if cfg!(debug_assertions) {
+            let object_name = vk::DebugUtilsObjectNameInfoEXT::builder()
+                .object_type(vk::ObjectType::IMAGE)
+                .object_handle(pass.vk_renderpass as u64)
+                .object_name(data.name.into())
+                .build();
+
+            match unsafe {
+                self.debug_utils
+                    .unwrap()
+                    .debug_utils_set_object_name(self.device.handle(), &object_name)
+            } {
+                Err(err) => log::debug!("debug_utils_set_object_name failed: {:?}", err),
+                Ok(_) => {}
+            }
+        }
+
+        Ok(pass)
+    }
 
     fn create_framebuffer(
         &self,

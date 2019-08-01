@@ -23,6 +23,7 @@ pub struct VulkanPhysicalDevice {
     instance: ash::Instance,
     phys_device: vk::PhysicalDevice,
     surface: Rc<dyn surface::Surface<vk::SurfaceKHR>>,
+    debug_utils: Option<ash::extensions::ext::DebugUtils>,
 
     surface_loader: ash::extensions::khr::Surface,
     graphics_queue_family_index: usize,
@@ -35,12 +36,14 @@ impl VulkanPhysicalDevice {
         instance: ash::Instance,
         phys_device: vk::PhysicalDevice,
         surface: vk::SurfaceKHR,
+        debug_utils: Option<ash::extensions::ext::DebugUtils>,
         entry: ash::Entry,
     ) -> VulkanPhysicalDevice {
         let mut dev = VulkanPhysicalDevice {
             instance,
             phys_device,
             surface,
+            debug_utils,
             surface_loader: ash::extensions::khr::Surface::new(&entry, &instance),
             graphics_queue_family_index: std::usize::MAX,
             compute_queue_family_index: std::usize::MAX,
@@ -193,6 +196,7 @@ impl PhysicalDevice for VulkanPhysicalDevice {
                 VulkanDevice::new(
                     self.instance.clone(),
                     device,
+                    self.debug_utils,
                     self.graphics_queue_family_index as u32,
                     self.transfer_queue_family_index as u32,
                     self.compute_queue_family_index as u32,

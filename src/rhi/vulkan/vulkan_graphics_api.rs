@@ -41,6 +41,7 @@ pub struct VulkanGraphicsApi {
     entry: ash::Entry,
     surface: Rc<dyn Surface<vk::SurfaceKHR>>,
     surface_object: vk::SurfaceKHR,
+    debug_utils: Option<ash::extensions::ext::DebugUtils>,
 }
 
 impl VulkanGraphicsApi {
@@ -128,12 +129,19 @@ impl VulkanGraphicsApi {
             Ok(v) => v,
         };
 
+        let debug_utils = if cfg!(debug_assertions) {
+            Some(ash::extensions::ext::DebugUtils::new(&entry, &instance))
+        } else {
+            None
+        };
+
         Ok(VulkanGraphicsApi {
             instance,
             debug_callback,
             entry,
             surface,
             surface_object,
+            debug_utils,
         })
     }
 }
@@ -152,7 +160,15 @@ impl GraphicsApi for VulkanGraphicsApi {
         devices
             .unwrap()
             .iter()
-            .map(|d| VulkanPhysicalDevice::new(self.instance, *d, self.surface.clone(), self.entry.clone()))
+            .map(|d| {
+                VulkanPhysicalDevice::new(
+                    self.instance,
+                    *d,
+                    self.surface.clone(),
+                    self.debug_utils,
+                    self.entry.clone(),
+                )
+            })
             .filter(|d| d.can_be_used_by_nova())
             .collect()
     }

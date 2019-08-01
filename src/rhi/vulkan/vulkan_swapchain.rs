@@ -29,8 +29,13 @@ impl VulkanSwapchain {
         let surface_size = self.surface.get_current_size();
 
         vk::Extent2D {
-            width: surface_size.0,
-            height: surface_size.1,
+            width: surface_size.x,
+            height: surface_size.y,
         }
+    }
+
+    pub fn get_size(&self) -> (u32, u32) {
+        let surface_size = self.surface.get_current_size();
+        (surface_size.x, surface_size.y)
     }
 }
