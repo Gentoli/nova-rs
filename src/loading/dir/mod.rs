@@ -4,7 +4,7 @@ use crate::loading::{FileTree, LoadingError};
 use futures::Future;
 use matches::matches;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 mod iter;
@@ -85,7 +85,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
     }
 
     fn read(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>> {
-        let path = path.to_path_buf();
+        let path = path.to_owned();
         let data = self.0.clone();
         Pin::from(Box::new(async move {
             let real_path = {
@@ -96,7 +96,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
             let future = data.reactor.send_async(FileSystemOp::FileRead(real_path));
 
             match future.await {
-                FileSystemOpResult::Error(error) => match error.kind() {
+                FileSystemOpResult::Error(error) => match error.error.kind() {
                     io::ErrorKind::NotFound => Err(LoadingError::PathNotFound),
                     _ => Err(LoadingError::FileSystemError {
                         sub_error: error.into(),
@@ -109,7 +109,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
     }
 
     fn read_u32(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>> {
-        let path = path.to_path_buf();
+        let path = path.to_owned();
         let data = self.0.clone();
         Pin::from(Box::new(async move {
             let real_path = {
@@ -120,7 +120,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
             let future = data.reactor.send_async(FileSystemOp::FileReadU32(real_path));
 
             match future.await {
-                FileSystemOpResult::Error(error) => match error.kind() {
+                FileSystemOpResult::Error(error) => match error.error.kind() {
                     io::ErrorKind::NotFound => Err(LoadingError::PathNotFound),
                     _ => Err(LoadingError::FileSystemError {
                         sub_error: error.into(),
@@ -133,7 +133,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
     }
 
     fn read_text(&self, path: &Path) -> Pin<Box<dyn Future<Output = Result<String, LoadingError>>>> {
-        let path = path.to_path_buf();
+        let path = path.to_owned();
         let data = self.0.clone();
         Pin::from(Box::new(async move {
             let real_path = {
@@ -144,7 +144,7 @@ impl<'a> FileTree<'a> for DirectoryFileTree {
             let future = data.reactor.send_async(FileSystemOp::FileReadText(real_path));
 
             match future.await {
-                FileSystemOpResult::Error(error) => match error.kind() {
+                FileSystemOpResult::Error(error) => match error.error.kind() {
                     io::ErrorKind::NotFound => Err(LoadingError::PathNotFound),
                     _ => Err(LoadingError::FileSystemError {
                         sub_error: error.into(),

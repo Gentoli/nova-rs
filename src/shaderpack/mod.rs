@@ -77,13 +77,19 @@ pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, Shade
 async fn load_nova_shaderpack_impl<'a, T: FileTree<'a>>(
     tree: &'a T,
 ) -> Result<ShaderpackData, ShaderpackLoadingFailure> {
-    let passes: Vec<RenderPassCreationInfo> = load_json(tree, &"/passes.json").await?;
-    let resources: ShaderpackResourceData = load_json(tree, &"/resources.json").await?;
-    let materials_folder = enumerate_folder(tree, &"/materials")?;
+    let passes: Vec<RenderPassCreationInfo> = load_json(tree, &"passes.json").await?;
+    let resources: ShaderpackResourceData = load_json(tree, &"resources.json").await?;
+    let materials_folder = enumerate_folder(tree, &"materials")?;
     let mut materials: Vec<MaterialData> = Vec::new();
     let mut pipelines: Vec<PipelineCreationInfo> = Vec::new();
     for path in materials_folder {
-        let full_path = format!("/materials/{}", path.to_string_lossy());
+        let full_path = {
+            let mut p = PathBuf::new();
+            p.push("materials");
+            p.push(path);
+            p
+        };
+
         let ext = path.extension().and_then(|s| s.to_str());
         match ext {
             Some("mat") => materials.push(load_json(tree, full_path).await?),
