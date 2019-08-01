@@ -514,7 +514,6 @@ impl TextureFormat {
 
 /// State of the fixed-function rasterizer.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum RasterizerState {
     /// Enable blending for this material state.
     Blending,
@@ -549,7 +548,6 @@ pub enum RasterizerState {
 
 /// Multisample Antialiasing mode.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum MSAASupport {
     /// Enable MSAA.
     MSAA,
@@ -560,7 +558,6 @@ pub enum MSAASupport {
 
 /// Primitive to interpret vertex buffer as.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum PrimitiveTopology {
     /// Rasterize triangles.
     Triangles,
@@ -573,7 +570,6 @@ pub enum PrimitiveTopology {
 ///
 /// See [opengl wiki](https://www.khronos.org/opengl/wiki/Blending#Blend_Equations) for more info.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum BlendFactor {
     /// 1 * color
     One,
@@ -608,7 +604,6 @@ pub enum BlendFactor {
 
 /// Comparator used for fixed function operations.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum CompareOp {
     /// false
     Never,
@@ -637,7 +632,6 @@ pub enum CompareOp {
 
 /// Objects join a queue based on the type of transparency they need.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum RenderQueue {
     /// Full alpha transparency.
     Transparent,
@@ -651,7 +645,6 @@ pub enum RenderQueue {
 
 /// Identifier for a type and data format for vertex data.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum VertexField {
     /// The vertex position.
     ///
@@ -710,7 +703,6 @@ pub enum VertexField {
 
 /// Which operation to determine the value of the stencil buffer after a write.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum StencilOp {
     /// Do not change the stencil buffer.
     Keep,
@@ -739,7 +731,6 @@ pub enum StencilOp {
 
 /// Layout of pixels in memory
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum PixelFormat {
     /// R, G, B, and A channels, all taking up 8 bits integers each. 4 bytes.
     RGBA8,
@@ -759,7 +750,6 @@ pub enum PixelFormat {
 
 /// Filter to use when reading from texture.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum TextureFilter {
     /// Bedrock features texel manipulation based AA.
     TexelAA,
@@ -773,7 +763,6 @@ pub enum TextureFilter {
 
 /// Texture wrap mode.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum WrapMode {
     /// Repeat the texture when out of UV bounds.
     Repeat,
@@ -784,7 +773,6 @@ pub enum WrapMode {
 
 /// Frame of reference for texture dimensions.
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum TextureDimensionType {
     /// Dimensions are relative to the screen to allow screen space textures of the appropriate size.
     ScreenRelative,
@@ -795,7 +783,6 @@ pub enum TextureDimensionType {
 
 /// Origin location of a texture
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
-#[serde(untagged)]
 pub enum TextureLocation {
     /// The texture is written to by a shader.
     Dynamic,
