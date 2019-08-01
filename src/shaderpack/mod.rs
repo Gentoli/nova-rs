@@ -26,7 +26,7 @@ pub enum ShaderpackLoadingFailure {
     MissingDirectory(OsString),
 
     #[fail(display = "Error while parsing json {:?}", _0)]
-    JsonError(serde_json::Error),
+    JsonError(OsString, serde_json::Error),
 
     #[fail(display = "Directory member is a file not a directory {:?}", _0)]
     NotDirectory(OsString),
@@ -103,11 +103,11 @@ async fn load_nova_shaderpack_impl<'a, T: FileTree<'a>>(
 fn enumerate_folder<'a, T, P>(tree: &'a T, path: P) -> Result<HashSet<&'a Path>, ShaderpackLoadingFailure>
 where
     T: FileTree<'a>,
-    P: AsRef<Path> + Into<PathBuf>,
+    P: AsRef<Path> + Into<OsString>,
 {
-    tree.read_dir(Path::new("/materials"))
+    tree.read_dir(path.as_ref())
         .map_err(|err| match err {
-            LoadingError::PathNotFound => ShaderpackLoadingFailure::PathNotFound(path.into()),
+            LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingDirectory(path.into()),
             LoadingError::FileSystemError { sub_error: e } => {
                 ShaderpackLoadingFailure::FileSystemError { sub_error: e }
             }
@@ -120,15 +120,15 @@ async fn load_json<'a, R, T, P>(tree: &'a T, path: P) -> Result<R, ShaderpackLoa
 where
     R: serde::de::DeserializeOwned,
     T: FileTree<'a>,
-    P: AsRef<Path> + Into<OsString>,
+    P: AsRef<Path>,
 {
     let rp_file_result: Result<Vec<u8>, _> = tree.read(path.as_ref()).await;
     let rp_file = rp_file_result.map_err(|err| match err {
-        LoadingError::NotFile => ShaderpackLoadingFailure::NotFile(path.into()),
+        LoadingError::NotFile => ShaderpackLoadingFailure::NotFile(path.as_ref().into()),
         LoadingError::FileSystemError { sub_error } => ShaderpackLoadingFailure::FileSystemError { sub_error },
-        LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingFile(path.into()),
+        LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingFile(path.as_ref().into()),
         e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
     })?;
     let parsed: Result<R, _> = serde_json::from_slice(&rp_file);
-    parsed.map_err(|err| ShaderpackLoadingFailure::JsonError(err))
+    parsed.map_err(|err| ShaderpackLoadingFailure::JsonError(path.as_ref().into(), err))
 }
