@@ -15,7 +15,7 @@ impl Dx12CommandAllocator {
 impl CommandAllocator for Dx12CommandAllocator {
     type CommandList = Dx12CommandList;
 
-    fn create_command_list(&self) -> Result<Dx12CommandList, MemoryError> {
+    fn create_command_list(&self, secondary_list: bool) -> Result<Dx12CommandList, MemoryError> {
         unimplemented!()
     }
 }

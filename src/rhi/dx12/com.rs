@@ -1,4 +1,5 @@
 //! This file shamelessly borrowed from d3d12-rs
+#![allow(unsafe_code)]
 
 use std::fmt;
 use std::hash::{Hash, Hasher};

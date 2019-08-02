@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use winapi::{
     shared::{dxgi, dxgi1_2, dxgi1_3, dxgi1_4, winerror},
     Interface,
@@ -34,7 +36,7 @@ impl Dx12GraphicsApi {
     }
 }
 
-impl<'a> GraphicsApi<'a> for Dx12GraphicsApi {
+impl GraphicsApi for Dx12GraphicsApi {
     type PhysicalDevice = Dx12PhysicalDevice;
     type PlatformSurface = Win32Surface;
 

@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use crate::rhi::{DeviceCreationError, PhysicalDevice, PhysicalDeviceProperties};
 
 use super::dx12_device::Dx12Device;
@@ -37,7 +39,7 @@ impl PhysicalDevice for Dx12PhysicalDevice {
             let mut device = WeakPtr::<ID3D12Device>::null();
             // TODO: Figure out how to determine which SDK version the system we're running on supports
             let hr = D3D12CreateDevice(
-                self.adapter.as_unknown(),
+                self.adapter.as_mut_ptr(),
                 D3D_FEATURE_LEVEL_11_0,
                 ID3D12Device::uuifof(),
                 device.mut_void(),
