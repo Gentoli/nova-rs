@@ -93,7 +93,7 @@ impl Device for Dx12Device {
 
         let hr = unsafe {
             self.device
-                .CreateCommandQueue(&queue_desc, ID3D12CommandQueue::uuidof(), queue.mut_void())
+                .CreateCommandQueue(&queue_desc, &ID3D12CommandQueue::uuidof(), queue.mut_void())
         };
         if winerror::SUCCEEDED(hr) {
             Ok(Dx12Queue::new(queue))
@@ -159,7 +159,7 @@ impl Device for Dx12Device {
 
             let hr = unsafe {
                 self.device
-                    .CreateHeap(&heap_create_info, ID3D12Heap::uuidof(), heap.mut_void())
+                    .CreateHeap(&heap_create_info, &ID3D12Heap::uuidof(), heap.mut_void())
             };
             if winerror::SUCCEEDED(hr) {
                 Ok(Dx12Memory::new(heap, size))
@@ -185,7 +185,7 @@ impl Device for Dx12Device {
         let hr = unsafe {
             self.device.CreateCommandAllocator(
                 command_allocator_type,
-                ID3D12CommandAllocator::uuidof(),
+                &ID3D12CommandAllocator::uuidof(),
                 allocator.mut_void(),
             )
         };

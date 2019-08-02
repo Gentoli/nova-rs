@@ -7,6 +7,7 @@ use crate::rhi::dx12::com::WeakPtr;
 use winapi::shared::{dxgi1_2, winerror};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::*;
+use winapi::Interface;
 
 /// A physical device which supports DX12
 pub struct Dx12PhysicalDevice {
@@ -39,9 +40,9 @@ impl PhysicalDevice for Dx12PhysicalDevice {
             let mut device = WeakPtr::<ID3D12Device>::null();
             // TODO: Figure out how to determine which SDK version the system we're running on supports
             let hr = D3D12CreateDevice(
-                self.adapter.as_mut_ptr(),
+                self.adapter.as_unknown() as *const _ as *mut _,
                 D3D_FEATURE_LEVEL_11_0,
-                ID3D12Device::uuifof(),
+                &ID3D12Device::uuidof(),
                 device.mut_void(),
             );
             if winerror::SUCCEEDED(hr) {
