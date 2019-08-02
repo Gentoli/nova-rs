@@ -9,10 +9,8 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
-use winapi::um::d3d12::{
-    ID3D12GraphicsCommandList, ID3D12GraphicsCommandList1, ID3D12GraphicsCommandList2, ID3D12GraphicsCommandList3,
-    ID3D12GraphicsCommandList4, D3D12_RENDER_PASS_FLAG_NONE,
-};
+use std::ptr;
+use winapi::um::d3d12::*;
 
 pub struct Dx12CommandList {
     list: WeakPtr<ID3D12GraphicsCommandList>,
@@ -76,12 +74,44 @@ impl CommandList for Dx12CommandList {
 
     fn begin_renderpass(&self, renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
         if !self.list4.is_null() {
-            self.list4.BeginRenderPass(
-                renderpass.render_targets.len() as u32,
-                renderpass.render_targets.as_ptr(),
-                &renderpass.depth_stencil,
-                D3D12_RENDER_PASS_FLAG_NONE,
-            );
+            let mut render_target_descs = Vec::<D3D12_RENDER_PASS_RENDER_TARGET_DESC>::new();
+            render_target_descs.reserve(renderpass.render_targets.len());
+            for (i, render_target_info) in renderpass.render_targets.iter().enumerate() {
+                let new_desc = D3D12_RENDER_PASS_RENDER_TARGET_DESC {
+                    cpuDescriptor: framebuffer.color_attachments[i],
+                    BeginningAccess: render_target_info.beginning_access,
+                    EndingAccess: render_target_info.ending_access,
+                };
+
+                render_target_descs.push(new_desc);
+            }
+
+            match renderpass.depth_stencil {
+                Some(ds_info) => {
+                    let depth_stencil_desc = D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
+                        cpuDescriptor: framebuffer.depth_attachment.unwrap(),
+                        DepthBeginningAccess: ds_info.beginning_access,
+                        StencilBeginningAccess: ds_info.beginning_access,
+                        DepthEndingAccess: ds_info.ending_access,
+                        StencilEndingAccess: ds_info.ending_access,
+                    };
+
+                    self.list4.BeginRenderPass(
+                        render_target_descs.len() as u32,
+                        render_target_descs.as_ptr(),
+                        &depth_stencil_desc,
+                        D3D12_RENDER_PASS_FLAG_NONE,
+                    );
+                }
+                None => {
+                    self.list4.BeginRenderPass(
+                        render_target_descs.len() as u32,
+                        render_target_descs.as_ptr(),
+                        ptr::null(),
+                        D3D12_RENDER_PASS_FLAG_NONE,
+                    );
+                }
+            }
         }
     }
 

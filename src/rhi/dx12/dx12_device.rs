@@ -1,4 +1,5 @@
 use crate::rhi::dx12::com::WeakPtr;
+use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
 use crate::{
     rhi::{
@@ -194,7 +195,7 @@ impl Device for Dx12Device {
     }
 
     fn create_renderpass(&self, data: shaderpack::RenderPassCreationInfo) -> Result<Dx12Renderpass, MemoryError> {
-        let mut render_target_descs = Vec::<D3D12_RENDER_PASS_RENDER_TARGET_DESC>::new();
+        let mut render_target_descs = Vec::<Dx12RenderPassAccessInfo>::new();
         for attachment_info in data.texture_outputs {
             let (beginning_access_type, ending_access_type) = match attachment_info.name.as_ref() {
                 "Backbuffer" => (
@@ -239,10 +240,9 @@ impl Device for Dx12Device {
             // TODO: Handle D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE when we actually support MSAA in a meaningful
             // capacity
 
-            let render_target_desc = D3D12_RENDER_PASS_RENDER_TARGET_DESC {
-                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {}, // TODO: Fill in in `CommandList::begin_render_pass`
-                BeginningAccess: beginning_access,
-                EndingAccess: ending_access,
+            let render_target_desc = Dx12RenderPassAccessInfo {
+                beginning_access,
+                ending_access,
             };
 
             render_target_descs.push(render_target_desc);
@@ -273,12 +273,9 @@ impl Device for Dx12Device {
                 ..unsafe { mem::zeroed() }
             };
 
-            D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
-                cpuDescriptor: D3D12_CPU_DESCRIPTOR_HANDLE {}, // TODO: Fill in in `CommandList::begin_render_pass`
-                DepthBeginningAccess: depth_beginning_access,
-                StencilBeginningAccess: depth_beginning_access,
-                DepthEndingAccess: depth_ending_access,
-                StencilEndingAccess: depth_ending_access,
+            Dx12RenderPassAccessInfo {
+                beginning_access: depth_beginning_access,
+                ending_access: depth_ending_access,
             }
         });
 
