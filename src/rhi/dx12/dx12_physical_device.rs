@@ -17,7 +17,7 @@ impl Dx12PhysicalDevice {
     }
 }
 
-impl<'a> PhysicalDevice<'a> for Dx12PhysicalDevice {
+impl PhysicalDevice for Dx12PhysicalDevice {
     type Device = Dx12Device;
 
     fn get_properties(&self) -> PhysicalDeviceProperties {
@@ -32,7 +32,7 @@ impl<'a> PhysicalDevice<'a> for Dx12PhysicalDevice {
         }
     }
 
-    fn create_logical_device(&'a self) -> Result<Dx12Device, DeviceCreationError> {
+    fn create_logical_device(&self) -> Result<Dx12Device, DeviceCreationError> {
         unsafe {
             let mut device = WeakPtr::<ID3D12Device>::null();
             // TODO: Figure out how to determine which SDK version the system we're running on supports

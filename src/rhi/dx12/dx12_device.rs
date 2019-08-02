@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
