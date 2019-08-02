@@ -98,12 +98,22 @@ async fn load_nova_shaderpack_impl<'a, T: FileTree<'a>>(
         }
     }
 
+    material_postprocess(&mut materials);
+
     Ok(ShaderpackData {
         passes,
         resources,
         materials,
         pipelines,
     })
+}
+
+fn material_postprocess(materials: &mut [MaterialData]) {
+    for mat in materials {
+        for pass in &mut mat.passes {
+            pass.material_name = mat.name.clone();
+        }
+    }
 }
 
 fn enumerate_folder<'a, T, P>(tree: &'a T, path: P) -> Result<HashSet<&'a Path>, ShaderpackLoadingFailure>

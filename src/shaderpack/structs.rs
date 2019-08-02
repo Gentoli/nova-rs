@@ -386,8 +386,7 @@ pub struct MaterialPass {
     /// Name of the material itself.
     ///
     /// This is not populated by serde, this is populated by a post processing pass _after_ serde.
-    ///
-    /// TODO(cwfitzgerald): Which function does that?
+    /// This happens in the function `material_postprocess`.
     #[serde(default)]
     pub material_name: String,
 

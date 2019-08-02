@@ -113,6 +113,7 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         let pass = &material.passes[0];
         assert_eq!(pass.name, "main");
         assert_eq!(pass.pipeline, "Final");
+        assert_eq!(pass.material_name, material.name);
 
         assert_eq!(pass.bindings.contains_key("per_model_uniforms"), true);
         let binding = &pass.bindings["per_model_uniforms"];
@@ -129,6 +130,7 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         let pass = &material.passes[0];
         assert_eq!(pass.name, "main");
         assert_eq!(pass.pipeline, "gbuffers_terrain");
+        assert_eq!(pass.material_name, material.name);
 
         assert_eq!(pass.bindings.contains_key("per_model_uniforms"), true);
         let binding = &pass.bindings["per_model_uniforms"];
@@ -145,6 +147,7 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         let pass = &material.passes[0];
         assert_eq!(pass.name, "main");
         assert_eq!(pass.pipeline, "gui");
+        assert_eq!(pass.material_name, material.name);
 
         assert_eq!(pass.bindings.contains_key("per_model_uniforms"), true);
         let binding = &pass.bindings["per_model_uniforms"];
@@ -161,6 +164,7 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         let pass = &material.passes[0];
         assert_eq!(pass.name, "main");
         assert_eq!(pass.pipeline, "gui");
+        assert_eq!(pass.material_name, material.name);
 
         assert_eq!(pass.bindings.contains_key("per_model_uniforms"), true);
         let binding = &pass.bindings["per_model_uniforms"];
@@ -177,6 +181,7 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         let pass = &material.passes[0];
         assert_eq!(pass.name, "main");
         assert_eq!(pass.pipeline, "gui");
+        assert_eq!(pass.material_name, material.name);
 
         assert_eq!(pass.bindings.contains_key("per_model_uniforms"), true);
         let binding = &pass.bindings["per_model_uniforms"];
