@@ -328,7 +328,7 @@ impl StencilOpState {
 }
 
 /// Shader source file.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", untagged)]
 pub enum ShaderSource {
     /// Uncompiled shader with path to source
@@ -338,7 +338,7 @@ pub enum ShaderSource {
 }
 
 /// A fully compiled shader
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct CompiledShader {
     /// Filename of the shader source file.
