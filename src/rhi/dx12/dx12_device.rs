@@ -380,7 +380,31 @@ impl Device for Dx12Device {
         color_attachments: &[shaderpack::TextureAttachmentInfo],
         depth_texture: &Option<shaderpack::TextureAttachmentInfo>,
     ) -> Result<Dx12PipelineInterface, MemoryError> {
-        unimplemented!()
+        let mut table_layouts: HashMap<u32, Vec<ResourceBindingDescription>> =
+            HashMap::<u32, Vec<ResourceBindingDescription>>::new();
+
+        for binding in bindings.values() {
+            match table_layouts.get_mut(&binding.set) {
+                Some(table_bindings) => table_bindings.push(binding.clone()),
+                None => {
+                    // TODO: help
+                    bindings.insert(binding.set, vec![binding]);
+                }
+            }
+        }
+
+        let num_sets = table_layouts.len();
+
+        for set in 0..num_sets {
+            let mut descriptor_layouts = table_layouts.get(&(set as u32));
+
+            // let param = D3D12_ROOT_PARAMETER {
+            // ParameterType: D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+            // ShaderVisibility:
+            // };
+        }
+
+        Err(MemoryError::OutOfDeviceMemory)
     }
 
     fn create_descriptor_pool(
