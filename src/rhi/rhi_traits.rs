@@ -18,13 +18,13 @@ use std::rc::Rc;
 /// Top-level trait for functions that don't belong to any specific device object.
 pub trait GraphicsApi {
     /// Corresponding physical device.
-    type PhysicalDevice: PhysicalDevice;
+    type Device: Device;
 
     /// Corresponding platform surface.
     type PlatformSurface;
 
     /// Gets a list of all available graphics adapters.
-    fn get_adapters(&self) -> Vec<Self::PhysicalDevice>;
+    fn get_adapters(&self) -> Vec<Self::Device>;
 
     /// Gets the surface this API was created with.
     fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
@@ -32,41 +32,7 @@ pub trait GraphicsApi {
 
 /// An implementation of the rendering API for a specific device.
 ///
-/// This will probably be a GPU card, but a software implementation of either Vulkan or Direct3D 12 is possible.
-pub trait PhysicalDevice {
-    type Device: Device;
-
-    /// Accesses all properties of the physical device.
-    fn get_properties(&self) -> PhysicalDeviceProperties;
-
-    /// Checks if this physical device is suitable for Nova.
-    ///
-    /// Devices are suitable for Nova if they:
-    /// - Have queues that support graphics, compute, transfer, and present operations.
-    /// - Support tessellation and geometry shaders.
-    ///
-    /// Nova's supported APIs have very different ways to check what features and capabilities a
-    /// physical device has, so this method encapsulates all that.
-    ///
-    /// Future work will probably come up with a way to score physical devices from most suitable to
-    /// least suitable, but for now this is fine.
-    fn can_be_used_by_nova(&self) -> bool;
-
-    /// Creates a new logical device.
-    ///
-    /// Nova has very specific requirements for a logical device, and how you express those
-    /// requirements varies significantly by API. Thus, this method doesn't take a create info
-    /// struct of any sort.
-    fn create_logical_device(&self) -> Result<Self::Device, DeviceCreationError>;
-
-    /// Gets the amount of free VRAM on this physical device.
-    fn get_free_memory(&self) -> u64;
-}
-
-/// The logical device that we're rendering with.
-///
-/// There may be multiple Devices in existence at once. Nova will eventually support multi-GPU
-/// rendering.
+/// This will probably be a physical GPU, but a software implementation of either Vulkan or Direct3D 12 is possible.
 pub trait Device {
     /// Device's queue type.
     type Queue: Queue;
@@ -100,6 +66,25 @@ pub trait Device {
 
     /// Device's fence type.
     type Fence: Fence;
+
+    /// Accesses all properties of the physical device.
+    fn get_properties(&self) -> DeviceProperties;
+
+    /// Checks if this physical device is suitable for Nova.
+    ///
+    /// Devices are suitable for Nova if they:
+    /// - Have queues that support graphics, compute, transfer, and present operations.
+    /// - Support tessellation and geometry shaders.
+    ///
+    /// Nova's supported APIs have very different ways to check what features and capabilities a
+    /// physical device has, so this method encapsulates all that.
+    ///
+    /// Future work will probably come up with a way to score physical devices from most suitable to
+    /// least suitable, but for now this is fine.
+    fn can_be_used_by_nova(&self) -> bool;
+
+    /// Gets the amount of free VRAM on this physical device.
+    fn get_free_memory(&self) -> u64;
 
     /// Retrieves the Queue with the provided queue family index and queue index.
     ///
