@@ -21,7 +21,7 @@ pub struct CommandAllocatorCreateInfo {
 /// This structure has things like the capabilities of the device, its hardware limits, its manufacturer and model
 /// number, etc
 #[derive(Debug, Clone)]
-pub struct PhysicalDeviceProperties {
+pub struct DeviceProperties {
     /// Company that manufactured the physical device.
     pub manufacturer: PhysicalDeviceManufacturer,
 
