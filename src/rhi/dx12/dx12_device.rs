@@ -23,6 +23,7 @@ use core::mem;
 use std::collections::HashMap;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
+use winapi::shared::winerror::SUCCEEDED;
 use winapi::um::d3dcommon::D3D_FEATURE_LEVEL_11_0;
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
@@ -324,9 +325,53 @@ impl Device for Dx12Device {
         &self,
         renderpass: Dx12Renderpass,
         attachments: Vec<Dx12Image>,
-        framebuffer_size: Vector2<f32>,
+        _: Vector2<f32>,
     ) -> Result<Dx12Framebuffer, MemoryError> {
-        unimplemented!()
+        let num_rtv_descriptors = match renderpass.depth_stencil {
+            Some(_) => renderpass.render_targets.len() + 1,
+            None => renderpass.render_targets.len(),
+        } as u32;
+
+        let rtv_descriptor_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC {
+            Type: D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+            NumDescriptors: num_rtv_descriptors,
+            Flags: D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+            NodeMask: 0,
+        };
+
+        let mut heap = WeakPtr::<ID3D12DescriptorHeap>::null();
+        let hr = unsafe {
+            self.device.CreateDescriptorHeap(
+                &rtv_descriptor_heap_desc,
+                &ID3D12DescriptorHeap::uuidof(),
+                heap.mut_void(),
+            )
+        };
+        if SUCCEEDED(hr) {
+            let base_descriptor = unsafe { heap.GetCPUDescriptorHandleForHeapStart() };
+
+            let mut color_attachment_descriptors = Vec::<D3D12_CPU_DESCRIPTOR_HANDLE>::new();
+            for (i, _) in attachments.iter().enumerate() {
+                color_attachment_descriptors.push(D3D12_CPU_DESCRIPTOR_HANDLE {
+                    ptr: base_descriptor.ptr + i,
+                });
+            }
+
+            let depth_attachment_descriptor = match renderpass.depth_stencil {
+                Some(_) => Some(D3D12_CPU_DESCRIPTOR_HANDLE {
+                    ptr: base_descriptor.ptr + color_attachment_descriptors.len() + 1,
+                }),
+                None => None,
+            };
+
+            Ok(Dx12Framebuffer {
+                color_attachments: color_attachment_descriptors,
+                depth_attachment: depth_attachment_descriptor,
+                descriptor_heap: heap,
+            })
+        } else {
+            Err(MemoryError::OutOfHostMemory)
+        }
     }
 
     fn create_pipeline_interface(
