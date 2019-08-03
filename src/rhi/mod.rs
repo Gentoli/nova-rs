@@ -33,7 +33,6 @@ mod dx12 {
     mod dx12_framebuffer;
     mod dx12_image;
     mod dx12_memory;
-    mod dx12_physical_device;
     mod dx12_pipeline;
     mod dx12_pipeline_interface;
     mod dx12_queue;

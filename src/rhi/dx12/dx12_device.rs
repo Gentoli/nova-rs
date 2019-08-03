@@ -3,17 +3,17 @@
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
+use crate::rhi::{DeviceCreationError, DeviceProperties};
 use crate::{
     rhi::{
         dx12::{
             dx12_command_allocator::Dx12CommandAllocator, dx12_descriptor_pool::Dx12DescriptorPool,
             dx12_fence::Dx12Fence, dx12_framebuffer::Dx12Framebuffer, dx12_image::Dx12Image, dx12_memory::Dx12Memory,
-            dx12_physical_device::Dx12PhysicalDevice, dx12_pipeline::Dx12Pipeline,
-            dx12_pipeline_interface::Dx12PipelineInterface, dx12_queue::Dx12Queue, dx12_renderpass::Dx12Renderpass,
-            dx12_semaphore::Dx12Semaphore,
+            dx12_pipeline::Dx12Pipeline, dx12_pipeline_interface::Dx12PipelineInterface, dx12_queue::Dx12Queue,
+            dx12_renderpass::Dx12Renderpass, dx12_semaphore::Dx12Semaphore,
         },
         AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, Device,
-        MemoryError, MemoryUsage, ObjectType, PhysicalDevice, PipelineCreationError, QueueGettingError, QueueType,
+        MemoryError, MemoryUsage, ObjectType, PipelineCreationError, QueueGettingError, QueueType,
         ResourceBindingDescription,
     },
     shaderpack,
@@ -21,14 +21,15 @@ use crate::{
 use cgmath::Vector2;
 use core::mem;
 use std::collections::HashMap;
-use std::rc::Rc;
+use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
+use winapi::um::d3dcommon::D3D_FEATURE_LEVEL_11_0;
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
 
 pub struct Dx12Device {
     /// Graphics adapter that we're using
-    phys_device: Rc<Dx12PhysicalDevice>,
+    adapter: WeakPtr<IDXGIAdapter2>,
 
     /// D3D12 device that we're wrapping
     device: WeakPtr<ID3D12Device>,
@@ -44,17 +45,39 @@ pub struct Dx12Device {
 }
 
 impl Dx12Device {
-    pub fn new(phys_device: Rc<Dx12PhysicalDevice>, device: WeakPtr<ID3D12Device>) -> Self {
-        let rtv_descriptor_size = device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        let shader_resource_descriptor_size =
-            device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    pub fn new(adapter: WeakPtr<IDXGIAdapter2>) -> Option<Self> {
+        let device_result = unsafe {
+            let mut device = WeakPtr::<ID3D12Device>::null();
+            // TODO: Figure out how to determine which SDK version the system we're running on supports
+            let hr = D3D12CreateDevice(
+                adapter.as_unknown() as *const _ as *mut _,
+                D3D_FEATURE_LEVEL_11_0,
+                &ID3D12Device::uuidof(),
+                device.mut_void(),
+            );
+            if winerror::SUCCEEDED(hr) {
+                Ok(device)
+            } else {
+                Err(DeviceCreationError::Failed)
+            }
+        };
 
-        Dx12Device {
-            phys_device,
-            device,
-            rtv_descriptor_size,
-            shader_resource_descriptor_size,
-            system_info: Dx12SystemInfo { supported_version: 4 },
+        match device_result {
+            Ok(device) => {
+                let rtv_descriptor_size =
+                    unsafe { device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
+                let shader_resource_descriptor_size =
+                    unsafe { device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
+
+                Some(Dx12Device {
+                    adapter,
+                    device,
+                    rtv_descriptor_size,
+                    shader_resource_descriptor_size,
+                    system_info: Dx12SystemInfo { supported_version: 4 },
+                })
+            }
+            Err(_) => None,
         }
     }
 
@@ -75,6 +98,19 @@ impl Device for Dx12Device {
     type Pipeline = Dx12Pipeline;
     type Semaphore = Dx12Semaphore;
     type Fence = Dx12Fence;
+
+    fn get_properties(&self) -> DeviceProperties {
+        unimplemented!()
+    }
+
+    fn can_be_used_by_nova(&self) -> bool {
+        // TODO: Something more interesting
+        true
+    }
+
+    fn get_free_memory(&self) -> u64 {
+        0
+    }
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Dx12Queue, QueueGettingError> {
         let queue_type = match queue_type {
@@ -141,7 +177,7 @@ impl Device for Dx12Device {
         };
 
         // Ensure we have enough free memory for the requested allocation
-        let free_memory = self.phys_device.get_free_memory();
+        let free_memory = self.get_free_memory();
         if free_memory < size {
             if memory_usage == MemoryUsage::StagingBuffer {
                 Err(AllocationError::OutOfHostMemory)
@@ -256,7 +292,7 @@ impl Device for Dx12Device {
                 false => D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE,
             };
 
-            let depth_beginning_access = D3D12_RENDER_PASS_BEGINNING_ACCESS {
+            let mut depth_beginning_access = D3D12_RENDER_PASS_BEGINNING_ACCESS {
                 Type: depth_beginning_access_type,
                 ..unsafe { mem::zeroed() }
             };

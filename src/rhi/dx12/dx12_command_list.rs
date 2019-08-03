@@ -97,28 +97,30 @@ impl CommandList for Dx12CommandList {
                         StencilEndingAccess: ds_info.ending_access,
                     };
 
-                    self.list4.BeginRenderPass(
-                        render_target_descs.len() as u32,
-                        render_target_descs.as_ptr(),
-                        &depth_stencil_desc,
-                        D3D12_RENDER_PASS_FLAG_NONE,
-                    );
+                    unsafe {
+                        self.list4.BeginRenderPass(
+                            render_target_descs.len() as u32,
+                            render_target_descs.as_ptr(),
+                            &depth_stencil_desc,
+                            D3D12_RENDER_PASS_FLAG_NONE,
+                        )
+                    };
                 }
-                None => {
+                None => unsafe {
                     self.list4.BeginRenderPass(
                         render_target_descs.len() as u32,
                         render_target_descs.as_ptr(),
                         ptr::null(),
                         D3D12_RENDER_PASS_FLAG_NONE,
                     );
-                }
+                },
             }
         }
     }
 
     fn end_renderpass(&self) {
         if !self.list4.is_null() {
-            self.list4.EndRenderPass();
+            unsafe { self.list4.EndRenderPass() };
         }
     }
 

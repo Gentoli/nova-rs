@@ -7,10 +7,10 @@ use winapi::{
 
 use log::error;
 
-use crate::rhi::{GraphicsApi, PhysicalDevice};
+use crate::rhi::{Device, GraphicsApi};
 
-use super::dx12_physical_device::Dx12PhysicalDevice;
 use crate::rhi::dx12::com::WeakPtr;
+use crate::rhi::dx12::dx12_device::Dx12Device;
 use crate::surface::{Surface, Win32Surface};
 use std::rc::Rc;
 
@@ -37,11 +37,11 @@ impl Dx12GraphicsApi {
 }
 
 impl GraphicsApi for Dx12GraphicsApi {
-    type PhysicalDevice = Dx12PhysicalDevice;
+    type Device = Dx12Device;
     type PlatformSurface = Win32Surface;
 
-    fn get_adapters(&self) -> Vec<Dx12PhysicalDevice> {
-        let mut adapters: Vec<Dx12PhysicalDevice> = vec![];
+    fn get_adapters(&self) -> Vec<Dx12Device> {
+        let mut adapters: Vec<Dx12Device> = vec![];
 
         let mut cur_adapter = 0;
         loop {
@@ -62,10 +62,13 @@ impl GraphicsApi for Dx12GraphicsApi {
                 continue;
             }
 
-            let phys_device = Dx12PhysicalDevice::new(adapter2);
-
-            if phys_device.can_be_used_by_nova() {
-                adapters.push(phys_device);
+            match Dx12Device::new(adapter2) {
+                Some(device) => {
+                    if device.can_be_used_by_nova() {
+                        adapters.push(device);
+                    }
+                }
+                None => (),
             }
         }
 
