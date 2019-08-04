@@ -28,6 +28,10 @@ use winapi::um::d3dcommon::D3D_FEATURE_LEVEL_11_0;
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
 
+#[macro_use]
+use log::*;
+use crate::rhi::dx12::dx12_utils::to_dx12_range_type;
+
 pub struct Dx12Device {
     /// Graphics adapter that we're using
     adapter: WeakPtr<IDXGIAdapter2>,
@@ -105,12 +109,11 @@ impl Device for Dx12Device {
     }
 
     fn can_be_used_by_nova(&self) -> bool {
-        // TODO: Something more interesting
-        true
+        unimplemented!()
     }
 
     fn get_free_memory(&self) -> u64 {
-        0
+        unimplemented!()
     }
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Dx12Queue, QueueGettingError> {
@@ -387,22 +390,56 @@ impl Device for Dx12Device {
             match table_layouts.get_mut(&binding.set) {
                 Some(table_bindings) => table_bindings.push(binding.clone()),
                 None => {
-                    // TODO: help
-                    bindings.insert(binding.set, vec![binding]);
+                    table_layouts.insert(binding.set, vec![binding.clone()]);
                 }
             }
         }
 
         let num_sets = table_layouts.len();
 
-        for set in 0..num_sets {
-            let mut descriptor_layouts = table_layouts.get(&(set as u32));
+        let mut root_signature_params = Vec::<D3D12_ROOT_PARAMETER>::new();
 
-            // let param = D3D12_ROOT_PARAMETER {
-            // ParameterType: D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
-            // ShaderVisibility:
-            // };
+        for set in 0..num_sets {
+            let mut descriptor_layouts_opt = table_layouts.get(&(set as u32));
+            if descriptor_layouts_opt.is_none() {
+                warn!(
+                    "No descriptors in set {}, but there should. Each pipeline _must_ use contiguous descriptor sets",
+                    set
+                );
+                continue;
+            }
+
+            let mut param = D3D12_ROOT_PARAMETER {
+                ParameterType: D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+                ..unsafe { mem::zeroed() }
+            };
+
+            let descriptor_layouts = descriptor_layouts_opt.unwrap();
+
+            let mut descriptor_ranges = Vec::<D3D12_DESCRIPTOR_RANGE>::new();
+            for layout in descriptor_layouts {
+                let descriptor_range = D3D12_DESCRIPTOR_RANGE {
+                    RangeType: to_dx12_range_type(layout.descriptor_type),
+                    NumDescriptors: layout.count,
+                    BaseShaderRegister: layout.binding,
+                    RegisterSpace: 0,
+                    OffsetInDescriptorsFromTableStart: D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND,
+                };
+
+                descriptor_ranges.push(descriptor_range);
+            }
+
+            let descriptor_table_param = D3D12_ROOT_DESCRIPTOR_TABLE {
+                NumDescriptorRanges: descriptor_ranges.len() as u32,
+                pDescriptorRanges: descriptor_ranges.as_ptr(),
+            };
+
+            *unsafe { param.u.DescriptorTable_mut() } = descriptor_table_param;
+
+            root_signature_params.push(param);
         }
+
+        // TODO: API calls to create the root sig
 
         Err(MemoryError::OutOfDeviceMemory)
     }
