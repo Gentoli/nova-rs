@@ -26,7 +26,7 @@ matches = "0.1"
 path-dsl = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-spirv_cross = "0.15.0"
+spirv_cross = { version = "0.15.0", features = ["hlsl"] }
 winapi = { git = "https://github.com/NovaMods/winapi-rs.git", rev = "c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f", features = ["basetsd","d3d12", "d3d12sdklayers","d3d12shader","d3dcommon","d3dcompiler", "dxgi1_2", "dxgi1_3","dxgi1_4", "dxgidebug", "dxgiformat","dxgitype","handleapi","minwindef","synchapi", "unknwnbase","winbase","windef","winerror","winnt","winuser"] }
 
 [dev-dependencies]
