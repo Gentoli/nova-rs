@@ -23,7 +23,7 @@ use core::mem;
 use std::collections::HashMap;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
-use winapi::shared::winerror::SUCCEEDED;
+use winapi::shared::winerror::{FAILED, SUCCEEDED};
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
@@ -117,7 +117,7 @@ impl Device for Dx12Device {
         unimplemented!()
     }
 
-    fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Dx12Queue, QueueGettingError> {
+    fn get_queue(&self, queue_type: QueueType, _queue_index: u32) -> Result<Dx12Queue, QueueGettingError> {
         let queue_type = match queue_type {
             QueueType::Graphics => D3D12_COMMAND_LIST_TYPE_DIRECT,
             QueueType::Compute => D3D12_COMMAND_LIST_TYPE_COMPUTE,
@@ -489,8 +489,55 @@ impl Device for Dx12Device {
         num_sampled_images: u32,
         num_samplers: u32,
         num_uniform_buffers: u32,
-    ) -> Result<Vec<Dx12DescriptorPool>, DescriptorPoolCreationError> {
-        unimplemented!()
+    ) -> Result<Dx12DescriptorPool, DescriptorPoolCreationError> {
+        let sampler_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC {
+            Type: D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+            NumDescriptors: num_samplers,
+            Flags: D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+            NodeMask: 0,
+        };
+
+        let mut sampler_heap = WeakPtr::<ID3D12DescriptorHeap>::null();
+        let hr = unsafe {
+            self.device.CreateDescriptorHeap(
+                &sampler_heap_desc,
+                &ID3D12DescriptorHeap::uuidof(),
+                sampler_heap.mut_void(),
+            )
+        };
+        if FAILED(hr) {
+            match hr {
+                E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
+                _ => return Err(DescriptorPoolCreationError::Fragmentation),
+            }
+        }
+
+        let cbv_srv_uav_descriptor_heap = D3D12_DESCRIPTOR_HEAP_DESC {
+            Type: D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+            NumDescriptors: num_sampled_images + num_uniform_buffers,
+            Flags: D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+            NodeMask: 0,
+        };
+
+        let mut data_heap = WeakPtr::<ID3D12DescriptorHeap>::null();
+        let hr = unsafe {
+            self.device.CreateDescriptorHeap(
+                &cbv_srv_uav_descriptor_heap,
+                &ID3D12DescriptorHeap::uuidof(),
+                data_heap.mut_void(),
+            )
+        };
+        if FAILED(hr) {
+            match hr {
+                E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
+                _ => return Err(DescriptorPoolCreationError::Fragmentation),
+            }
+        }
+
+        Ok(Dx12DescriptorPool {
+            sampler_heap,
+            data_heap,
+        })
     }
 
     fn create_pipeline(
