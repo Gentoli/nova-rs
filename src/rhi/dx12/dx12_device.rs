@@ -24,13 +24,14 @@ use std::collections::HashMap;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
 use winapi::shared::winerror::SUCCEEDED;
-use winapi::um::d3dcommon::D3D_FEATURE_LEVEL_11_0;
+use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
 use winapi::Interface;
 use winapi::{shared::winerror, um::d3d12::*};
 
 #[macro_use]
 use log::*;
 use crate::rhi::dx12::dx12_utils::to_dx12_range_type;
+use std::ptr::null;
 
 pub struct Dx12Device {
     /// Graphics adapter that we're using
@@ -439,9 +440,46 @@ impl Device for Dx12Device {
             root_signature_params.push(param);
         }
 
-        // TODO: API calls to create the root sig
+        let root_signature = D3D12_ROOT_SIGNATURE_DESC {
+            NumParameters: root_signature_params.len() as _,
+            pParameters: root_signature_params.as_ptr(),
+            NumStaticSamplers: 0,
+            pStaticSamplers: null(),
+            Flags: 0,
+        };
 
-        Err(MemoryError::OutOfDeviceMemory)
+        let mut root_sig_blob = WeakPtr::<ID3DBlob>::null();
+        let mut root_sig_error_blob = WeakPtr::<ID3DBlob>::null();
+        let hr = unsafe {
+            D3D12SerializeRootSignature(
+                &root_signature,
+                D3D_ROOT_SIGNATURE_VERSION_1_0,
+                root_sig_blob.mut_void() as *mut *mut _,
+                root_sig_error_blob.mut_void() as *mut *mut _,
+            )
+        };
+
+        if SUCCEEDED(hr) {
+            let mut root_sig = WeakPtr::<ID3D12RootSignature>::null();
+            let hr = unsafe {
+                self.device.CreateRootSignature(
+                    0,
+                    root_sig_blob.GetBufferPointer(),
+                    root_sig_blob.GetBufferSize(),
+                    &ID3D12RootSignature::uuidof(),
+                    root_sig.mut_void(),
+                )
+            };
+            if SUCCEEDED(hr) {
+                let pipeline_interface = Dx12PipelineInterface {};
+
+                Ok(pipeline_interface)
+            } else {
+                Err(MemoryError::OutOfHostMemory)
+            }
+        } else {
+            Err(MemoryError::OutOfHostMemory)
+        }
     }
 
     fn create_descriptor_pool(

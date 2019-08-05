@@ -19,4 +19,4 @@ mod dx12_semaphore;
 mod dx12_system_info;
 mod dx12_utils;
 
-pub use dx12::dx12_graphics_api::Dx12GraphicsApi;
+pub use dx12_graphics_api::Dx12GraphicsApi;
