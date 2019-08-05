@@ -507,7 +507,7 @@ impl Device for Dx12Device {
         };
         if FAILED(hr) {
             match hr {
-                E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
+                winerror::E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
                 _ => return Err(DescriptorPoolCreationError::Fragmentation),
             }
         }
@@ -545,7 +545,9 @@ impl Device for Dx12Device {
         pipeline_interface: Dx12PipelineInterface,
         data: shaderpack::PipelineCreationInfo,
     ) -> Result<Dx12Pipeline, PipelineCreationError> {
-        unimplemented!()
+        let mut shader_inputs = HashMap::<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>::new();
+
+        Err(PipelineCreationError::InvalidShader)
     }
 
     fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Dx12Image, MemoryError> {
