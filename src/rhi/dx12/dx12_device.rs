@@ -401,7 +401,7 @@ impl Device for Dx12Device {
         let mut root_signature_params = Vec::<D3D12_ROOT_PARAMETER>::new();
 
         for set in 0..num_sets {
-            let mut descriptor_layouts_opt = table_layouts.get(&(set as u32));
+            let descriptor_layouts_opt = table_layouts.get(&(set as u32));
             if descriptor_layouts_opt.is_none() {
                 warn!(
                     "No descriptors in set {}, but there should. Each pipeline _must_ use contiguous descriptor sets",
@@ -471,15 +471,17 @@ impl Device for Dx12Device {
                 )
             };
             if SUCCEEDED(hr) {
-                let pipeline_interface = Dx12PipelineInterface {};
+                let pipeline_interface = Dx12PipelineInterface {
+                    root_sig,
+                    color_attachments: color_attachments.to_vec(),
+                    depth_texture: depth_texture.clone(),
+                };
 
-                Ok(pipeline_interface)
-            } else {
-                Err(MemoryError::OutOfHostMemory)
+                return Ok(pipeline_interface);
             }
-        } else {
-            Err(MemoryError::OutOfHostMemory)
         }
+
+        Err(MemoryError::OutOfHostMemory)
     }
 
     fn create_descriptor_pool(
