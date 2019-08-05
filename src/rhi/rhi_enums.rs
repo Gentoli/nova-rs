@@ -23,8 +23,8 @@ pub enum PhysicalDeviceType {
     /// A physical GPU onboard the CPU.
     Integrated,
 
-    /// A physical separate GPU from the CPU.
-    Discreet,
+    /// A physically separate GPU from the CPU.
+    Discrete,
 
     /// Device is emulated or otherwise altered with.
     Virtual,
