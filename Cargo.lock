@@ -27,7 +27,7 @@ version = "0.3.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "backtrace-sys 0.1.31 (registry+https://github.com/rust-lang/crates.io-index)",
- "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-demangle 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -43,7 +43,12 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "1.1.0"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "bumpalo"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -53,7 +58,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cfg-if"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -71,7 +76,7 @@ name = "crossbeam"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-deque 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-epoch 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -102,7 +107,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "arrayvec 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-utils 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "memoffset 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -122,7 +127,7 @@ name = "crossbeam-utils"
 version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -149,7 +154,7 @@ dependencies = [
 [[package]]
 name = "futures-channel-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
  "futures-sink-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
@@ -158,12 +163,12 @@ dependencies = [
 [[package]]
 name = "futures-core-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 
 [[package]]
 name = "futures-executor-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
  "futures-util-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
@@ -173,12 +178,12 @@ dependencies = [
 [[package]]
 name = "futures-io-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 
 [[package]]
 name = "futures-join-macro-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "proc-macro-hack 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -189,7 +194,7 @@ dependencies = [
 [[package]]
 name = "futures-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "futures-channel-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
  "futures-core-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
@@ -202,7 +207,7 @@ dependencies = [
 [[package]]
 name = "futures-select-macro-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "proc-macro-hack 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -213,12 +218,12 @@ dependencies = [
 [[package]]
 name = "futures-sink-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 
 [[package]]
 name = "futures-util-preview"
 version = "0.3.0-alpha.18"
-source = "git+https://github.com/rust-lang-nursery/futures-rs.git#ddcb8893cf16209be9d9e2403d2e1f3df611c249"
+source = "git+https://github.com/rust-lang-nursery/futures-rs.git#d8e436316d044a82f2daced2a4b79befd13d23eb"
 dependencies = [
  "futures-channel-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
  "futures-core-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)",
@@ -239,6 +244,14 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "js-sys"
+version = "0.3.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "wasm-bindgen 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -253,7 +266,7 @@ name = "log"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -288,7 +301,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "nova-rs"
 version = "0.1.0"
 dependencies = [
- "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cgmath 0.17.0 (git+https://github.com/rustgd/cgmath.git)",
  "crossbeam 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (git+https://github.com/infinity0/failure.git)",
@@ -299,6 +312,8 @@ dependencies = [
  "path-dsl 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
+ "spirv_cross 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.7 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)",
 ]
 
 [[package]]
@@ -428,6 +443,16 @@ version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "spirv_cross"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cc 1.0.45 (registry+https://github.com/rust-lang/crates.io-index)",
+ "js-sys 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -453,15 +478,84 @@ name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
+[[package]]
+name = "wasm-bindgen"
+version = "0.2.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen-macro 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "wasm-bindgen-backend"
+version = "0.2.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bumpalo 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proc-macro2 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen-shared 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "wasm-bindgen-macro"
+version = "0.2.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen-macro-support 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "wasm-bindgen-macro-support"
+version = "0.2.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "proc-macro2 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen-backend 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasm-bindgen-shared 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "wasm-bindgen-shared"
+version = "0.2.50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "winapi"
+version = "0.3.7"
+source = "git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f#c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f"
+dependencies = [
+ "winapi-i686-pc-windows-gnu 0.4.0 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)",
+ "winapi-x86_64-pc-windows-gnu 0.4.0 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)",
+]
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
+source = "git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f#c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f"
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f#c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f"
+
 [metadata]
 "checksum approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f0e60b75072ecd4168020818c0107f2857bb6c4e64252d8d3983f6263b40a5c3"
 "checksum arrayvec 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)" = "b8d73f9beda665eaa98ab9e4f7442bd4e7de6652587de55b2525e52e29c1b0ba"
 "checksum autocfg 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "b671c8fb71b457dd4ae18c4ba1e59aa81793daacc361d82fcd410cef0d491875"
 "checksum backtrace 0.3.38 (registry+https://github.com/rust-lang/crates.io-index)" = "690a62be8920ccf773ee00ef0968649b0e724cda8bd5b12286302b4ae955fdf5"
 "checksum backtrace-sys 0.1.31 (registry+https://github.com/rust-lang/crates.io-index)" = "82a830b4ef2d1124a711c71d263c5abdc710ef8e907bd508c88be475cebc422b"
-"checksum bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3d155346769a6855b86399e9bc3814ab343cd3d62c7e985113d46a0ec3c281fd"
+"checksum bitflags 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8a606a02debe2813760609f57a64a2ffd27d9fdf5b2f133eaca0b248dd92cdd2"
+"checksum bumpalo 2.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ad807f2fc2bf185eeb98ff3a901bd46dc5ad58163d0fa4577ba0d25674d71708"
 "checksum cc 1.0.45 (registry+https://github.com/rust-lang/crates.io-index)" = "4fc9a35e1f4290eb9e5fc54ba6cf40671ed2a2514c3eeb2b2a908dda2ea5a1be"
-"checksum cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "b486ce3ccf7ffd79fdeb678eac06a9e6c09fc88d33836340becb8fffe87c5e33"
+"checksum cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 "checksum cgmath 0.17.0 (git+https://github.com/rustgd/cgmath.git)" = "<none>"
 "checksum crossbeam 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "2d818a4990769aac0c7ff1360e233ef3a41adcb009ebb2036bf6915eb0f6b23c"
 "checksum crossbeam-channel 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "c8ec7fcd21571dc78f96cc96243cab8d8f035247c3efd16c687be154c3fa9efa"
@@ -481,6 +575,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum futures-sink-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)" = "<none>"
 "checksum futures-util-preview 0.3.0-alpha.18 (git+https://github.com/rust-lang-nursery/futures-rs.git)" = "<none>"
 "checksum itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
+"checksum js-sys 0.3.27 (registry+https://github.com/rust-lang/crates.io-index)" = "1efc4f2a556c58e79c5500912e221dd826bec64ff4aabd8ce71ccef6da02d7d4"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 "checksum libc 0.2.62 (registry+https://github.com/rust-lang/crates.io-index)" = "34fcd2c08d2f832f376f4173a231990fa5aef4e99fb569867318a227ef4c06ba"
 "checksum log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)" = "14b6052be84e6b71ab17edffc2eeabf5c2c3ae1fdb464aae35ac50c67a44e1f7"
@@ -507,6 +602,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum serde_derive 1.0.101 (registry+https://github.com/rust-lang/crates.io-index)" = "4b133a43a1ecd55d4086bd5b4dc6c1751c68b1bfbeba7a5040442022c7e7c02e"
 "checksum serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)" = "051c49229f282f7c6f3813f8286cc1e3323e8051823fce42c7ea80fe13521704"
 "checksum slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
+"checksum spirv_cross 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cd72403fee8f7ec2f4f453dfbaf39ccdd4c6d0157d67d6e65513cd26cc49289f"
 "checksum syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "66850e97125af79138385e9b88339cbcd037e3f28ceab8c5ad98e64f0f1f80bf"
 "checksum synstructure 0.12.0 (git+https://github.com/NovaMods/synstructure.git?branch=cw/update-unicode-xid)" = "<none>"
 "checksum unicode-xid 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
+"checksum wasm-bindgen 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "dcddca308b16cd93c2b67b126c688e5467e4ef2e28200dc7dfe4ae284f2faefc"
+"checksum wasm-bindgen-backend 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "f805d9328b5fc7e5c6399960fd1889271b9b58ae17bdb2417472156cc9fafdd0"
+"checksum wasm-bindgen-macro 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "3ff88201a482abfc63921621f6cb18eb1efd74f136b05e5841e7f8ca434539e9"
+"checksum wasm-bindgen-macro-support 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "6a433d89ecdb9f77d46fcf00c8cf9f3467b7de9954d8710c175f61e2e245bb0e"
+"checksum wasm-bindgen-shared 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)" = "d41fc1bc3570cdf8d108c15e014045fd45a95bb5eb36605f96a90461fc34027d"
+"checksum winapi 0.3.7 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)" = "<none>"
+"checksum winapi-i686-pc-windows-gnu 0.4.0 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)" = "<none>"
+"checksum winapi-x86_64-pc-windows-gnu 0.4.0 (git+https://github.com/NovaMods/winapi-rs.git?rev=c01b5ed6674ffbfcf5e78bf597e1f7826b9d379f)" = "<none>"
