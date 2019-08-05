@@ -420,7 +420,7 @@ impl Device for Dx12Device {
             let mut descriptor_ranges = Vec::<D3D12_DESCRIPTOR_RANGE>::new();
             for layout in descriptor_layouts {
                 let descriptor_range = D3D12_DESCRIPTOR_RANGE {
-                    RangeType: to_dx12_range_type(layout.descriptor_type),
+                    RangeType: to_dx12_range_type(&layout.descriptor_type),
                     NumDescriptors: layout.count,
                     BaseShaderRegister: layout.binding,
                     RegisterSpace: 0,
