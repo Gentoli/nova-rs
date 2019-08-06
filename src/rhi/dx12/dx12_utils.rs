@@ -13,11 +13,11 @@ use log::*;
 use spirv_cross::{hlsl, spirv, ErrorCode};
 use std::ptr::null;
 use winapi::shared::winerror::FAILED;
-use winapi::um::d3d12::{ID3D12ShaderReflection, D3D12_SHADER_DESC, D3D12_SHADER_INPUT_BIND_DESC};
-use winapi::um::d3dcompiler::{
-    D3DCompile2, D3DReflect, D3DCOMPILE_ENABLE_STRICTNESS, D3DCOMPILE_IEEE_STRICTNESS, D3DCOMPILE_OPTIMIZATION_LEVEL3,
-    D3D_COMPILE_STANDARD_FILE_INCLUDE,
-};
+use winapi::um::d3d12shader::*;
+use winapi::um::d3dcompiler::*;
+
+use std::mem;
+use winapi::Interface;
 
 pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_RANGE_TYPE {
     match descriptor_type {
@@ -92,8 +92,10 @@ pub fn compile_shader(
                     )));
                 }
 
-                let mut shader_desc = D3D12_SHADER_DESC::new();
-                let hr = shader_reflector.GetDesc(&shader_desc);
+                let mut shader_desc = D3D12_SHADER_DESC {
+                    ..unsafe { mem::zeroed() }
+                };
+                let hr = shader_reflector.GetDesc(&mut shader_desc);
                 if FAILED(hr) {
                     return Err(ErrorCode::CompilationError(String::from(
                         "Could not get shader description",
@@ -101,7 +103,25 @@ pub fn compile_shader(
                 }
 
                 let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
-                for bound_resource in shader_desc.BoundResources {}
+                for i in 0..shader_desc.BoundResources {
+                    let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
+                        ..unsafe { mem::zeroed() }
+                    };
+                    let hr = shader_reflector.GetResourceBindingDesc(i, &mut binding_desc);
+                    if FAILED(hr) {
+                        return Err(ErrorCode::CompilationError(String::from(
+                            "Could not get resource binding description",
+                        )));
+                    }
+
+                    let (descriptor_type, spirv_resource, set) = match binding_desc.Type {
+                        D3D12_SIT_CBUFFER => {
+                            let descriptor_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+                            let spirv_resource = spirv_uniform_buffers[binding_desc.Name];
+                            let set = shader_compiler.get_decoration(spirv_resource.id, spv::DecorationDescriptorSet);
+                        }
+                    };
+                }
 
                 Err(ErrorCode::CompilationError(String::from(
                     "Could not create D3D12ShaderReflector",
