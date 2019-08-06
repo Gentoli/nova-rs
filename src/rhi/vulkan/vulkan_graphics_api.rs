@@ -9,6 +9,7 @@ use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
 use log::debug;
 use std::ffi;
+use std::mem;
 use std::os::raw;
 use std::rc::Rc;
 
@@ -53,6 +54,64 @@ impl VulkanGraphicsApi {
         .iter()
         .map(|n| n.as_ptr())
         .collect()
+    }
+
+    // TODO: This currently uses Vector3<f32> as a vertex, maybe this needs to be adjusted
+    pub fn get_vertex_input_binding_description() -> Vec<vk::VertexInputBindingDescription> {
+        (0..=6)
+            .map(|v| vk::VertexInputBindingDescription {
+                binding: v,
+                stride: mem::size_of::<cgmath::Vector3<f32>>() as u32,
+                input_rate: vk::VertexInputRate::VERTEX,
+            })
+            .collect()
+    }
+
+    pub fn get_vertex_input_attribute_descriptions() -> Vec<vk::VertexInputAttributeDescription> {
+        vec![
+            vk::VertexInputAttributeDescription {
+                location: 0,
+                binding: 0,
+                format: vk::Format::R32G32B32_SFLOAT,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 1,
+                binding: 0,
+                format: vk::Format::R32G32B32_SFLOAT,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 2,
+                binding: 0,
+                format: vk::Format::R32G32B32_SFLOAT,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 3,
+                binding: 0,
+                format: vk::Format::R16G16_UNORM,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 4,
+                binding: 0,
+                format: vk::Format::R8G8_UNORM,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 5,
+                binding: 0,
+                format: vk::Format::R32_UINT,
+                offset: 0,
+            },
+            vk::VertexInputAttributeDescription {
+                location: 6,
+                binding: 0,
+                format: vk::Format::R32G32B32A32_SFLOAT,
+                offset: 0,
+            },
+        ]
     }
 
     pub fn new(

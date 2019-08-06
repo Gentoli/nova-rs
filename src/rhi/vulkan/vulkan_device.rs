@@ -214,6 +214,47 @@ impl VulkanDevice {
         stage_flags as vk::ShaderStageFlags
     }
 
+    fn nova_compare_op_to_vulkan_op(compare_op: CompareOp) -> vk::CompareOp {
+        match compare_op {
+            CompareOp::Never => vk::CompareOp::NEVER,
+            CompareOp::Less => vk::CompareOp::LESS,
+            CompareOp::LessEqual => vk::CompareOp::LESS_OR_EQUAL,
+            CompareOp::Greater => vk::CompareOp::GREATER,
+            CompareOp::GreaterEqual => vk::CompareOp::GREATER_OR_EQUAL,
+            CompareOp::Equal => vk::CompareOp::EQUAL,
+            CompareOp::NotEqual => vk::CompareOp::NOT_EQUAL,
+            CompareOp::Always => vk::CompareOp::ALWAYS,
+        }
+    }
+
+    fn nova_stencil_op_to_vulkan_op(stencil_op: StencilOp) -> vk::StencilOp {
+        match stencil_op {
+            StencilOp::Keep => vk::StencilOp::KEEP,
+            StencilOp::Zero => vk::StencilOp::ZERO,
+            StencilOp::Replace => vk::StencilOp::REPLACE,
+            StencilOp::Incr => vk::StencilOp::INCREMENT_AND_CLAMP,
+            StencilOp::IncrWrap => vk::StencilOp::INCREMENT_AND_WRAP,
+            StencilOp::Decr => vk::StencilOp::DECREMENT_AND_CLAMP,
+            StencilOp::DecrWrap => vk::StencilOp::DECREMENT_AND_WRAP,
+            StencilOp::Invert => vk::StencilOp::INVERT,
+        }
+    }
+
+    fn nova_blend_factor_to_vulkan_factor(blend_factor: BlendFactor) -> vk::BlendFactor {
+        match blend_factor {
+            BlendFactor::One => vk::BlendFactor::ONE,
+            BlendFactor::Zero => vk::BlendFactor::ZERO,
+            BlendFactor::SrcColor => vk::BlendFactor::SRC_COLOR,
+            BlendFactor::DstColor => vk::BlendFactor::DST_COLOR,
+            BlendFactor::OneMinusSrcColor => vk::BlendFactor::ONE_MINUS_SRC_COLOR,
+            BlendFactor::OneMinusDstColor => vk::BlendFactor::ONE_MINUS_DST_COLOR,
+            BlendFactor::SrcAlpha => vk::BlendFactor::SRC_ALPHA,
+            BlendFactor::DstAlpha => vk::BlendFactor::DST_ALPHA,
+            BlendFactor::OneMinusSrcAlpha => vk::BlendFactor::ONE_MINUS_SRC_ALPHA,
+            BlendFactor::OneMinusDstAlpha => vk::BlendFactor::ONE_MINUS_DST_ALPHA,
+        }
+    }
+
     fn create_descriptor_set_layouts(
         &self,
         all_bindings: &HashMap<String, ResourceBindingDescription>,
@@ -262,6 +303,11 @@ impl VulkanDevice {
         }
 
         Ok(layouts)
+    }
+
+    fn create_shader_module(&self, source: &Vec<u32>) -> Result<vk::ShaderModule, vk::Result> {
+        let create_info = vk::ShaderModuleCreateInfo::builder().code(source.as_slice()).build();
+        unsafe { self.device.create_shader_module(&create_info, None) }
     }
 
     pub fn get_queue_families(&self) -> VulkanDeviceQueueFamilies {
@@ -579,18 +625,17 @@ impl Device for VulkanDevice {
 
         if cfg!(debug_assertions) {
             let object_name = vk::DebugUtilsObjectNameInfoEXT::builder()
-                .object_type(vk::ObjectType::IMAGE)
+                .object_type(vk::ObjectType::RENDER_PASS)
                 .object_handle(pass.vk_renderpass as u64)
                 .object_name(data.name.into())
                 .build();
 
-            match unsafe {
+            if let Err(result) = unsafe {
                 self.debug_utils
                     .unwrap()
                     .debug_utils_set_object_name(self.device.handle(), &object_name)
             } {
-                Err(err) => log::debug!("debug_utils_set_object_name failed: {:?}", err),
-                Ok(_) => {}
+                log::debug!("debug_utils_set_object_name failed: {:?}", result)
             }
         }
 
@@ -808,7 +853,237 @@ impl Device for VulkanDevice {
         pipeline_interface: Self::PipelineInterface,
         data: PipelineCreationInfo,
     ) -> Result<Self::Pipeline, PipelineCreationError> {
-        unimplemented!()
+        let mut shader_modules = HashMap::new();
+
+        let insert_shader_module =
+            |stage: vk::ShaderStageFlags, source: &Vec<u32>| -> Result<(), PipelineCreationError> {
+                shader_modules.insert(
+                    stage,
+                    match self.create_shader_module(source) {
+                        Err(result) => {
+                            return match result {
+                                vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(PipelineCreationError::OutOfHostMemory),
+                                vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(PipelineCreationError::OutOfDeviceMemory),
+                                vk::Result::ERROR_INVALID_SHADER_NV => Err(PipelineCreationError::InvalidShader),
+                                _ => panic!("Invalid vk result returned: {:?}", result),
+                            };
+                        }
+                        Ok(v) => v,
+                    },
+                );
+
+                Ok(())
+            };
+
+        insert_shader_module(vk::ShaderStageFlags::VERTEX, &data.vertex_shader.source)?;
+
+        if let Some(geometry_shader) = data.geometry_shader {
+            insert_shader_module(vk::ShaderStageFlags::GEOMETRY, &geometry_shader.source)?;
+        }
+
+        if let Some(tessellation_control_shader) = data.tessellation_control_shader {
+            insert_shader_module(
+                vk::ShaderStageFlags::TESSELLATION_CONTROL,
+                &tessellation_control_shader.source,
+            )?;
+        }
+
+        if let Some(tessellation_evaluation_shader) = data.tessellation_evaluation_shader {
+            insert_shader_module(
+                vk::ShaderStageFlags::TESSELLATION_EVALUATION,
+                &tessellation_evaluation_shader.source,
+            )?;
+        }
+
+        if let Some(fragment_shader) = data.fragment_shader {
+            insert_shader_module(vk::ShaderStageFlags::FRAGMENT, &fragment_shader.source)?;
+        }
+
+        let shader_stages: Vec<vk::PipelineShaderStageCreateInfo> = shader_modules
+            .iter()
+            .map(|(stage, module)| {
+                vk::PipelineShaderStageCreateInfo::builder()
+                    .stage(*stage)
+                    .module(*module)
+                    .name("main".into())
+            })
+            .collect();
+
+        let vertex_input_state_create_info = vk::PipelineVertexInputStateCreateInfo::builder()
+            .vertex_binding_descriptions(VulkanGraphicsApi::get_vertex_input_binding_description().as_slice())
+            .vertex_attribute_descriptions(VulkanGraphicsApi::get_vertex_input_attribute_descriptions().as_slice())
+            .build();
+
+        let input_assembly_create_info = vk::PipelineInputAssemblyStateCreateInfo::builder()
+            .primitive_restart_enable(false)
+            .topology(match data.primitive_mode {
+                PrimitiveTopology::Triangles => vk::PrimitiveTopology::TRIANGLE_LIST,
+                PrimitiveTopology::Lines => vk::PrimitiveTopology::LINE_LIST,
+            })
+            .build();
+
+        let swapchain_extend = self.swapchain.get_extend();
+
+        let viewport = vk::Viewport::builder()
+            .x(0f32)
+            .y(0f32)
+            .width(swapchain_extend.width as f32)
+            .height(swapchain_extend.height as f32)
+            .min_depth(0f32)
+            .max_depth(1f32)
+            .build();
+
+        let scissor = vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 0 },
+            extent: swapchain_extend,
+        };
+
+        let viewport_state_create_info = vk::PipelineViewportStateCreateInfo::builder()
+            .viewports(&[viewport])
+            .scissors(&[scissor])
+            .build();
+
+        let cull_mode = if data.states.contains(&RasterizerState::InvertCulling)
+            && !data.states.contains(&RasterizerState::DisableCulling)
+        {
+            vk::CullModeFlags::FRONT
+        } else if !data.states.contains(&RasterizerState::InvertCulling)
+            && data.states.contains(&RasterizerState::DisableCulling)
+        {
+            vk::CullModeFlags::NONE
+        } else {
+            panic!("Shaderpack data contains both disable and invert culling");
+        };
+
+        let rasterizer_create_info = vk::PipelineRasterizationStateCreateInfo::builder()
+            .rasterizer_discard_enable(false)
+            .polygon_mode(vk::PolygonMode::FILL)
+            .line_width(1f32)
+            .cull_mode(cull_mode)
+            .front_face(vk::FrontFace::CLOCKWISE)
+            .depth_bias_enable(false)
+            .depth_clamp_enable(false)
+            .depth_bias_constant_factor(data.depth_bias)
+            .depth_bias_slope_factor(data.slope_scaled_depth_bias)
+            .build();
+
+        let multisample_create_info = vk::PipelineMultisampleStateCreateInfo::builder()
+            .sample_shading_enable(false)
+            .rasterization_samples(vk::SampleCountFlags::TYPE_1)
+            .min_sample_shading(1f32)
+            .alpha_to_coverage_enable(data.states.contains(&RasterizerState::EnableAlphaToCoverage))
+            .alpha_to_one_enable(false)
+            .build();
+
+        let depth_stencil_create_info = {
+            let depth_stencil_create_info = vk::PipelineDepthStencilStateCreateInfo::builder()
+                .depth_test_enable(!data.states.contains(&RasterizerState::DisableDepthTest))
+                .depth_write_enable(!data.states.contains(&RasterizerState::DisableDepthWrite))
+                .depth_compare_op(VulkanDevice::nova_compare_op_to_vulkan_op(data.depth_func))
+                .depth_bounds_test_enable(false)
+                .stencil_test_enable(data.states.contains(&RasterizerState::EnableStencilTest));
+
+            let depth_stencil_create_info = match data.front_face {
+                Some(front_face) => depth_stencil_create_info.front(
+                    vk::StencilOpState::builder()
+                        .fail_op(VulkanDevice::nova_stencil_op_to_vulkan_op(front_face.fail_op))
+                        .pass_op(VulkanDevice::nova_stencil_op_to_vulkan_op(front_face.pass_op))
+                        .depth_fail_op(VulkanDevice::nova_stencil_op_to_vulkan_op(front_face.depth_fail_op))
+                        .compare_op(VulkanDevice::nova_compare_op_to_vulkan_op(front_face.compare_op))
+                        .compare_mask(front_face.compare_mask)
+                        .write_mask(front_face.write_mask)
+                        .build(),
+                ),
+                None => depth_stencil_create_info,
+            };
+
+            let depth_stencil_create_info = match data.back_face {
+                Some(back_face) => depth_stencil_create_info.back(
+                    vk::StencilOpState::builder()
+                        .fail_op(VulkanDevice::nova_stencil_op_to_vulkan_op(back_face.fail_op))
+                        .pass_op(VulkanDevice::nova_stencil_op_to_vulkan_op(back_face.pass_op))
+                        .depth_fail_op(VulkanDevice::nova_stencil_op_to_vulkan_op(back_face.depth_fail_op))
+                        .compare_op(VulkanDevice::nova_compare_op_to_vulkan_op(back_face.compare_op))
+                        .compare_mask(back_face.compare_mask)
+                        .write_mask(back_face.write_mask)
+                        .build(),
+                ),
+                None => depth_stencil_create_info,
+            };
+
+            depth_stencil_create_info.build()
+        };
+
+        let color_blend_attachment = vk::PipelineColorBlendAttachmentState::builder()
+            .color_write_mask(
+                vk::ColorComponentFlags::R
+                    | vk::ColorComponentFlags::G
+                    | vk::ColorComponentFlags::B
+                    | vk::ColorComponentFlags::A,
+            )
+            .blend_enable(true)
+            .src_color_blend_factor(VulkanDevice::nova_blend_factor_to_vulkan_factor(data.src_blend_factor))
+            .dst_color_blend_factor(VulkanDevice::nova_blend_factor_to_vulkan_factor(data.dst_blend_factor))
+            .color_blend_op(vk::BlendOp::ADD)
+            .src_alpha_blend_factor(VulkanDevice::nova_blend_factor_to_vulkan_factor(data.alpha_src))
+            .dst_alpha_blend_factor(VulkanDevice::nova_blend_factor_to_vulkan_factor(data.alpha_dst))
+            .alpha_blend_op(vk::BlendOp::ADD)
+            .build();
+
+        let color_blend_create_info = vk::PipelineColorBlendStateCreateInfo::builder()
+            .logic_op_enable(false)
+            .logic_op(vk::LogicOp::COPY) // TODO: Is this even required when `logic_op_enable = false`?
+            .attachments(&[color_blend_attachment])
+            .blend_constants([0f32, 0f32, 0f32, 0f32])
+            .build();
+
+        let pipeline_create_info = vk::GraphicsPipelineCreateInfo::builder()
+            .stages(shader_stages.as_slice())
+            .vertex_input_state(&vertex_input_state_create_info)
+            .input_assembly_state(&input_assembly_create_info)
+            .viewport_state(&viewport_state_create_info)
+            .rasterization_state(&rasterizer_create_info)
+            .multisample_state(&multisample_create_info)
+            .depth_stencil_state(&depth_stencil_create_info)
+            .color_blend_state(&color_blend_create_info)
+            .layout(pipeline_interface.vk_pipeline_layout)
+            .render_pass(pipeline_interface.ren)
+            .subpass(0)
+            .base_pipeline_index(-1)
+            .build();
+
+        let pipeline = match unsafe {
+            self.device
+                .create_graphics_pipelines(vk::PipelineCache::null(), &[pipeline_create_info], None)
+        } {
+            Err((_, result)) => {
+                return match result {
+                    vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(PipelineCreationError::OutOfHostMemory),
+                    vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(PipelineCreationError::OutOfDeviceMemory),
+                    vk::Result::ERROR_INVALID_SHADER_NV => Err(PipelineCreationError::InvalidShader),
+                    _ => panic!("Invalid vk result returned: {:?}", result),
+                };
+            }
+            Ok(mut v) => v.remove(0),
+        };
+
+        if cfg!(debug_assertions) {
+            let object_name = vk::DebugUtilsObjectNameInfoEXT::builder()
+                .object_handle(pipeline as u64)
+                .object_type(vk::ObjectType::PIPELINE)
+                .object_name(data.name.clone().into())
+                .build();
+
+            if let Err(result) = unsafe {
+                self.debug_utils
+                    .unwrap()
+                    .debug_utils_set_object_name(self.device.handle(), &object_name)
+            } {
+                log::debug!("debug_utils_set_object_name failed: {:?}", result);
+            }
+        }
+
+        Ok(VulkanPipeline { vk_pipeline: pipeline })
     }
 
     fn create_image(&self, data: TextureCreateInfo) -> Result<Self::Image, MemoryError> {
