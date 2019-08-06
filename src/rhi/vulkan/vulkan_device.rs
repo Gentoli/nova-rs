@@ -802,8 +802,20 @@ impl Device for VulkanDevice {
             .attachments(attachment_descriptions.as_slice())
             .build();
 
+        let renderpass = match unsafe { self.device.create_render_pass(&render_pass_create_info, None) } {
+            Err(result) => {
+                return match result {
+                    vk::Result::ERROR_OUT_OF_HOST_MEMORY => Err(MemoryError::OutOfHostMemory),
+                    vk::Result::ERROR_OUT_OF_DEVICE_MEMORY => Err(MemoryError::OutOfDeviceMemory),
+                    _ => panic!("Invalid vk result returned: {:?}", result),
+                };
+            }
+            Ok(v) => v,
+        };
+
         Ok(VulkanPipelineInterface {
             vk_pipeline_layout: pipeline_layout,
+            vk_renderpass: renderpass,
             bindings: bindings.clone(),
             layouts_by_set,
         })
