@@ -72,7 +72,9 @@ pub fn compile_shader(
                     )
                 };
                 if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError("DirectX shader compiler error"));
+                    return Err(ErrorCode::CompilationError(String::from(
+                        "DirectX shader compiler error",
+                    )));
                 }
 
                 let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
@@ -85,27 +87,33 @@ pub fn compile_shader(
                     )
                 };
                 if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError("Could not create D3D12ShaderReflector"));
+                    return Err(ErrorCode::CompilationError(String::from(
+                        "Could not create D3D12ShaderReflector",
+                    )));
                 }
 
                 let mut shader_desc = D3D12_SHADER_DESC::new();
                 let hr = shader_reflector.GetDesc(&shader_desc);
                 if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError("Could not get shader description"));
+                    return Err(ErrorCode::CompilationError(String::from(
+                        "Could not get shader description",
+                    )));
                 }
 
                 let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
                 for bound_resource in shader_desc.BoundResources {}
 
-                Err(ErrorCode::CompilationError("Could not create D3D12ShaderReflector"))
+                Err(ErrorCode::CompilationError(String::from(
+                    "Could not create D3D12ShaderReflector",
+                )))
             });
         }
         Err(e) => match e {
             spirv_cross::ErrorCode::Unhandled => {
-                warn!("Unhandled error when compiling shader {}", shader.filename.to_str())
+                warn!("Unhandled error when compiling shader {:?}", shader.filename.to_str())
             }
             spirv_cross::ErrorCode::CompilationError(err) => warn!(
-                "Compilation error {} when compiling shader {}",
+                "Compilation error {} when compiling shader {:?}",
                 err,
                 shader.filename.to_str()
             ),
@@ -114,5 +122,5 @@ pub fn compile_shader(
 
     let blob = WeakPtr::<ID3DBlob>::null();
 
-    blob
+    Ok(blob)
 }
