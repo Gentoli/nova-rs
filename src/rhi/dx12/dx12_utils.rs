@@ -1,4 +1,5 @@
-#[allow(unsafe_code)]
+#![allow(unsafe_code)]
+
 use crate::rhi::DescriptorType;
 
 use crate::rhi::dx12::com::WeakPtr;
@@ -9,11 +10,12 @@ use winapi::um::d3dcommon::ID3DBlob;
 
 #[macro_use]
 use log::*;
-use spirv_cross::{hlsl, spirv};
+use spirv_cross::{hlsl, spirv, ErrorCode};
 use std::ptr::null;
 use winapi::shared::winerror::FAILED;
+use winapi::um::d3d12::{ID3D12ShaderReflection, D3D12_SHADER_DESC, D3D12_SHADER_INPUT_BIND_DESC};
 use winapi::um::d3dcompiler::{
-    D3DCompile2, D3DCOMPILE_ENABLE_STRICTNESS, D3DCOMPILE_IEEE_STRICTNESS, D3DCOMPILE_OPTIMIZATION_LEVEL3,
+    D3DCompile2, D3DReflect, D3DCOMPILE_ENABLE_STRICTNESS, D3DCOMPILE_IEEE_STRICTNESS, D3DCOMPILE_OPTIMIZATION_LEVEL3,
     D3D_COMPILE_STANDARD_FILE_INCLUDE,
 };
 
@@ -31,7 +33,8 @@ pub fn compile_shader(
     options: hlsl::CompilerOptions,
     tables: &HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
 ) -> Result<WeakPtr<ID3DBlob>, spirv_cross::ErrorCode> {
-    let shader_compiler = spirv::Ast::<hlsl::Target>::parse(spirv::Module::new(shader.source));
+    let shader_module = spirv::Module::from_words(&shader.source);
+    let shader_compiler = spirv::Ast::<hlsl::Target>::parse(&shader_module);
     match shader_compiler.and_then(|ast| ast.get_shader_resources()) {
         Ok(resources) => {
             let mut spirv_sampled_images = HashMap::<String, spirv::Resource>::new();
@@ -52,27 +55,49 @@ pub fn compile_shader(
 
                 let hr = unsafe {
                     D3DCompile2(
-                        &shader_hlsl as _,
+                        shader_hlsl.as_ptr() as _,
                         shader_hlsl.len(),
-                        shader.filename.into_os_string().as_bytes() as _,
+                        shader.filename.into_os_string().as_ptr() as _,
                         null,
                         D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                        "main".as_bytes() as _,
-                        target.as_bytes() as _,
+                        "main".as_ptr() as _,
+                        target.as_ptr() as _,
                         D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
                         0,
                         0,
-                        null,
+                        null as _,
                         0,
-                        shader_blob.GetBufferPointer(),
-                        shader_error_blob.GetBufferPointer,
+                        shader_blob.GetBufferPointer() as _,
+                        shader_error_blob.GetBufferPointer() as _,
                     )
                 };
                 if FAILED(hr) {
-                    return Err("DirectX shader compiler error");
+                    return Err(ErrorCode::CompilationError("DirectX shader compiler error"));
                 }
 
-                // TODO: D3D12ShaderReflection
+                let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
+                let hr = unsafe {
+                    D3DReflect(
+                        shader_blob.GetBufferPointer(),
+                        shader_blob.GetBufferSize(),
+                        &ID3D12ShaderReflection::uuidof(),
+                        shader_reflector.mut_void(),
+                    )
+                };
+                if FAILED(hr) {
+                    return Err(ErrorCode::CompilationError("Could not create D3D12ShaderReflector"));
+                }
+
+                let mut shader_desc = D3D12_SHADER_DESC::new();
+                let hr = shader_reflector.GetDesc(&shader_desc);
+                if FAILED(hr) {
+                    return Err(ErrorCode::CompilationError("Could not get shader description"));
+                }
+
+                let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
+                for bound_resource in shader_desc.BoundResources {}
+
+                Err(ErrorCode::CompilationError("Could not create D3D12ShaderReflector"))
             });
         }
         Err(e) => match e {
