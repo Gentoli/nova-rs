@@ -2,23 +2,29 @@
 
 use crate::rhi::shaderpack::*;
 use crate::rhi::vulkan::vulkan_command_allocator::VulkanCommandAllocator;
+use crate::rhi::vulkan::vulkan_descriptor_pool::VulkanDescriptorPool;
+use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
+use crate::rhi::vulkan::vulkan_image::VulkanImage;
 use crate::rhi::vulkan::vulkan_memory::VulkanMemory;
+use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
+use crate::rhi::vulkan::vulkan_pipeline_interface::VulkanPipelineInterface;
 use crate::rhi::vulkan::vulkan_queue::VulkanQueue;
 use crate::rhi::vulkan::vulkan_renderpass::VulkanRenderPass;
 use crate::rhi::vulkan::vulkan_swapchain::VulkanSwapchain;
 use crate::rhi::*;
 
-use crate::rhi::vulkan::vulkan_descriptor_pool::VulkanDescriptorPool;
-use crate::rhi::vulkan::vulkan_framebuffer::VulkanFramebuffer;
-use crate::rhi::vulkan::vulkan_image::VulkanImage;
-use crate::rhi::vulkan::vulkan_pipeline::VulkanPipeline;
-use crate::rhi::vulkan::vulkan_pipeline_interface::VulkanPipelineInterface;
-use ash::version::DeviceV1_0;
+use ash::extensions::ext::DebugReport;
+use ash::extensions::khr::Swapchain;
+use ash::version::{DeviceV1_0, InstanceV1_0};
 use ash::vk;
 use cgmath::Vector2;
-use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use std::process::exit;
+
+#[cfg(all(unix, not(target_os = "android")))]
+use ash::extensions::khr::XlibSurface;
+
+#[cfg(windows)]
+use ash::extensions::khr::Win32Surface;
 
 #[derive(Clone, Copy, Debug)]
 pub struct VulkanDeviceQueueFamilies {
@@ -53,30 +59,119 @@ pub struct VulkanDevice {
 impl VulkanDevice {
     pub fn new(
         instance: ash::Instance,
-        device: ash::Device,
+        phys_device: vk::PhysicalDevice,
+        surface: vk::SurfaceKHR,
         debug_utils: Option<ash::extensions::ext::DebugUtils>,
-        graphics_queue_family_index: u32,
-        transfer_queue_family_index: u32,
-        compute_queue_family_index: u32,
-        swapchain: VulkanSwapchain,
-        memory_properties: vk::PhysicalDeviceMemoryProperties,
+        entry: ash::Entry,
     ) -> Result<VulkanDevice, DeviceCreationError> {
-        let mut device = VulkanDevice {
-            instance,
-            device,
-            debug_utils,
-            queue_families: VulkanDeviceQueueFamilies {
-                graphics_queue_family_index,
-                transfer_queue_family_index,
-                compute_queue_family_index,
-            },
-            memory_properties,
-            swapchain,
+        let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
+        let queue_family_props = unsafe { instance.get_physical_device_queue_family_properties(phys_device) };
 
-            allocated_memory: Vec::new(),
+        let mut graphics_queue_family_index = std::u32::MAX;
+        let mut compute_queue_family_index = std::u32::MAX;
+        let mut transfer_queue_family_index = std::u32::MAX;
+
+        for (index, props) in queue_family_props.iter().enumerate() {
+            if !unsafe { surface_loader.get_physical_device_surface_support(phys_device, index as u32, surface) } {
+                continue;
+            }
+
+            if graphics_queue_family_index == std::u32::MAX && props.queue_flags & vk::QueueFlags::GRAPHICS != 0u32 {
+                graphics_queue_family_index = index as u32
+            }
+
+            if compute_queue_family_index == std::u32::MAX && props.queue_flags & vk::QueueFlags::COMPUTE != 0u32 {
+                compute_queue_family_index = index as u32
+            }
+
+            if transfer_queue_family_index == std::u32::MAX && props.queue_flags & vk::QueueFlags::TRANSFER != 0u32 {
+                transfer_queue_family_index = index as u32
+            }
+        }
+
+        let graphics_queue_create_info = vk::DeviceQueueCreateInfo::builder()
+            .queue_family_index(graphics_queue_family_index)
+            .queue_priorities(&[1.0f32])
+            .build();
+
+        let transfer_queue_create_info = vk::DeviceQueueCreateInfo::builder()
+            .queue_family_index(transfer_queue_family_index)
+            .queue_priorities(&[1.0f32])
+            .build();
+        let compute_queue_create_info = vk::DeviceQueueCreateInfo::builder()
+            .queue_family_index(compute_queue_family_index)
+            .queue_priorities(&[1.0f32])
+            .build();
+
+        let queue_create_infos = [
+            graphics_queue_create_info,
+            transfer_queue_create_info,
+            compute_queue_create_info,
+        ];
+
+        let physical_device_features = vk::PhysicalDeviceFeatures::builder()
+            .geometry_shader(true)
+            .tessellation_shader(true)
+            .sampler_anisotropy(true)
+            .build();
+
+        let device_create_info = vk::DeviceCreateInfo::builder()
+            .queue_create_infos(&queue_create_infos)
+            .enabled_features(&physical_device_features)
+            .enabled_extension_names(&[Swapchain::name()])
+            .enabled_layer_names(VulkanGraphicsApi::get_layer_names().as_slice())
+            .build();
+
+        let swapchain = match VulkanSwapchain::new(phys_device, surface_loader.clone(), surface) {
+            Err(_) => return Err(DeviceCreationError::Failed),
+            Ok(v) => v,
         };
 
-        Ok(device)
+        match unsafe { instance.create_device(phys_device, &device_create_info, None) } {
+            Err(_) => Err(DeviceCreationError::Failed),
+            Ok(device) => Ok(VulkanDevice {
+                instance,
+                device,
+                debug_utils,
+                queue_families: VulkanDeviceQueueFamilies {
+                    graphics_queue_family_index,
+                    transfer_queue_family_index,
+                    compute_queue_family_index,
+                },
+                memory_properties: unsafe { instance.get_physical_device_memory_properties(phys_device) },
+                swapchain,
+
+                allocated_memory: Vec::new(),
+            }),
+        }
+    }
+
+    fn supports_needed_extensions(&self) -> bool {
+        let available_extensions =
+            match unsafe { self.instance.enumerate_device_extension_properties(self.phys_device) } {
+                Ok(extensions) => extensions,
+                Err(_) => Vec::new(),
+            };
+
+        let mut needed_extensions = get_needed_extensions();
+
+        for ext in available_extensions {
+            needed_extensions.remove(ext.extension_name);
+        }
+
+        needed_extensions.is_empty()
+    }
+
+    fn get_manufacturer(&self, properties: &vk::PhysicalDeviceProperties) -> PhysicalDeviceManufacturer {
+        match properties.vendor_id {
+            // see http://vulkan.gpuinfo.org/
+            // and https://www.reddit.com/r/vulkan/comments/4ta9nj/is_there_a_comprehensive_list_of_the_names_and/
+            //  (someone find a better link here than reddit)
+            0x1002 => PhysicalDeviceManufacturer::AMD,
+            0x10DE => PhysicalDeviceManufacturer::Nvidia,
+            0x8086 => PhysicalDeviceManufacturer::Intel,
+            _ => PhysicalDeviceManufacturer::Other,
+        }
     }
 
     fn find_memory_by_flags(&self, memory_flags: vk::MemoryPropertyFlags, exact: bool) -> Option<u32> {
@@ -186,6 +281,48 @@ impl Device for VulkanDevice {
     type Pipeline = VulkanPipeline;
     type Semaphore = ();
     type Fence = ();
+
+    fn get_properties(&self) -> DeviceProperties {
+        let properties: vk::PhysicalDeviceProperties =
+            unsafe { self.instance.get_physical_device_properties(self.phys_device) };
+        DeviceProperties {
+            manufacturer: self.get_manufacturer(&properties),
+            device_id: properties.device_id,
+            device_name: String::from(properties.device_name),
+            device_type: match properties.device_type {
+                vk::PhysicalDeviceType::INTEGRATED_GPU => PhysicalDeviceType::Integrated,
+                vk::PhysicalDeviceType::DISCRETE_GPU => PhysicalDeviceType::Discreet,
+                vk::PhysicalDeviceType::VIRTUAL_GPU => PhysicalDeviceType::Virtual,
+                vk::PhysicalDeviceType::CPU => PhysicalDeviceType::CPU,
+                vk::PhysicalDeviceType::OTHER => PhysicalDeviceType::Other,
+            },
+            max_color_attachments: properties.limits.max_color_attachments,
+        }
+    }
+
+    fn can_be_used_by_nova(&self) -> bool {
+        if !self.supports_needed_extensions() {
+            false
+        }
+
+        self.graphics_queue_family_index != std::usize::MAX
+            && self.transfer_queue_family_index != std::usize::MAX
+            && self.compute_queue_family_index != std::usize::MAX
+    }
+
+    fn get_free_memory(&self) -> u64 {
+        // TODO: This just return all available memory, vulkan does not provide a way to query free memory
+        //       on windows this could be done using DXGI (also works with vulkan according to stackoverflow),
+        //       for linux a way has yet to be found
+        let properties: vk::PhysicalDeviceMemoryProperties =
+            unsafe { self.instance.get_physical_device_memory_properties(self.phys_device) };
+        properties
+            .memory_heaps
+            .iter()
+            .filter(|h| h.flags & vk::MemoryHeapFlags::DEVICE_LOCAL)
+            .map(|h| h.size)
+            .sum()
+    }
 
     fn get_queue(&self, queue_type: QueueType, queue_index: u32) -> Result<Self::Queue, QueueGettingError> {
         if queue_index > 0 {
@@ -705,4 +842,22 @@ impl Device for VulkanDevice {
     fn update_descriptor_sets(&self, updates: Vec<DescriptorSetWrite>) {
         unimplemented!()
     }
+}
+
+#[cfg(all(unix, not(target_os = "android")))]
+pub fn get_needed_extensions() -> Vec<*const u8> {
+    vec![
+        Swapchain::name().as_ptr(),
+        XlibSurface::name().as_ptr(),
+        DebugReport::name().as_ptr(),
+    ]
+}
+
+#[cfg(windows)]
+pub fn get_needed_extensions() -> Vec<*const u8> {
+    vec![
+        Swapchain::name().as_ptr(),
+        Win32Surface::name().as_ptr(),
+        DebugReport::name().as_ptr(),
+    ]
 }

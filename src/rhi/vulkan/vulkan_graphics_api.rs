@@ -1,10 +1,9 @@
 #![allow(unsafe_code)]
-use crate::rhi::vulkan::vulkan_physical_device;
-use crate::rhi::vulkan::vulkan_physical_device::VulkanPhysicalDevice;
-use crate::rhi::PhysicalDevice;
+use crate::rhi::vulkan::vulkan_device;
+use crate::rhi::vulkan::vulkan_device::VulkanDevice;
 use crate::rhi::*;
-
 use crate::surface::{Surface, SurfaceError};
+
 use ash::extensions::ext::DebugReport;
 use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::vk;
@@ -63,7 +62,7 @@ impl VulkanGraphicsApi {
     ) -> Result<VulkanGraphicsApi, VulkanGraphicsApiCreationError> {
         let layer_names_raw = VulkanGraphicsApi::get_layer_names().as_slice();
 
-        let extension_names_raw = vulkan_physical_device::get_needed_extensions();
+        let extension_names_raw = vulkan_device::get_needed_extensions();
 
         let application_info = vk::ApplicationInfo::builder()
             .application_name(&application_name.into())
@@ -147,10 +146,10 @@ impl VulkanGraphicsApi {
 }
 
 impl GraphicsApi for VulkanGraphicsApi {
-    type PhysicalDevice = VulkanPhysicalDevice;
+    type Device = VulkanDevice;
     type PlatformSurface = vk::SurfaceKHR;
 
-    fn get_adapters(&self) -> Vec<VulkanPhysicalDevice> {
+    fn get_adapters(&self) -> Vec<VulkanDevice> {
         let devices = unsafe { self.instance.enumerate_physical_devices() };
         if devices.is_err() {
             // TODO: The current trait doesn't allow us to return an error, what to do?
@@ -161,7 +160,7 @@ impl GraphicsApi for VulkanGraphicsApi {
             .unwrap()
             .iter()
             .map(|d| {
-                VulkanPhysicalDevice::new(
+                VulkanDevice::new(
                     self.instance,
                     *d,
                     self.surface.clone(),

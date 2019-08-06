@@ -25,7 +25,6 @@ mod vulkan {
     mod vulkan_framebuffer;
     mod vulkan_image;
     mod vulkan_memory;
-    mod vulkan_physical_device;
     mod vulkan_pipeline;
     mod vulkan_pipeline_interface;
     mod vulkan_queue;
