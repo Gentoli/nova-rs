@@ -1,7 +1,6 @@
 use cgmath::Vector2;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// A fully parsed Nova Shaderpack
 #[derive(Debug, Clone)]

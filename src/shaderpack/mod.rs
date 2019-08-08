@@ -3,9 +3,7 @@
 use crate::loading::{DirectoryFileTree, FileTree, LoadingError};
 use failure::Error;
 use failure::Fail;
-use futures::future::{join_all, RemoteHandle};
 use futures::task::SpawnExt;
-use futures::StreamExt;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -13,8 +11,10 @@ use std::path::{Path, PathBuf};
 mod structs;
 pub use structs::*;
 
+/// Failure type for shaderpack loading.
 #[derive(Fail, Debug)]
 pub enum ShaderpackLoadingFailure {
+    /// Path to the root of the shaderpack not found
     #[fail(display = "Path to shaderpack not found: {:?}", _0)]
     PathNotFound(PathBuf),
 

@@ -2,7 +2,7 @@ use crate::fs;
 use crate::fs::dir::DirectoryTree;
 use failure::{Backtrace, Fail};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub enum FileSystemOp {

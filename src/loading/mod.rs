@@ -9,7 +9,6 @@
 use failure::{Error, Fail};
 use futures::Future;
 use std::path::{Path, PathBuf};
-use std::pin::Pin;
 
 mod dir;
 

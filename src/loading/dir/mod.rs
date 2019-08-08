@@ -79,7 +79,7 @@ impl FileTree for DirectoryFileTree {
     fn read_dir(&self, path: &Path) -> Result<HashSet<PathBuf>, LoadingError> {
         match self.get_node_at_location(path) {
             Some(DirectoryEntry::File) => Err(LoadingError::NotDirectory),
-            Some(DirectoryEntry::Directory { entries: map }) => Ok(map.keys().map(|p| PathBuf::from(p)).collect()),
+            Some(DirectoryEntry::Directory { entries: map }) => Ok(map.keys().map(PathBuf::from).collect()),
             None => Err(LoadingError::PathNotFound),
         }
     }
