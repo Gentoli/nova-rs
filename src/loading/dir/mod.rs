@@ -3,8 +3,10 @@ use crate::fs::dir::{DirectoryEntry, DirectoryTree};
 use crate::loading::{FileTree, LoadingError};
 use futures::Future;
 use matches::matches;
+use std::collections::HashSet;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::pin::Pin;
 use std::sync::Arc;
 
 mod iter;
@@ -12,8 +14,6 @@ mod reactor;
 
 pub use iter::*;
 use reactor::*;
-use std::collections::HashSet;
-use std::pin::Pin;
 
 /// File tree structure representing a filesystem directory.
 ///
@@ -37,7 +37,7 @@ impl DirectoryFileTree {
 impl FileTree for DirectoryFileTree {
     fn from_path(path: &Path) -> Self::FromPathResult {
         let path = path.to_path_buf();
-        async move {
+        Pin::from(Box::new(async move {
             if !path.exists() {
                 return Err(LoadingError::ResourceNotFound);
             }
@@ -56,9 +56,9 @@ impl FileTree for DirectoryFileTree {
                 FileSystemOpResult::Error(err) => Err(LoadingError::FileSystemError { sub_error: err.into() }),
                 _ => panic!("Incorrect directory action response received"),
             }
-        }
+        }))
     }
-    type FromPathResult = impl Future<Output = Result<Self, LoadingError>> + Send;
+    type FromPathResult = Pin<Box<dyn Future<Output = Result<Self, LoadingError>> + Send>>;
 
     fn exists(&self, path: &Path) -> bool {
         self.get_node_at_location(path).is_some()
@@ -107,7 +107,7 @@ impl FileTree for DirectoryFileTree {
             }
         }))
     }
-    type ReadResult = impl Future<Output = Result<Vec<u8>, LoadingError>> + Send;
+    type ReadResult = Pin<Box<dyn Future<Output = Result<Vec<u8>, LoadingError>> + Send>>;
 
     fn read_u32(&self, path: &Path) -> Self::ReadU32Result {
         let path = path.to_owned();
@@ -132,7 +132,7 @@ impl FileTree for DirectoryFileTree {
             }
         }))
     }
-    type ReadU32Result = impl Future<Output = Result<Vec<u32>, LoadingError>> + Send;
+    type ReadU32Result = Pin<Box<dyn Future<Output = Result<Vec<u32>, LoadingError>> + Send>>;
 
     fn read_text(&self, path: &Path) -> Self::ReadTextResult {
         let path = path.to_owned();
@@ -157,5 +157,5 @@ impl FileTree for DirectoryFileTree {
             }
         }))
     }
-    type ReadTextResult = impl Future<Output = Result<String, LoadingError>> + Send;
+    type ReadTextResult = Pin<Box<dyn Future<Output = Result<String, LoadingError>> + Send>>;
 }
