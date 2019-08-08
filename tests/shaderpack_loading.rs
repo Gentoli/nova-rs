@@ -1,12 +1,19 @@
-use futures::executor::block_on;
+use futures::executor::{block_on, ThreadPoolBuilder};
 use nova_rs::shaderpack::*;
 use std::path::PathBuf;
 
 #[test]
 fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
-    let mut parsed: ShaderpackData = block_on(load_nova_shaderpack(PathBuf::from(
-        "tests/data/shaderpacks/nova/DefaultShaderpack",
-    )))?;
+    let mut threadpool = ThreadPoolBuilder::new()
+        .name_prefix("default_nova_shaderpack")
+        .create()
+        .unwrap();
+    let threadpool2 = threadpool.clone();
+
+    let mut parsed: ShaderpackData = threadpool.run(load_nova_shaderpack(
+        threadpool2,
+        PathBuf::from("tests/data/shaderpacks/nova/DefaultShaderpack"),
+    ))?;
 
     // Renderpass checking
     {

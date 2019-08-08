@@ -3,12 +3,14 @@
 use crate::loading::{DirectoryFileTree, FileTree, LoadingError};
 use failure::Error;
 use failure::Fail;
+use futures::future::{join_all, RemoteHandle};
+use futures::task::SpawnExt;
 use futures::StreamExt;
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 mod structs;
-use std::collections::HashSet;
 pub use structs::*;
 
 #[derive(Fail, Debug)]
@@ -50,7 +52,10 @@ pub enum ShaderpackLoadingFailure {
     },
 }
 
-pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, ShaderpackLoadingFailure> {
+pub async fn load_nova_shaderpack<E>(executor: E, path: PathBuf) -> Result<ShaderpackData, ShaderpackLoadingFailure>
+where
+    E: SpawnExt + Clone + 'static,
+{
     match (
         path.exists(),
         path.is_dir(),
@@ -65,7 +70,7 @@ pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, Shade
                 }
                 e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
             })?;
-            load_nova_shaderpack_impl(&file_tree).await
+            load_nova_shaderpack_impl(executor, file_tree).await
         }
         (true, false, Some("zip")) => unimplemented!(),
         (true, false, Some(ext)) => Err(ShaderpackLoadingFailure::UnsupportedExtension(ext.to_owned())),
@@ -74,31 +79,84 @@ pub async fn load_nova_shaderpack(path: PathBuf) -> Result<ShaderpackData, Shade
     }
 }
 
-async fn load_nova_shaderpack_impl<'a, T: FileTree<'a>>(
-    tree: &'a T,
-) -> Result<ShaderpackData, ShaderpackLoadingFailure> {
-    let passes: Vec<RenderPassCreationInfo> = load_json(tree, &"passes.json").await?;
-    let resources: ShaderpackResourceData = load_json(tree, &"resources.json").await?;
-    let materials_folder = enumerate_folder(tree, &"materials")?;
-    let mut materials: Vec<MaterialData> = Vec::new();
-    let mut pipelines: Vec<PipelineCreationInfo> = Vec::new();
+macro_rules! shaderpack_load_invoke {
+    ( into: $typ:ty, $exec:expr, $($args:expr),* ) => {
+        $exec.spawn_with_handle(load_json::<$typ, T>($($args),*)).unwrap()
+    };
+}
+
+macro_rules! await_result_vector {
+    ($vec:expr ) => {
+        {
+            let mut vec = Vec::new();
+            vec.reserve($vec.len());
+            for f in $vec {
+                vec.push(f.await?);
+            }
+            vec
+        }
+    };
+    ( $($vec:expr),+ ) => {
+        ($(await_result_vector!($vec)),*)
+    };
+}
+
+async fn load_nova_shaderpack_impl<E, T>(mut executor: E, tree: T) -> Result<ShaderpackData, ShaderpackLoadingFailure>
+where
+    E: SpawnExt + Clone + 'static,
+    T: FileTree + Send + Clone + 'static,
+{
+    // //////////// //
+    // Job Creation //
+    // //////////// //
+    let passes_fut = shaderpack_load_invoke!(
+        into: Vec<RenderPassCreationInfo>,
+        executor,
+        tree.clone(),
+        "passes.json".into()
+    );
+
+    let resources_fut = shaderpack_load_invoke!(
+        into: ShaderpackResourceData,
+        executor,
+        tree.clone(),
+        "resources.json".into()
+    );
+
+    let materials_folder = enumerate_folder(&tree, "materials")?;
+
+    let mut materials_futs = Vec::new();
+    let mut pipelines_futs = Vec::new();
+
     for path in materials_folder {
         let full_path = {
             let mut p = PathBuf::new();
             p.push("materials");
-            p.push(path);
+            p.push(&path);
             p
         };
-
         let ext = path.extension().and_then(|s| s.to_str());
         match ext {
-            Some("mat") => materials.push(load_json(tree, full_path).await?),
-            Some("pipeline") => pipelines.push(load_json(tree, full_path).await?),
+            Some("mat") => {
+                let fut = shaderpack_load_invoke!(into: MaterialData, executor, tree.clone(), full_path);
+                materials_futs.push(fut)
+            }
+            Some("pipeline") => {
+                let fut = shaderpack_load_invoke!(into: PipelineCreationInfo, executor, tree.clone(), full_path);
+                pipelines_futs.push(fut)
+            }
             _ => {}
         }
     }
+    // ////////////// //
+    // Job Resolution //
+    // ////////////// //
 
+    let passes = passes_fut.await?;
+    let resources = resources_fut.await?;
+    let mut materials = await_result_vector!(materials_futs);
     material_postprocess(&mut materials);
+    let pipelines = await_result_vector!(pipelines_futs);
 
     Ok(ShaderpackData {
         passes,
@@ -116,35 +174,30 @@ fn material_postprocess(materials: &mut [MaterialData]) {
     }
 }
 
-fn enumerate_folder<'a, T, P>(tree: &'a T, path: P) -> Result<HashSet<&'a Path>, ShaderpackLoadingFailure>
+fn enumerate_folder<T, P>(tree: &T, path: P) -> Result<HashSet<PathBuf>, ShaderpackLoadingFailure>
 where
-    T: FileTree<'a>,
+    T: FileTree,
     P: AsRef<Path> + Into<OsString>,
 {
-    tree.read_dir(path.as_ref())
-        .map_err(|err| match err {
-            LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingDirectory(path.into()),
-            LoadingError::FileSystemError { sub_error: e } => {
-                ShaderpackLoadingFailure::FileSystemError { sub_error: e }
-            }
-            e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
-        })
-        .map(|iter| iter.collect())
+    tree.read_dir(path.as_ref()).map_err(|err| match err {
+        LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingDirectory(path.into()),
+        LoadingError::FileSystemError { sub_error: e } => ShaderpackLoadingFailure::FileSystemError { sub_error: e },
+        e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
+    })
 }
 
-async fn load_json<'a, R, T, P>(tree: &'a T, path: P) -> Result<R, ShaderpackLoadingFailure>
+async fn load_json<R, T>(tree: T, path: PathBuf) -> Result<R, ShaderpackLoadingFailure>
 where
-    R: serde::de::DeserializeOwned,
-    T: FileTree<'a>,
-    P: AsRef<Path>,
+    R: serde::de::DeserializeOwned + Send,
+    T: FileTree + Send,
 {
     let rp_file_result: Result<Vec<u8>, _> = tree.read(path.as_ref()).await;
     let rp_file = rp_file_result.map_err(|err| match err {
-        LoadingError::NotFile => ShaderpackLoadingFailure::NotFile(path.as_ref().into()),
+        LoadingError::NotFile => ShaderpackLoadingFailure::NotFile(path.clone().into_os_string()),
         LoadingError::FileSystemError { sub_error } => ShaderpackLoadingFailure::FileSystemError { sub_error },
-        LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingFile(path.as_ref().into()),
+        LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingFile(path.clone().into_os_string()),
         e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
     })?;
     let parsed: Result<R, _> = serde_json::from_slice(&rp_file);
-    parsed.map_err(|err| ShaderpackLoadingFailure::JsonError(path.as_ref().into(), err))
+    parsed.map_err(|err| ShaderpackLoadingFailure::JsonError(path.into_os_string(), err))
 }

@@ -7,6 +7,7 @@
 #![feature(async_closure)]
 #![feature(seek_convenience)]
 #![feature(test)]
+#![feature(type_alias_impl_trait)]
 #![deny(nonstandard_style)]
 #![deny(future_incompatible)]
 #![deny(rust_2018_idioms)]
