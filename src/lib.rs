@@ -24,11 +24,3 @@ pub mod rhi;
 pub mod settings;
 pub mod shaderpack;
 pub mod surface;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
