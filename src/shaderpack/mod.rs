@@ -1,4 +1,9 @@
-//! Shaderpack loaders.
+//! Loaders for user shaderpacks.
+//!
+//! There is currently a single entrypoint: [`load_nova_shaderpack`].
+//! Use this function to load a shaderpack from disk.
+//!
+//! TOOD(cwfitzgerald): Unify shaderpack entrypoints.
 
 use crate::loading::{DirectoryFileTree, FileTree, LoadingError};
 use failure::Error;
