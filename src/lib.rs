@@ -8,6 +8,8 @@
 #![feature(seek_convenience)]
 #![feature(test)]
 #![feature(type_alias_impl_trait)]
+#![allow(clippy::cognitive_complexity)]
+#![allow(clippy::float_cmp)]
 #![deny(nonstandard_style)]
 #![deny(future_incompatible)]
 #![deny(rust_2018_idioms)]

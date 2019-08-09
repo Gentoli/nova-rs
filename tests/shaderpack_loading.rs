@@ -5,6 +5,21 @@ use futures::executor::ThreadPoolBuilder;
 use nova_rs::shaderpack::*;
 use std::path::PathBuf;
 
+fn check_shader_option(shaders: &[LoadedShader], shader: &Option<ShaderSource>, filename: &str) {
+    check_shader(shaders, shader.as_ref().expect("Expected shader to exist"), filename);
+}
+
+fn check_shader(shaders: &[LoadedShader], shader: &ShaderSource, filename: &str) {
+    if let ShaderSource::Loaded(idx) = shader {
+        let idx = *idx as usize;
+        assert_eq!(idx < shaders.len(), true);
+        let loaded = &shaders[idx];
+        assert_eq!(loaded.filename.to_str(), Some(filename));
+    } else {
+        panic!("ShaderSource not loaded.");
+    }
+}
+
 #[test]
 fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
     let mut threadpool = ThreadPoolBuilder::new()
@@ -17,6 +32,12 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         threadpool2,
         PathBuf::from("tests/data/shaderpacks/nova/DefaultShaderpack"),
     ))?;
+
+    // Shader Extraction
+    let shader_list = match &parsed.shaders {
+        ShaderSet::Sources(sources) => sources,
+        _ => panic!("Shader set isn't `Sources`"),
+    };
 
     // Renderpass checking
     {
@@ -216,14 +237,8 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableDepthWrite), true);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableDepthTest), true);
 
-        assert_eq!(
-            pipeline.vertex_shader,
-            ShaderSource::Path(String::from("shaders/textured_unlit"))
-        );
-        assert_eq!(
-            pipeline.fragment_shader,
-            Some(ShaderSource::Path(String::from("shaders/image_passthrough")))
-        );
+        check_shader(shader_list, &pipeline.vertex_shader, "shaders/textured_unlit");
+        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/image_passthrough");
 
         assert_eq!(pipeline.vertex_fields.len(), 2);
         let vertex_field = &pipeline.vertex_fields[0];
@@ -244,14 +259,8 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.len(), 1);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableAlphaWrite), true);
 
-        assert_eq!(
-            pipeline.vertex_shader,
-            ShaderSource::Path(String::from("shaders/gbuffers_terrain"))
-        );
-        assert_eq!(
-            pipeline.fragment_shader,
-            Some(ShaderSource::Path(String::from("shaders/gbuffers_terrain")))
-        );
+        check_shader(shader_list, &pipeline.vertex_shader, "shaders/gbuffers_terrain");
+        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/gbuffers_terrain");
 
         assert_eq!(pipeline.vertex_fields.len(), 9);
         let vertex_field = &pipeline.vertex_fields[0];
@@ -301,11 +310,8 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.len(), 1);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableAlphaWrite), true);
 
-        assert_eq!(pipeline.vertex_shader, ShaderSource::Path(String::from("shaders/gui")));
-        assert_eq!(
-            pipeline.fragment_shader,
-            Some(ShaderSource::Path(String::from("shaders/gui")))
-        );
+        check_shader(shader_list, &pipeline.vertex_shader, "shaders/gui");
+        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/gui");
 
         assert_eq!(pipeline.vertex_fields.len(), 4);
         let vertex_field = &pipeline.vertex_fields[0];

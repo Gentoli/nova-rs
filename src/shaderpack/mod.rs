@@ -186,7 +186,15 @@ where
         }
     }
 
-    let shaders_folder = enumerate_folder(&tree, "shaders")?;
+    let shaders_folder: HashSet<PathBuf> = enumerate_folder(&tree, "shaders")?
+        .into_iter()
+        .map(|path| {
+            let mut p = PathBuf::new();
+            p.push("shaders");
+            p.push(path);
+            p
+        })
+        .collect();
 
     let shader_futs: Vec<_> = shaders_folder.iter().map(|p| tree.read_text(p)).collect();
     let shader_mapping: HashMap<&PathBuf, u32> =
