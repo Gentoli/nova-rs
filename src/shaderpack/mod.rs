@@ -9,7 +9,7 @@ use crate::loading::{DirectoryFileTree, FileTree, LoadingError};
 use failure::Error;
 use failure::Fail;
 use futures::task::SpawnExt;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
@@ -126,21 +126,17 @@ macro_rules! shaderpack_load_invoke {
 }
 
 macro_rules! await_result_vector {
-    ($vec:expr ) => {
-        {
-            let mut vec = Vec::new();
-            vec.reserve($vec.len());
-            for f in $vec {
-                vec.push(f.await?);
-            }
-            vec
+    ($vec:expr ) => {{
+        let mut vec = Vec::new();
+        vec.reserve($vec.len());
+        for f in $vec {
+            vec.push(f.await?);
         }
-    };
-    ( $($vec:expr),+ ) => {
-        ($(await_result_vector!($vec)),*)
-    };
+        vec
+    }};
 }
 
+// TODO(cwfitzgerald): This code is complicated af, comment it up
 async fn load_nova_shaderpack_impl<E, T>(mut executor: E, tree: T) -> Result<ShaderpackData, ShaderpackLoadingFailure>
 where
     E: SpawnExt + Clone + 'static,
@@ -149,6 +145,7 @@ where
     // //////////// //
     // Job Creation //
     // //////////// //
+
     let passes_fut = shaderpack_load_invoke!(
         into: Vec<RenderPassCreationInfo>,
         executor,
@@ -188,6 +185,13 @@ where
             _ => {}
         }
     }
+
+    let shaders_folder = enumerate_folder(&tree, "shaders")?;
+
+    let shader_futs: Vec<_> = shaders_folder.iter().map(|p| tree.read_text(p)).collect();
+    let shader_mapping: HashMap<&PathBuf, u32> =
+        shaders_folder.iter().enumerate().map(|(i, p)| (p, i as u32)).collect();
+
     // ////////////// //
     // Job Resolution //
     // ////////////// //
@@ -196,13 +200,29 @@ where
     let resources = resources_fut.await?;
     let mut materials = await_result_vector!(materials_futs);
     material_postprocess(&mut materials);
-    let pipelines = await_result_vector!(pipelines_futs);
+    let mut pipelines = await_result_vector!(pipelines_futs);
+    pipeline_postprocess(&mut pipelines, shader_mapping);
+    let shaders = ShaderSet::Sources({
+        let mut vec = Vec::new();
+        vec.reserve(shader_futs.len());
+        for (fut, filename) in shader_futs.into_iter().zip(shaders_folder.into_iter()) {
+            let source = fut.await.map_err(|err| match err {
+                LoadingError::NotFile => ShaderpackLoadingFailure::NotFile(filename.clone().into_os_string()),
+                LoadingError::FileSystemError { sub_error } => ShaderpackLoadingFailure::FileSystemError { sub_error },
+                LoadingError::PathNotFound => ShaderpackLoadingFailure::MissingFile(filename.clone().into_os_string()),
+                e => ShaderpackLoadingFailure::UnknownError { sub_error: e.into() },
+            })?;
+            vec.push(LoadedShader { filename, source });
+        }
+        vec
+    });
 
     Ok(ShaderpackData {
         passes,
         resources,
         materials,
         pipelines,
+        shaders,
     })
 }
 
@@ -211,6 +231,31 @@ fn material_postprocess(materials: &mut [MaterialData]) {
         for pass in &mut mat.passes {
             pass.material_name = mat.name.clone();
         }
+    }
+}
+
+fn pipeline_postprocess(pipelines: &mut [PipelineCreationInfo], shader_mapping: HashMap<&PathBuf, u32>) {
+    let process_shader = |shader: &mut ShaderSource| {
+        if let ShaderSource::Path(name) = shader {
+            *shader = match shader_mapping.get(name) {
+                Some(index) => ShaderSource::Loaded(*index),
+                None => ShaderSource::Invalid,
+            }
+        }
+    };
+
+    let process_shader_option = |shader_option: &mut Option<ShaderSource>| {
+        if let Some(shader) = shader_option {
+            process_shader(shader)
+        }
+    };
+
+    for pipeline in pipelines {
+        process_shader(&mut pipeline.vertex_shader);
+        process_shader_option(&mut pipeline.tessellation_control_shader);
+        process_shader_option(&mut pipeline.tessellation_evaluation_shader);
+        process_shader_option(&mut pipeline.geometry_shader);
+        process_shader_option(&mut pipeline.fragment_shader);
     }
 }
 

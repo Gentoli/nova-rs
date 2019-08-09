@@ -1,6 +1,7 @@
 use cgmath::Vector2;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 /// A fully parsed Nova Shaderpack
 #[derive(Debug, Clone)]
@@ -16,6 +17,13 @@ pub struct ShaderpackData {
 
     /// The resources that this shaderpack specifies.
     pub resources: ShaderpackResourceData,
+
+    /// The shaders that this shaderpack contains.
+    ///
+    /// This is set by a postprocessing step that loads the shaders.
+    ///
+    /// Compilation to SPIRV happens elsewhere.
+    pub shaders: ShaderSet,
 }
 
 /// Information needed to create a pipeline
@@ -171,7 +179,7 @@ impl PipelineCreationInfo {
         RenderQueue::Opaque
     }
     fn default_vertex_shader() -> ShaderSource {
-        ShaderSource::Path(String::from("<NAME_MISSING>"))
+        ShaderSource::Invalid
     }
 
     /// Merge a shaderpack with a "parent" shaderpack. Unimplemented.
@@ -264,6 +272,37 @@ pub struct ShaderpackResourceData {
     pub samplers: Vec<SamplerCreateInfo>,
 }
 
+/// Holds all shaders in the shaderpack. Deduplicated.
+///
+/// All shaders are either in pure source form, or in pure compiled form.
+///
+/// [`ShaderSource`] contains indices into this array.
+#[derive(Debug, Clone)]
+pub enum ShaderSet {
+    /// All shaders are in source form
+    Sources(Vec<LoadedShader>),
+    /// All shaders are in compiled SPIR-V form.
+    Compiled(Vec<CompiledShader>),
+}
+
+/// A loaded but uncompiled shader
+#[derive(Debug, Clone)]
+pub struct LoadedShader {
+    /// Filename for the source file of the shader. Relative to shaderpack root.
+    pub filename: PathBuf,
+    /// Raw source of the shader.
+    pub source: String,
+}
+
+/// A compiled shader.
+#[derive(Debug, Clone)]
+pub struct CompiledShader {
+    /// Filename for the source file of the shader. Relative to shaderpack root.
+    pub filename: PathBuf,
+    /// Compiled SPIR-V of the shader.
+    pub compiled: Vec<u32>,
+}
+
 /// Connects a [`VertexField`] with a semantic name.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -330,20 +369,12 @@ impl StencilOpState {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", untagged)]
 pub enum ShaderSource {
-    /// Uncompiled shader with path to source
-    Path(String),
-    /// Compiled SPIR-V shader
-    Compiled(CompiledShader),
-}
-
-/// A fully compiled shader
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct CompiledShader {
-    /// Filename of the shader source file.
-    pub filename: String,
-    /// Compiled SPIR-V shader.
-    pub spirv: Vec<u32>,
+    /// Unloaded shader with path to the source file relative to the shaderpack root.
+    Path(PathBuf),
+    /// Loaded shader with index into the shader vector. [`ShaderpackData::shaders`]
+    Loaded(u32),
+    /// Shader does not exist
+    Invalid,
 }
 
 /// A description of a texture that a render pass outputs to.
