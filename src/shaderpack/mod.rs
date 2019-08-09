@@ -18,24 +18,33 @@ pub enum ShaderpackLoadingFailure {
     #[fail(display = "Path to shaderpack not found: {:?}", _0)]
     PathNotFound(PathBuf),
 
+    /// If the shaderpack is a single file, it has an unknown extension
     #[fail(display = "Unsupported shaderpack extension {:?}", _0)]
     UnsupportedExtension(String),
 
+    /// Required file not found inside shaderpack
     #[fail(display = "File {:?} not found in shaderpack.", _0)]
     MissingFile(OsString),
 
-    #[fail(display = "File {:?} not found in shaderpack.", _0)]
+    /// Required directory not found inside shaderpack
+    #[fail(display = "Directory {:?} not found in shaderpack.", _0)]
     MissingDirectory(OsString),
 
+    /// Error while parsing shaderpack json
     #[fail(display = "Error while parsing json {:?}", _0)]
     JsonError(OsString, serde_json::Error),
 
+    /// Shaderpack requires a certain path inside the shaderpack to be a
+    /// directory, but hte shaderpack has it as a file.
     #[fail(display = "Directory member is a file not a directory {:?}", _0)]
     NotDirectory(OsString),
 
+    /// Shaderpack requires a certain path inside the shaderpack to be a
+    /// file, but hte shaderpack has it as a directory.
     #[fail(display = "Directory member is a directory not a file {:?}", _0)]
     NotFile(OsString),
 
+    /// An unknown error occurred internally. This is generally a bug.
     #[fail(display = "Unknown internal error: {:?}", sub_error)]
     UnknownError {
         /// Actual error
@@ -43,7 +52,7 @@ pub enum ShaderpackLoadingFailure {
         sub_error: Error,
     },
 
-    /// Error within the filesystem.
+    /// Error within the filesystem. Might be a bug.
     #[fail(display = "Unknown filesystem error: {:?}", sub_error)]
     FileSystemError {
         /// Actual error
@@ -52,15 +61,41 @@ pub enum ShaderpackLoadingFailure {
     },
 }
 
+/// Load a nova shaderpack from a file or folder.
+///
+/// File names are currently case sensitive.
+///
+/// # File Tree
+///
+/// - `passes.json`
+/// - `resources.json`
+/// - `materials`
+///   - `*.mat`
+///   - `*.pipeline`
+/// - `shaders`
+///   - `*.frag`
+///   - `*.vert`
+///
+/// # File Formats
+///
+/// While the file tree must be the same, the shaderpacks can either come as an unpacked folder
+/// or as one of the following single-file formats:
+/// - None
+///
+/// Future Supported Formats:
+/// - BZIP2/Deflate/Uncompressed `.zip`
+/// - TAR (maybe)
+/// - LZMA2 `.7z` (maybe)
+///
+/// # Arguments
+///
+/// - `executor` - Executor to run sub-tasks on
+/// - `path` - Path to the root of the shaderpack, or the file the shaderpack is contained in.
 pub async fn load_nova_shaderpack<E>(executor: E, path: PathBuf) -> Result<ShaderpackData, ShaderpackLoadingFailure>
 where
     E: SpawnExt + Clone + 'static,
 {
-    match (
-        path.exists(),
-        path.is_dir(),
-        path.extension().iter().flat_map(|s| s.to_str()).next(),
-    ) {
+    match (path.exists(), path.is_dir(), path.extension().and_then(|s| s.to_str())) {
         (true, true, _) => {
             let file_tree_res: Result<DirectoryFileTree, _> = DirectoryFileTree::from_path(&path).await;
             let file_tree = file_tree_res.map_err(|err| match err {

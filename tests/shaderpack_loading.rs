@@ -1,4 +1,7 @@
-use futures::executor::{block_on, ThreadPoolBuilder};
+#![allow(clippy::cognitive_complexity)]
+#![allow(clippy::float_cmp)]
+
+use futures::executor::ThreadPoolBuilder;
 use nova_rs::shaderpack::*;
 use std::path::PathBuf;
 
