@@ -1,39 +1,45 @@
 #![allow(unsafe_code)]
 
+#[macro_use]
+use log::*;
+
 use crate::rhi::dx12::com::WeakPtr;
+use crate::rhi::dx12::dx12_command_allocator::Dx12CommandAllocator;
+use crate::rhi::dx12::dx12_descriptor_pool::Dx12DescriptorPool;
+use crate::rhi::dx12::dx12_fence::Dx12Fence;
+use crate::rhi::dx12::dx12_framebuffer::Dx12Framebuffer;
+use crate::rhi::dx12::dx12_image::Dx12Image;
+use crate::rhi::dx12::dx12_memory::Dx12Memory;
+use crate::rhi::dx12::dx12_pipeline::Dx12Pipeline;
+use crate::rhi::dx12::dx12_pipeline_interface::Dx12PipelineInterface;
+use crate::rhi::dx12::dx12_queue::Dx12Queue;
 use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
+use crate::rhi::dx12::dx12_renderpass::Dx12Renderpass;
+use crate::rhi::dx12::dx12_semaphore::Dx12Semaphore;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
-use crate::rhi::{DeviceCreationError, DeviceProperties};
-use crate::{
-    rhi::{
-        dx12::{
-            dx12_command_allocator::Dx12CommandAllocator, dx12_descriptor_pool::Dx12DescriptorPool,
-            dx12_fence::Dx12Fence, dx12_framebuffer::Dx12Framebuffer, dx12_image::Dx12Image, dx12_memory::Dx12Memory,
-            dx12_pipeline::Dx12Pipeline, dx12_pipeline_interface::Dx12PipelineInterface, dx12_queue::Dx12Queue,
-            dx12_renderpass::Dx12Renderpass, dx12_semaphore::Dx12Semaphore,
-        },
-        AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, Device,
-        MemoryError, MemoryUsage, ObjectType, PipelineCreationError, QueueGettingError, QueueType,
-        ResourceBindingDescription,
-    },
-    shaderpack,
+use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_blend, to_dx12_range_type};
+use crate::rhi::dx12::pso_utils::{
+    get_input_descriptions, make_depth_stencil_state, make_rasterizer_desc, make_render_target_blend_desc,
 };
+use crate::rhi::{
+    AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, Device,
+    DeviceCreationError, DeviceProperties, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
+    QueueGettingError, QueueType, ResourceBindingDescription,
+};
+use crate::shaderpack;
 use cgmath::Vector2;
 use core::mem;
 use spirv_cross::hlsl;
+use spirv_cross::ErrorCode;
 use std::collections::HashMap;
+use std::ptr::null;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
+use winapi::shared::winerror;
 use winapi::shared::winerror::{FAILED, SUCCEEDED};
+use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
 use winapi::Interface;
-use winapi::{shared::winerror, um::d3d12::*};
-
-#[macro_use]
-use log::*;
-use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_blend, to_dx12_range_type};
-use spirv_cross::ErrorCode;
-use std::ptr::null;
 
 pub struct Dx12Device {
     /// Graphics adapter that we're using
@@ -626,28 +632,24 @@ impl Device for Dx12Device {
         }
 
         // Blending
-        {
-            pso_desc.BlendState.AlphaToCoverageEnable =
-                data.states
-                    .contains(&shaderpack::RasterizerState::EnableAlphaToCoverage) as i32;
+        pso_desc.BlendState.AlphaToCoverageEnable =
+            data.states
+                .contains(&shaderpack::RasterizerState::EnableAlphaToCoverage) as i32;
 
-            pso_desc.BlendState.IndependentBlendEnable = false;
+        pso_desc.BlendState.IndependentBlendEnable = false as i32;
 
-            pso_desc.BlendState.RenderTarget[0] = D3D12_RENDER_TARGET_BLEND_DESC {
-                BlendEnable: data.states.contains(&shaderpack::RasterizerState::Blending) as i32,
-                LogicOpEnable: 0,
-                SrcBlend: to_dx12_blend(&data.src_blend_factor),
-                DestBlend: to_dx12_blend(&data.dst_blend_factor),
-                BlendOp: D3D12_BLEND_OP_ADD,
-                SrcBlendAlpha: to_dx12_blend(&data.src_blend_factor),
-                DestBlendAlpha: to_dx12_blend(&data.dst_blend_factor),
-                BlendOpAlpha: D3D12_BLEND_OP_ADD,
-                LogicOp: 0,
-                RenderTargetWriteMask: D3D12_COLOR_WRITE_ENABLE_ALL as u8,
-            };
+        pso_desc.BlendState.RenderTarget[0] = make_render_target_blend_desc(&data);
 
-            pso_desc.SampleMask = 0xFFFF_FFFF;
-        }
+        pso_desc.SampleMask = 0xFFFF_FFFF;
+
+        pso_desc.RasterizerState = make_rasterizer_desc(&data);
+
+        pso_desc.DepthStencilState = make_depth_stencil_state(&data);
+
+        // TODO: Get the pipeline inputs from the pipeline data
+        let input_descs = get_input_descriptions();
+        pso_desc.InputLayout.NumElements = input_descs.len() as u32;
+        pso_desc.InputLayout.pInputElementDescs = input_descs.as_ptr();
 
         Err(PipelineCreationError::InvalidShader)
     }

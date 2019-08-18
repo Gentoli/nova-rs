@@ -42,6 +42,32 @@ pub fn to_dx12_blend(blend_factor: &shaderpack::BlendFactor) -> D3D12_BLEND {
     }
 }
 
+pub fn to_dx12_compare_func(op: &shaderpack::CompareOp) -> D3D12_COMPARISON_FUNC {
+    match op {
+        shaderpack::CompareOp::Never => D3D12_COMPARISON_FUNC_NEVER,
+        shaderpack::CompareOp::Less => D3D12_COMPARISON_FUNC_LESS,
+        shaderpack::CompareOp::LessEqual => D3D12_COMPARISON_FUNC_LESS_EQUAL,
+        shaderpack::CompareOp::Greater => D3D12_COMPARISON_FUNC_GREATER,
+        shaderpack::CompareOp::GreaterEqual => D3D12_COMPARISON_FUNC_GREATER_EQUAL,
+        shaderpack::CompareOp::Equal => D3D12_COMPARISON_FUNC_EQUAL,
+        shaderpack::CompareOp::NotEqual => D3D12_COMPARISON_FUNC_NOT_EQUAL,
+        shaderpack::CompareOp::Always => D3D12_COMPARISON_FUNC_NEVER,
+    }
+}
+
+pub fn to_dx12_stencil_op(op: &shaderpack::StencilOp) -> D3D12_STENCIL_OP {
+    match op {
+        shaderpack::StencilOp::Keep => D3D12_STENCIL_OP_KEEP,
+        shaderpack::StencilOp::Zero => D3D12_STENCIL_OP_ZERO,
+        shaderpack::StencilOp::Replace => D3D12_STENCIL_OP_REPLACE,
+        shaderpack::StencilOp::Incr => D3D12_STENCIL_OP_INCR,
+        shaderpack::StencilOp::IncrWrap => D3D12_STENCIL_OP_INCR_SAT,
+        shaderpack::StencilOp::Decr => D3D12_STENCIL_OP_DECR,
+        shaderpack::StencilOp::DecrWrap => D3D12_STENCIL_OP_DECR_SAT,
+        shaderpack::StencilOp::Invert => D3D12_STENCIL_OP_INVERT,
+    }
+}
+
 pub fn compile_shader(
     shader: shaderpack::ShaderSource,
     target: &str,
