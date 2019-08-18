@@ -7,18 +7,26 @@ use crate::shaderpack;
 use std::collections::HashMap;
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::ID3DBlob;
-
 #[macro_use]
 use log::*;
 use spirv_cross::{hlsl, spirv, ErrorCode};
+use std::ffi::CStr;
+use std::mem;
 use std::ptr::null;
 use winapi::shared::winerror::FAILED;
 use winapi::um::d3d12shader::*;
+use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
-
-use std::ffi::CStr;
-use std::mem;
 use winapi::Interface;
+
+#[macro_export]
+macro_rules! dx_call {
+    ( $x:expr, $s:literal ) => {{
+        if FAILED($x) {
+            return Err(ErrorCode::CompilationError(String::from($s)));
+        }
+    }};
+}
 
 pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_RANGE_TYPE {
     match descriptor_type {
@@ -54,77 +62,68 @@ pub fn compile_shader(
                 let shader_blob = WeakPtr::<ID3DBlob>::null();
                 let shader_error_blob = WeakPtr::<ID3DBlob>::null();
 
-                let hr = unsafe {
-                    D3DCompile2(
-                        shader_hlsl.as_ptr() as _,
-                        shader_hlsl.len(),
-                        shader.filename.to_str().unwrap().as_ptr() as _,
-                        null as _,
-                        D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                        "main".as_ptr() as _,
-                        target.as_ptr() as _,
-                        D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
-                        0,
-                        0,
-                        null as _,
-                        0,
-                        shader_blob.GetBufferPointer() as _,
-                        shader_error_blob.GetBufferPointer() as _,
-                    )
-                };
-                if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError(String::from(
-                        "DirectX shader compiler error",
-                    )));
-                }
+                let hr = dx_call!(
+                    unsafe {
+                        D3DCompile2(
+                            shader_hlsl.as_ptr() as _,
+                            shader_hlsl.len(),
+                            shader.filename.to_str().unwrap().as_ptr() as _,
+                            null as _,
+                            D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                            "main".as_ptr() as _,
+                            target.as_ptr() as _,
+                            D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
+                            0,
+                            0,
+                            null as _,
+                            0,
+                            shader_blob.GetBufferPointer() as _,
+                            shader_error_blob.GetBufferPointer() as _,
+                        )
+                    },
+                    "DirectX shader compiler error"
+                );
 
                 let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
-                let hr = unsafe {
-                    D3DReflect(
-                        shader_blob.GetBufferPointer(),
-                        shader_blob.GetBufferSize(),
-                        &ID3D12ShaderReflection::uuidof(),
-                        shader_reflector.mut_void(),
-                    )
-                };
-                if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError(String::from(
-                        "Could not create D3D12ShaderReflector",
-                    )));
-                }
+                dx_call!(
+                    unsafe {
+                        D3DReflect(
+                            shader_blob.GetBufferPointer(),
+                            shader_blob.GetBufferSize(),
+                            &ID3D12ShaderReflection::uuidof(),
+                            shader_reflector.mut_void(),
+                        )
+                    },
+                    "Could not create D3D12ShaderReflector"
+                );
 
                 let mut shader_desc = D3D12_SHADER_DESC {
                     ..unsafe { mem::zeroed() }
                 };
-                let hr = shader_reflector.GetDesc(&mut shader_desc);
-                if FAILED(hr) {
-                    return Err(ErrorCode::CompilationError(String::from(
-                        "Could not get shader description",
-                    )));
-                }
+                dx_call!(
+                    shader_reflector.GetDesc(&mut shader_desc),
+                    "Could not get shader description"
+                );
 
                 let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
                 for i in 0..shader_desc.BoundResources {
                     let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
                         ..unsafe { mem::zeroed() }
                     };
-                    let hr = shader_reflector.GetResourceBindingDesc(i, &mut binding_desc);
-                    if FAILED(hr) {
-                        return Err(ErrorCode::CompilationError(String::from(
-                            "Could not get resource binding description",
-                        )));
-                    }
+                    dx_call!(
+                        shader_reflector.GetResourceBindingDesc(i, &mut binding_desc),
+                        "Could not get resource binding description"
+                    );
 
-                    let (descriptor_type, spirv_resource, set) = match get_descriptor_info(
+                    if binding_desc.Type == D3D_SIT_CBUFFER {}
+
+                    save_descriptor_info(
                         tables,
                         &shader_compiler.unwrap(),
                         &spirv_sampled_images,
                         &spirv_uniform_buffers,
                         &mut binding_desc,
-                    ) {
-                        Ok(tup) => tup,
-                        Err(e) => return Err(e),
-                    };
+                    );
                 }
 
                 Err(ErrorCode::CompilationError(String::from(
@@ -149,50 +148,38 @@ pub fn compile_shader(
     Ok(blob)
 }
 
-fn get_descriptor_info(
+fn save_descriptor_info(
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
     shader_compiler: &spirv::Ast<hlsl::Target>,
     mut spirv_sampled_images: &HashMap<String, spirv::Resource>,
     mut spirv_uniform_buffers: &HashMap<String, spirv::Resource>,
-    mut binding_desc: &mut D3D12_SHADER_INPUT_BIND_DESC,
-) -> Result<(u32, spirv::Resource, u32), ErrorCode> {
-    // if binding_desc.Type
+    mut binding_desc: &D3D12_SHADER_INPUT_BIND_DESC,
+) {
+    let mut set: u32;
+    let mut descriptor_type: u32;
+    let mut spirv_resource: spirv::Resource;
 
-    match binding_desc.Type {
-        D3D12_SIT_CBUFFER => {
-            let name_str = unsafe { CStr::from_ptr(binding_desc.Name as _) }.to_str().unwrap();
-            let descriptor_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-            let spirv_resource = spirv_uniform_buffers[name_str].clone();
-            let set = match shader_compiler.get_decoration(spirv_resource.id, spirv::Decoration::DescriptorSet) {
-                Ok(set) => set,
-                Err(e) => {
-                    return Err(ErrorCode::CompilationError(String::from(
-                        "Could not get descriptor set decoration",
-                    )));
-                }
-            };
+    if binding_desc.Type == D3D_SIT_CBUFFER {
+        let name_str = unsafe { CStr::from_ptr(binding_desc.Name as _) }.to_str().unwrap();
 
-            add_resource_to_descriptor_table(&descriptor_type, &binding_desc, &set, tables);
+        descriptor_type = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+        spirv_resource = spirv_uniform_buffers[name_str].clone();
+        set = shader_compiler
+            .get_decoration(spirv_resource.id, spirv::Decoration::DescriptorSet)
+            .unwrap();
 
-            Ok((descriptor_type, spirv_resource, set))
-        }
-        D3D_SIT_TEXTURE => {
-            let name_str = unsafe { CStr::from_ptr(binding_desc.Name as _) }.to_str().unwrap();
-            let descriptor_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-            let spirv_resource = spirv_sampled_images[name_str].clone();
-            let set = match shader_compiler.get_decoration(spirv_resource.id, spirv::Decoration::DescriptorSet) {
-                Ok(set) => set,
-                Err(e) => {
-                    return Err(ErrorCode::CompilationError(String::from(
-                        "Could not get descriptor set decoration",
-                    )));
-                }
-            };
+        add_resource_to_descriptor_table(&descriptor_type, &binding_desc, &set, tables);
+    } else if binding_desc.Type == D3D_SIT_TEXTURE {
+        let name_str = unsafe { CStr::from_ptr(binding_desc.Name as _) }.to_str().unwrap();
 
-            add_resource_to_descriptor_table(&D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, &binding_desc, &set, &mut tables);
+        descriptor_type = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        spirv_resource = spirv_sampled_images[name_str].clone();
+        set = shader_compiler
+            .get_decoration(spirv_resource.id, spirv::Decoration::DescriptorSet)
+            .unwrap();
 
-            Ok((descriptor_type, spirv_resource, set))
-        }
+        add_resource_to_descriptor_table(&descriptor_type, &binding_desc, &set, tables);
+        add_resource_to_descriptor_table(&D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, &binding_desc, &set, tables);
     }
 }
 
