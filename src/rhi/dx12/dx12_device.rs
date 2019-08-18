@@ -31,7 +31,7 @@ use winapi::{shared::winerror, um::d3d12::*};
 
 #[macro_use]
 use log::*;
-use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_range_type};
+use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_blend, to_dx12_range_type};
 use spirv_cross::ErrorCode;
 use std::ptr::null;
 
@@ -572,7 +572,7 @@ impl Device for Dx12Device {
             },
         };
 
-        // Shader compilation
+        // Shaders
         {
             match compile_shader(data.vertex_shader, "vs_5_1", spv_cross_options, &mut shader_inputs) {
                 Ok(blob) => {
@@ -621,6 +621,32 @@ impl Device for Dx12Device {
                     Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
                 };
             }
+
+            pso_desc.pRootSignature = pipeline_interface.root_sig.as_mut_ptr();
+        }
+
+        // Blending
+        {
+            pso_desc.BlendState.AlphaToCoverageEnable =
+                data.states
+                    .contains(&shaderpack::RasterizerState::EnableAlphaToCoverage) as i32;
+
+            pso_desc.BlendState.IndependentBlendEnable = false;
+
+            pso_desc.BlendState.RenderTarget[0] = D3D12_RENDER_TARGET_BLEND_DESC {
+                BlendEnable: data.states.contains(&shaderpack::RasterizerState::Blending) as i32,
+                LogicOpEnable: 0,
+                SrcBlend: to_dx12_blend(&data.src_blend_factor),
+                DestBlend: to_dx12_blend(&data.dst_blend_factor),
+                BlendOp: D3D12_BLEND_OP_ADD,
+                SrcBlendAlpha: to_dx12_blend(&data.src_blend_factor),
+                DestBlendAlpha: to_dx12_blend(&data.dst_blend_factor),
+                BlendOpAlpha: D3D12_BLEND_OP_ADD,
+                LogicOp: 0,
+                RenderTargetWriteMask: D3D12_COLOR_WRITE_ENABLE_ALL as u8,
+            };
+
+            pso_desc.SampleMask = 0xFFFF_FFFF;
         }
 
         Err(PipelineCreationError::InvalidShader)

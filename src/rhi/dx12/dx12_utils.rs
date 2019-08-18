@@ -27,6 +27,21 @@ pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_
     }
 }
 
+pub fn to_dx12_blend(blend_factor: &shaderpack::BlendFactor) -> D3D12_BLEND {
+    match blend_factor {
+        shaderpack::BlendFactor::One => D3D12_BLEND_ONE,
+        shaderpack::BlendFactor::Zero => D3D12_BLEND_ZERO,
+        shaderpack::BlendFactor::SrcColor => D3D12_BLEND_SRC_COLOR,
+        shaderpack::BlendFactor::DstColor => D3D12_BLEND_DEST_COLOR,
+        shaderpack::BlendFactor::OneMinusSrcColor => D3D12_BLEND_INV_SRC_COLOR,
+        shaderpack::BlendFactor::OneMinusDstColor => D3D12_BLEND_INV_DEST_COLOR,
+        shaderpack::BlendFactor::SrcAlpha => D3D12_BLEND_SRC_ALPHA,
+        shaderpack::BlendFactor::DstAlpha => D3D12_BLEND_DEST_ALPHA,
+        shaderpack::BlendFactor::OneMinusSrcAlpha => D3D12_BLEND_INV_SRC_ALPHA,
+        shaderpack::BlendFactor::OneMinusDstAlpha => D3D12_BLEND_INV_DEST_ALPHA,
+    }
+}
+
 pub fn compile_shader(
     shader: shaderpack::ShaderSource,
     target: &str,
