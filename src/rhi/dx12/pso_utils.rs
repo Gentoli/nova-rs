@@ -2,10 +2,12 @@
 
 #![allow(unsafe_code)]
 
+use crate::mesh::FullVertex;
 use crate::rhi::dx12::dx12_utils::{to_dx12_blend, to_dx12_compare_func, to_dx12_stencil_op};
 use crate::shaderpack;
 
 use std::mem;
+use std::mem::size_of;
 use winapi::shared::dxgiformat::*;
 use winapi::um::d3d12::*;
 
@@ -93,13 +95,69 @@ pub fn make_depth_stencil_state(data: &shaderpack::PipelineCreationInfo) -> D3D1
 }
 
 pub fn get_input_descriptions() -> Vec<D3D12_INPUT_ELEMENT_DESC> {
-    vec![D3D12_INPUT_ELEMENT_DESC {
-        SemanticName: "POSITION\0".as_ptr() as *const _,
-        SemanticIndex: 0,
-        Format: DXGI_FORMAT_R32G32B32_FLOAT,
-        InputSlot: 0,
-        AlignedByteOffset: 0,
-        InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-        InstanceDataStepRate: 0,
-    }]
+    vec![
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "POSITION\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32B32_FLOAT,
+            InputSlot: 0,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "NORMAL\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32B32_FLOAT,
+            InputSlot: 1,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "TANGENT\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32B32_FLOAT,
+            InputSlot: 2,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "TEXCOORD\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32_FLOAT,
+            InputSlot: 3,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "LMUV\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32_FLOAT,
+            InputSlot: 4,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "VTEX_ID\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32_UINT,
+            InputSlot: 5,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+        D3D12_INPUT_ELEMENT_DESC {
+            SemanticName: "DATA\0".as_ptr() as *const _,
+            SemanticIndex: 0,
+            Format: DXGI_FORMAT_R32G32B32A32_FLOAT,
+            InputSlot: 6,
+            AlignedByteOffset: D3D12_APPEND_ALIGNED_ELEMENT,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InstanceDataStepRate: 0,
+        },
+    ]
 }

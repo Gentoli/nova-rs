@@ -1,5 +1,7 @@
 use cgmath::{Vector2, Vector3, Vector4};
 
+// TODO: Verify that this struct is the size I expect
+#[repr(C)]
 pub struct FullVertex {
     pub position: Vector3<f32>,
     pub normal: Vector3<f32>,
