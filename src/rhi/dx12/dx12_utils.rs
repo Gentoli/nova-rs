@@ -19,14 +19,6 @@ use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
 use winapi::Interface;
 
-macro_rules! dx_call {
-    ( $x:expr, $s:literal ) => {{
-        if FAILED($x) {
-            return Err(ErrorCode::CompilationError(String::from($s)));
-        }
-    }};
-}
-
 pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_RANGE_TYPE {
     match descriptor_type {
         DescriptorType::CombinedImageSampler => D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
@@ -57,12 +49,38 @@ pub fn compile_shader(
 
             // I know that shader_compiler is Ok because I'm in the branch of the match where it's Ok
             shader_compiler?.compile().and_then(|shader_hlsl| {
-                compile_to_dxil_and_reflect(
+                // TODO: Write HLSL to a file to help debug
+                let shader_blob = WeakPtr::<ID3DBlob>::null();
+                let shader_error_blob = WeakPtr::<ID3DBlob>::null();
+
+                let hr = dx_call!(
+                    unsafe {
+                        D3DCompile2(
+                            shader_hlsl.as_ptr() as _,
+                            shader_hlsl.len(),
+                            shader.filename.to_str().unwrap().as_ptr() as _,
+                            null as _,
+                            D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                            "main".as_ptr() as _,
+                            target.as_ptr() as _,
+                            D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
+                            0,
+                            0,
+                            null as _,
+                            0,
+                            shader_blob.GetBufferPointer() as _,
+                            shader_error_blob.GetBufferPointer() as _,
+                        )
+                    },
+                    "DirectX shader compiler error"
+                );
+
+                extract_descriptor_info_from_blob(
                     tables,
-                    &shader_compiler,
+                    &shader_compiler.unwrap(),
                     &mut spirv_sampled_images,
                     &mut spirv_uniform_buffers,
-                    shader_hlsl,
+                    &shader_blob,
                 )
             })
         }
@@ -83,39 +101,13 @@ pub fn compile_shader(
     Ok(blob)
 }
 
-fn compile_to_dxil_and_reflect(
+fn extract_descriptor_info_from_blob(
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
-    shader_compiler: &Result<spirv::Ast<hlsl::Target>, ErrorCode>,
+    shader_compiler: &spirv::Ast<hlsl::Target>,
     spirv_sampled_images: &mut _,
     spirv_uniform_buffers: &mut _,
-    shader_hlsl: String,
-) -> Result<WeakPtr<ID3D10Blob>, ErrorCode> {
-    // TODO: Write HLSL to a file to help debug
-    let shader_blob = WeakPtr::<ID3DBlob>::null();
-    let shader_error_blob = WeakPtr::<ID3DBlob>::null();
-
-    let hr = dx_call!(
-        unsafe {
-            D3DCompile2(
-                shader_hlsl.as_ptr() as _,
-                shader_hlsl.len(),
-                shader.filename.to_str().unwrap().as_ptr() as _,
-                null as _,
-                D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                "main".as_ptr() as _,
-                target.as_ptr() as _,
-                D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
-                0,
-                0,
-                null as _,
-                0,
-                shader_blob.GetBufferPointer() as _,
-                shader_error_blob.GetBufferPointer() as _,
-            )
-        },
-        "DirectX shader compiler error"
-    );
-
+    shader_blob: &WeakPtr<ID3DBlob>,
+) {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
     dx_call!(
         unsafe {
@@ -151,14 +143,12 @@ fn compile_to_dxil_and_reflect(
 
         save_descriptor_info(
             tables,
-            &shader_compiler.unwrap(),
+            shader_compiler,
             &spirv_sampled_images,
             &spirv_uniform_buffers,
             &mut binding_desc,
         );
     }
-
-    Ok(shader_blob)
 }
 
 fn save_descriptor_info(
