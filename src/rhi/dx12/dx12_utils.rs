@@ -19,7 +19,6 @@ use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
 use winapi::Interface;
 
-#[macro_export]
 macro_rules! dx_call {
     ( $x:expr, $s:literal ) => {{
         if FAILED($x) {
@@ -58,78 +57,14 @@ pub fn compile_shader(
 
             // I know that shader_compiler is Ok because I'm in the branch of the match where it's Ok
             shader_compiler?.compile().and_then(|shader_hlsl| {
-                // TODO: Write HLSL to a file to help debug
-                let shader_blob = WeakPtr::<ID3DBlob>::null();
-                let shader_error_blob = WeakPtr::<ID3DBlob>::null();
-
-                let hr = dx_call!(
-                    unsafe {
-                        D3DCompile2(
-                            shader_hlsl.as_ptr() as _,
-                            shader_hlsl.len(),
-                            shader.filename.to_str().unwrap().as_ptr() as _,
-                            null as _,
-                            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                            "main".as_ptr() as _,
-                            target.as_ptr() as _,
-                            D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
-                            0,
-                            0,
-                            null as _,
-                            0,
-                            shader_blob.GetBufferPointer() as _,
-                            shader_error_blob.GetBufferPointer() as _,
-                        )
-                    },
-                    "DirectX shader compiler error"
-                );
-
-                let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
-                dx_call!(
-                    unsafe {
-                        D3DReflect(
-                            shader_blob.GetBufferPointer(),
-                            shader_blob.GetBufferSize(),
-                            &ID3D12ShaderReflection::uuidof(),
-                            shader_reflector.mut_void(),
-                        )
-                    },
-                    "Could not create D3D12ShaderReflector"
-                );
-
-                let mut shader_desc = D3D12_SHADER_DESC {
-                    ..unsafe { mem::zeroed() }
-                };
-                dx_call!(
-                    shader_reflector.GetDesc(&mut shader_desc),
-                    "Could not get shader description"
-                );
-
-                let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
-                for i in 0..shader_desc.BoundResources {
-                    let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
-                        ..unsafe { mem::zeroed() }
-                    };
-                    dx_call!(
-                        shader_reflector.GetResourceBindingDesc(i, &mut binding_desc),
-                        "Could not get resource binding description"
-                    );
-
-                    if binding_desc.Type == D3D_SIT_CBUFFER {}
-
-                    save_descriptor_info(
-                        tables,
-                        &shader_compiler.unwrap(),
-                        &spirv_sampled_images,
-                        &spirv_uniform_buffers,
-                        &mut binding_desc,
-                    );
-                }
-
-                Err(ErrorCode::CompilationError(String::from(
-                    "Could not create D3D12ShaderReflector",
-                )))
-            });
+                compile_to_dxil_and_reflect(
+                    tables,
+                    &shader_compiler,
+                    &mut spirv_sampled_images,
+                    &mut spirv_uniform_buffers,
+                    shader_hlsl,
+                )
+            })
         }
         Err(e) => match e {
             spirv_cross::ErrorCode::Unhandled => {
@@ -146,6 +81,84 @@ pub fn compile_shader(
     let blob = WeakPtr::<ID3DBlob>::null();
 
     Ok(blob)
+}
+
+fn compile_to_dxil_and_reflect(
+    tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
+    shader_compiler: &Result<spirv::Ast<hlsl::Target>, ErrorCode>,
+    spirv_sampled_images: &mut _,
+    spirv_uniform_buffers: &mut _,
+    shader_hlsl: String,
+) -> Result<WeakPtr<ID3D10Blob>, ErrorCode> {
+    // TODO: Write HLSL to a file to help debug
+    let shader_blob = WeakPtr::<ID3DBlob>::null();
+    let shader_error_blob = WeakPtr::<ID3DBlob>::null();
+
+    let hr = dx_call!(
+        unsafe {
+            D3DCompile2(
+                shader_hlsl.as_ptr() as _,
+                shader_hlsl.len(),
+                shader.filename.to_str().unwrap().as_ptr() as _,
+                null as _,
+                D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                "main".as_ptr() as _,
+                target.as_ptr() as _,
+                D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
+                0,
+                0,
+                null as _,
+                0,
+                shader_blob.GetBufferPointer() as _,
+                shader_error_blob.GetBufferPointer() as _,
+            )
+        },
+        "DirectX shader compiler error"
+    );
+
+    let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
+    dx_call!(
+        unsafe {
+            D3DReflect(
+                shader_blob.GetBufferPointer(),
+                shader_blob.GetBufferSize(),
+                &ID3D12ShaderReflection::uuidof(),
+                shader_reflector.mut_void(),
+            )
+        },
+        "Could not create D3D12ShaderReflector"
+    );
+
+    let mut shader_desc = D3D12_SHADER_DESC {
+        ..unsafe { mem::zeroed() }
+    };
+    dx_call!(
+        shader_reflector.GetDesc(&mut shader_desc),
+        "Could not get shader description"
+    );
+
+    let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
+    for i in 0..shader_desc.BoundResources {
+        let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
+            ..unsafe { mem::zeroed() }
+        };
+        dx_call!(
+            shader_reflector.GetResourceBindingDesc(i, &mut binding_desc),
+            "Could not get resource binding description"
+        );
+
+        if binding_desc.Type == D3D_SIT_CBUFFER {}
+
+        save_descriptor_info(
+            tables,
+            &shader_compiler.unwrap(),
+            &spirv_sampled_images,
+            &spirv_uniform_buffers,
+            &mut binding_desc,
+        );
+    }
+
+    Ok(shader_blob)
 }
 
 fn save_descriptor_info(
