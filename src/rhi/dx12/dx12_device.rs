@@ -20,6 +20,7 @@ use crate::{
 };
 use cgmath::Vector2;
 use core::mem;
+use spirv_cross::hlsl;
 use std::collections::HashMap;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
@@ -30,7 +31,8 @@ use winapi::{shared::winerror, um::d3d12::*};
 
 #[macro_use]
 use log::*;
-use crate::rhi::dx12::dx12_utils::to_dx12_range_type;
+use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_range_type};
+use spirv_cross::ErrorCode;
 use std::ptr::null;
 
 pub struct Dx12Device {
@@ -545,7 +547,34 @@ impl Device for Dx12Device {
         pipeline_interface: Dx12PipelineInterface,
         data: shaderpack::PipelineCreationInfo,
     ) -> Result<Dx12Pipeline, PipelineCreationError> {
+        let mut pso_desc = D3D12_GRAPHICS_PIPELINE_STATE_DESC {
+            ..unsafe { mem::zeroed() }
+        };
+
         let mut shader_inputs = HashMap::<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>::new();
+        let spv_cross_options = hlsl::CompilerOptions {
+            shader_model: hlsl::ShaderModel::V5_1, // TODO: Check if this is the DX12 needs
+            point_size_compat: false,
+            point_coord_compat: false,
+            vertex: hlsl::CompilerVertexOptions {
+                invert_y: true, // TODO: check if this is correct
+                transform_clip_space: false,
+            },
+        };
+
+        match compile_shader(data.vertex_shader, "vs_5_1", spv_cross_options, &mut shader_inputs) {
+            Ok(blob) => {
+                pso_desc.VS.BytecodeLength = blob.GetBufferSize();
+                pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
+            }
+            Err(e) => match e {
+                ErrorCode::Unhandled => return Err(PipelineCreationError::InvalidShader),
+                ErrorCode::CompilationError(str) => {
+                    warn!("Could not compile vertex shader for {} because {}", data.name, str);
+                    return Err(PipelineCreationError::InvalidShader);
+                }
+            },
+        };
 
         Err(PipelineCreationError::InvalidShader)
     }

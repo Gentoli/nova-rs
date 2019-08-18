@@ -29,7 +29,7 @@ pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_
 
 pub fn compile_shader(
     shader: shaderpack::ShaderSource,
-    target: String,
+    target: &str,
     options: hlsl::CompilerOptions,
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
 ) -> Result<WeakPtr<ID3DBlob>, spirv_cross::ErrorCode> {
@@ -104,8 +104,8 @@ pub fn compile_shader(
 fn extract_descriptor_info_from_blob(
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
     shader_compiler: &spirv::Ast<hlsl::Target>,
-    spirv_sampled_images: &mut _,
-    spirv_uniform_buffers: &mut _,
+    spirv_sampled_images: &mut HashMap<String, spirv::Resource>,
+    spirv_uniform_buffers: &mut HashMap<String, spirv::Resource>,
     shader_blob: &WeakPtr<ID3DBlob>,
 ) {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
