@@ -20,6 +20,7 @@ pub mod debugging;
 pub mod fs;
 pub mod loading;
 pub mod logging;
+pub mod mesh;
 pub mod rhi;
 pub mod settings;
 pub mod shaderpack;
