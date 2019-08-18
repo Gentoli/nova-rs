@@ -92,6 +92,16 @@ impl Dx12Device {
     pub fn get_api_version(&self) -> u32 {
         self.system_info.supported_version
     }
+
+    fn handle_shader_compile_error(name: &str, e: ErrorCode) -> Result<Dx12Pipeline, PipelineCreationError> {
+        match e {
+            ErrorCode::Unhandled => Err(PipelineCreationError::InvalidShader),
+            ErrorCode::CompilationError(str) => {
+                warn!("Could not compile shader for {} because {}", name, str);
+                Err(PipelineCreationError::InvalidShader)
+            }
+        }
+    }
 }
 
 impl Device for Dx12Device {
@@ -562,19 +572,76 @@ impl Device for Dx12Device {
             },
         };
 
-        match compile_shader(data.vertex_shader, "vs_5_1", spv_cross_options, &mut shader_inputs) {
-            Ok(blob) => {
-                pso_desc.VS.BytecodeLength = blob.GetBufferSize();
-                pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
-            }
-            Err(e) => match e {
-                ErrorCode::Unhandled => return Err(PipelineCreationError::InvalidShader),
-                ErrorCode::CompilationError(str) => {
-                    warn!("Could not compile vertex shader for {} because {}", data.name, str);
-                    return Err(PipelineCreationError::InvalidShader);
+        // Shader compilation
+        {
+            match compile_shader(data.vertex_shader, "vs_5_1", spv_cross_options, &mut shader_inputs) {
+                Ok(blob) => {
+                    pso_desc.VS.BytecodeLength = blob.GetBufferSize();
+                    pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
                 }
-            },
-        };
+                Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+            };
+
+            if data.geometry_shader.is_some() {
+                match compile_shader(
+                    data.geometry_shader.unwrap(),
+                    "gs_5_1",
+                    spv_cross_options,
+                    &mut shader_inputs,
+                ) {
+                    Ok(blob) => {
+                        pso_desc.GS.BytecodeLength = blob.GetBufferSize();
+                        pso_desc.GS.pShaderBytecode = blob.GetBufferPointer();
+                    }
+                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                };
+            }
+
+            if data.tessellation_control_shader.is_some() {
+                match compile_shader(
+                    data.tessellation_control_shader.unwrap(),
+                    "hs_5_1",
+                    spv_cross_options,
+                    &mut shader_inputs,
+                ) {
+                    Ok(blob) => {
+                        pso_desc.HS.BytecodeLength = blob.GetBufferSize();
+                        pso_desc.HS.pShaderBytecode = blob.GetBufferPointer();
+                    }
+                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                };
+            }
+
+            if data.tessellation_evaluation_shader.is_some() {
+                match compile_shader(
+                    data.tessellation_evaluation_shader.unwrap(),
+                    "ds_5_1",
+                    spv_cross_options,
+                    &mut shader_inputs,
+                ) {
+                    Ok(blob) => {
+                        pso_desc.DS.BytecodeLength = blob.GetBufferSize();
+                        pso_desc.DS.pShaderBytecode = blob.GetBufferPointer();
+                    }
+                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                };
+            }
+
+            if data.fragment_shader.is_some() {
+                match compile_shader(
+                    data.fragment_shader.unwrap(),
+                    "ps_5_1",
+                    spv_cross_options,
+                    &mut shader_inputs,
+                ) {
+                    Ok(blob) => {
+                        pso_desc.PS.BytecodeLength = blob.GetBufferSize();
+                        pso_desc.PS.pShaderBytecode = blob.GetBufferPointer();
+                    }
+                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                };
+            }
+        }
 
         Err(PipelineCreationError::InvalidShader)
     }
