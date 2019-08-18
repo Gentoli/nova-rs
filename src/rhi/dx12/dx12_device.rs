@@ -582,13 +582,8 @@ impl Device for Dx12Device {
                 Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
             };
 
-            if data.geometry_shader.is_some() {
-                match compile_shader(
-                    data.geometry_shader.unwrap(),
-                    "gs_5_1",
-                    spv_cross_options,
-                    &mut shader_inputs,
-                ) {
+            if let Some(geo) = data.geometry_shader {
+                match compile_shader(geo, "gs_5_1", spv_cross_options, &mut shader_inputs) {
                     Ok(blob) => {
                         pso_desc.GS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.GS.pShaderBytecode = blob.GetBufferPointer();
@@ -597,13 +592,8 @@ impl Device for Dx12Device {
                 };
             }
 
-            if data.tessellation_control_shader.is_some() {
-                match compile_shader(
-                    data.tessellation_control_shader.unwrap(),
-                    "hs_5_1",
-                    spv_cross_options,
-                    &mut shader_inputs,
-                ) {
+            if let Some(tesc) = data.tessellation_control_shader {
+                match compile_shader(tesc, "hs_5_1", spv_cross_options, &mut shader_inputs) {
                     Ok(blob) => {
                         pso_desc.HS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.HS.pShaderBytecode = blob.GetBufferPointer();
@@ -612,13 +602,8 @@ impl Device for Dx12Device {
                 };
             }
 
-            if data.tessellation_evaluation_shader.is_some() {
-                match compile_shader(
-                    data.tessellation_evaluation_shader.unwrap(),
-                    "ds_5_1",
-                    spv_cross_options,
-                    &mut shader_inputs,
-                ) {
+            if let Some(tese) = data.tessellation_evaluation_shader {
+                match compile_shader(tese, "ds_5_1", spv_cross_options, &mut shader_inputs) {
                     Ok(blob) => {
                         pso_desc.DS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.DS.pShaderBytecode = blob.GetBufferPointer();
@@ -627,13 +612,8 @@ impl Device for Dx12Device {
                 };
             }
 
-            if data.fragment_shader.is_some() {
-                match compile_shader(
-                    data.fragment_shader.unwrap(),
-                    "ps_5_1",
-                    spv_cross_options,
-                    &mut shader_inputs,
-                ) {
+            if let Some(frag) = data.fragment_shader {
+                match compile_shader(frag, "ps_5_1", spv_cross_options, &mut shader_inputs) {
                     Ok(blob) => {
                         pso_desc.PS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.PS.pShaderBytecode = blob.GetBufferPointer();
