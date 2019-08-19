@@ -134,30 +134,20 @@ pub fn compile_shader(
                     "DirectX shader compiler error"
                 );
 
-                extract_descriptor_info_from_blob(
+                match extract_descriptor_info_from_blob(
                     tables,
                     &shader_compiler.unwrap(),
                     &mut spirv_sampled_images,
                     &mut spirv_uniform_buffers,
                     &shader_blob,
-                )
+                ) {
+                    Ok(_) => Ok(shader_blob),
+                    Err(e) => Err(e),
+                }
             })
         }
-        Err(e) => match e {
-            spirv_cross::ErrorCode::Unhandled => {
-                warn!("Unhandled error when compiling shader {:?}", shader.filename.to_str())
-            }
-            spirv_cross::ErrorCode::CompilationError(err) => warn!(
-                "Compilation error {} when compiling shader {:?}",
-                err,
-                shader.filename.to_str()
-            ),
-        },
-    };
-
-    let blob = WeakPtr::<ID3DBlob>::null();
-
-    Ok(blob)
+        Err(e) => Err(e),
+    }
 }
 
 fn extract_descriptor_info_from_blob(
@@ -166,7 +156,7 @@ fn extract_descriptor_info_from_blob(
     spirv_sampled_images: &mut HashMap<String, spirv::Resource>,
     spirv_uniform_buffers: &mut HashMap<String, spirv::Resource>,
     shader_blob: &WeakPtr<ID3DBlob>,
-) {
+) -> Result<bool, spirv_cross::ErrorCode> {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
     dx_call!(
         unsafe {
@@ -208,6 +198,8 @@ fn extract_descriptor_info_from_blob(
             &mut binding_desc,
         );
     }
+
+    Ok(true)
 }
 
 fn save_descriptor_info(
