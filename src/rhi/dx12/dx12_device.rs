@@ -707,6 +707,8 @@ impl Device for Dx12Device {
     }
 
     fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Dx12Image, MemoryError> {
+        // let dimensions
+
         unimplemented!()
     }
 
