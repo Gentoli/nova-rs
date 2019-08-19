@@ -37,6 +37,7 @@ use std::collections::HashMap;
 use std::ptr::null;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
+use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
 use winapi::shared::winerror;
 use winapi::shared::winerror::{FAILED, SUCCEEDED};
 use winapi::um::d3d12::*;
@@ -706,10 +707,65 @@ impl Device for Dx12Device {
         })
     }
 
-    fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Dx12Image, MemoryError> {
-        // let dimensions
+    fn create_image(
+        &self,
+        data: &shaderpack::TextureCreateInfo,
+        swapchain_size: &Vector2<u32>,
+    ) -> Result<Dx12Image, MemoryError> {
+        let dimensions = match data.format.dimension_type {
+            shaderpack::TextureDimensionType::ScreenRelative => Vector2::<u32>::new(),
+            shaderpack::TextureDimensionType::Absolute => swapchain_size,
+        };
 
-        unimplemented!()
+        let mut texture_desc = D3D12_RESOURCE_DESC {
+            Dimension: D3D12_DSV_DIMENSION_TEXTURE2D,
+            Alignment: 0,
+            Width: dimensions.x as u64,
+            Height: dimensions.y as u32,
+            DepthOrArraySize: 1,
+            MipLevels: 1,
+            Format: to_dxgi_format(&data.format.pixel_format),
+            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 1 },
+            Layout: D3D12_TEXTURE_LAYOUT_UNKNOWN,
+            Flags: D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET, /* TODO: Add a flag to TextureCreateInfo for if the
+                                                             * texture will be an RTV, and only set this flag if that
+                                                             * flag is true */
+        };
+
+        if data.format.pixel_format == shaderpack::PixelFormat::Depth
+            || data.format.pixel_format == shaderpack::PixelFormat::DepthStencil
+        {
+            texture_desc.flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+        }
+
+        let mut image = WeakPtr::<ID3D12Resource>::null();
+        let heap_props = D3D12_HEAP_PROPERTIES {
+            Type: D3D12_HEAP_TYPE_DEFAULT,
+            CPUPageProperty: D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE,
+            MemoryPoolPreference: D3D12_MEMORY_POOL_L1,
+            CreationNodeMask: 0,
+            VisibleNodeMask: 0,
+        };
+
+        let hr = unsafe {
+            self.device.CreateCommittedResource(
+                &heap_props,
+                D3D12_HEAP_FLAG_NONE,
+                &texture_desc,
+                D3D12_RESOURCE_STATE_RENDER_TARGET,
+                null,
+                &ID3D12Resource::uuidof(),
+                image.mut_void(),
+            )
+        };
+        if FAILED(hr) {
+            match hr {
+                E_OUTOFMEMORY => return Err(MemoryError::OutOfDeviceMemory),
+                _ => return Err(MemoryError::OutOfHostMemory),
+            }
+        }
+
+        Ok(Dx12Image { image })
     }
 
     fn create_semaphore(&self) -> Result<Dx12Semaphore, MemoryError> {

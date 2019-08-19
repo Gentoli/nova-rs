@@ -199,7 +199,12 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `data` - The ImageData to create the image from.
-    fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Self::Image, MemoryError>;
+    /// * `swapchain_size` - The size of the swapchain, in pixels. Used to resolve the size of swapchain-relative images
+    fn create_image(
+        &self,
+        data: shaderpack::TextureCreateInfo,
+        swapchain_size: &Vector2<u32>,
+    ) -> Result<Self::Image, MemoryError>;
 
     /// Creates a new Semaphore.
     fn create_semaphore(&self) -> Result<Self::Semaphore, MemoryError>;
@@ -346,20 +351,20 @@ pub trait Swapchain<'a> {
     /// Gets the index of the first available swapchain image
     ///
     /// If no swapchain images are available, this method will block until one is available
-    fn acquire_next_image() -> u32;
+    fn acquire_next_image(&self) -> u32;
 
     /// Tells the presents the specified swapchain image to the screen. The swapchain image at the specified index
     /// is unusable until that index is returned from acquire_next_image
-    fn present(index: u32);
+    fn present(&self, index: u32);
 
     /// Borrows the framebuffer that can render to the swapchain image at the specified index
-    fn get_framebuffer(index: u32) -> &'a Self::Framebuffer;
+    fn get_framebuffer(&self, index: u32) -> &'a Self::Framebuffer;
 
     /// Borrows the graphics API's representation of the swapchain image at the specified index
-    fn get_image(index: u32) -> &'a Self::Image;
+    fn get_image(&self, index: u32) -> &'a Self::Image;
 
     /// Gets the size, in pixels,  of the swapchain
-    fn get_size() -> Vector2<u32>;
+    fn get_size(&self) -> Vector2<u32>;
 }
 
 /// FIXME(dethraid): docs
