@@ -191,9 +191,10 @@ pub trait Device {
 
     /// Creates an Image from the specified ImageCreateInto.
     ///
-    /// FIXME(dethraid): Is this true anymore? If not does this need to change the structure
-    ///     of the code.
-    /// Images are created directly from the Device and not from a MemoryPool .
+    /// Images are created directly from the Device and not from a MemoryPool. In Nova, images are either render
+    /// targets, which should have a dedicated allocation, or a virtual texture, which should also have a dedicated
+    /// allocation because of its size. All the types of images that Nova deals with need a dedicated allocation, so
+    /// there's no support for creating an image from a non-unique memory allocation
     ///
     /// # Parameters
     ///
