@@ -335,6 +335,22 @@ pub trait Renderpass {}
 /// FIXME(dethraid): docs
 pub trait Framebuffer {}
 
+pub trait Swapchain {
+    type Framebuffer: Framebuffer;
+    type Image: Image;
+    type Fence: Fence;
+
+    fn acquire_next_image() -> u32;
+
+    fn present(index: u32);
+
+    fn get_framebuffer(index: u32) -> Self::Framebuffer;
+
+    fn get_image(index: u32) -> Self::Image;
+
+    fn get_size() -> Vector2<u32>;
+}
+
 /// FIXME(dethraid): docs
 pub trait PipelineInterface {}
 
