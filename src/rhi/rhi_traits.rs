@@ -335,19 +335,30 @@ pub trait Renderpass {}
 /// FIXME(dethraid): docs
 pub trait Framebuffer {}
 
-pub trait Swapchain {
+/// A swapchain that Nova can render to
+///
+/// Contains all the framebuffers and images needed!
+pub trait Swapchain<'a> {
     type Framebuffer: Framebuffer;
     type Image: Image;
     type Fence: Fence;
 
+    /// Gets the index of the first available swapchain image
+    ///
+    /// If no swapchain images are available, this method will block until one is available
     fn acquire_next_image() -> u32;
 
+    /// Tells the presents the specified swapchain image to the screen. The swapchain image at the specified index
+    /// is unusable until that index is returned from acquire_next_image
     fn present(index: u32);
 
-    fn get_framebuffer(index: u32) -> Self::Framebuffer;
+    /// Borrows the framebuffer that can render to the swapchain image at the specified index
+    fn get_framebuffer(index: u32) -> &'a Self::Framebuffer;
 
-    fn get_image(index: u32) -> Self::Image;
+    /// Borrows the graphics API's representation of the swapchain image at the specified index
+    fn get_image(index: u32) -> &'a Self::Image;
 
+    /// Gets the size, in pixels,  of the swapchain
     fn get_size() -> Vector2<u32>;
 }
 
