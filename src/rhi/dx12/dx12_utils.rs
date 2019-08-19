@@ -1,20 +1,21 @@
 #![allow(unsafe_code)]
 
-use crate::rhi::DescriptorType;
-
-use crate::rhi::dx12::com::WeakPtr;
-use crate::shaderpack;
-use std::collections::HashMap;
-use winapi::um::d3d12::*;
-use winapi::um::d3dcommon::ID3DBlob;
 #[macro_use]
 use log::*;
+
+use crate::rhi::dx12::com::WeakPtr;
+use crate::rhi::DescriptorType;
+use crate::shaderpack;
 use spirv_cross::{hlsl, spirv, ErrorCode};
+use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem;
 use std::ptr::null;
+use winapi::shared::dxgiformat::*;
 use winapi::shared::winerror::FAILED;
+use winapi::um::d3d12::*;
 use winapi::um::d3d12shader::*;
+use winapi::um::d3dcommon::ID3DBlob;
 use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
 use winapi::Interface;
@@ -65,6 +66,23 @@ pub fn to_dx12_stencil_op(op: &shaderpack::StencilOp) -> D3D12_STENCIL_OP {
         shaderpack::StencilOp::Decr => D3D12_STENCIL_OP_DECR,
         shaderpack::StencilOp::DecrWrap => D3D12_STENCIL_OP_DECR_SAT,
         shaderpack::StencilOp::Invert => D3D12_STENCIL_OP_INVERT,
+    }
+}
+
+pub fn to_dx12_topology(topology: &shaderpack::PrimitiveTopology) -> D3D12_PRIMITIVE_TOPOLOGY_TYPE {
+    match topology {
+        shaderpack::PrimitiveTopology::Triangles => D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+        shaderpack::PrimitiveTopology::Lines => D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+    }
+}
+
+pub fn to_dxgi_format(format: &shaderpack::PixelFormat) -> DXGI_FORMAT {
+    match format {
+        shaderpack::PixelFormat::RGBA8 => DXGI_FORMAT_R8G8B8A8_UNORM,
+        shaderpack::PixelFormat::RGBA16F => DXGI_FORMAT_R16G16B16A16_FLOAT,
+        shaderpack::PixelFormat::RGBA32F => DXGI_FORMAT_R32G32B32A32_FLOAT,
+        shaderpack::PixelFormat::Depth => DXGI_FORMAT_D32_FLOAT,
+        shaderpack::PixelFormat::DepthStencil => DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
     }
 }
 

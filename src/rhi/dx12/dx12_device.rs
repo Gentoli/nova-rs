@@ -17,7 +17,9 @@ use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_renderpass::Dx12Renderpass;
 use crate::rhi::dx12::dx12_semaphore::Dx12Semaphore;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
-use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_blend, to_dx12_range_type};
+use crate::rhi::dx12::dx12_utils::{
+    compile_shader, to_dx12_blend, to_dx12_range_type, to_dx12_topology, to_dxgi_format,
+};
 use crate::rhi::dx12::pso_utils::{
     get_input_descriptions, make_depth_stencil_state, make_rasterizer_desc, make_render_target_blend_desc,
 };
@@ -632,26 +634,76 @@ impl Device for Dx12Device {
         }
 
         // Blending
-        pso_desc.BlendState.AlphaToCoverageEnable =
-            data.states
-                .contains(&shaderpack::RasterizerState::EnableAlphaToCoverage) as i32;
+        {
+            pso_desc.BlendState.AlphaToCoverageEnable =
+                data.states
+                    .contains(&shaderpack::RasterizerState::EnableAlphaToCoverage) as i32;
 
-        pso_desc.BlendState.IndependentBlendEnable = false as i32;
+            pso_desc.BlendState.IndependentBlendEnable = false as i32;
 
-        pso_desc.BlendState.RenderTarget[0] = make_render_target_blend_desc(&data);
+            pso_desc.BlendState.RenderTarget[0] = make_render_target_blend_desc(&data);
 
-        pso_desc.SampleMask = 0xFFFF_FFFF;
+            pso_desc.SampleMask = 0xFFFF_FFFF;
+        }
 
-        pso_desc.RasterizerState = make_rasterizer_desc(&data);
+        // Rasterizer state
+        {
+            pso_desc.RasterizerState = make_rasterizer_desc(&data);
+        }
 
-        pso_desc.DepthStencilState = make_depth_stencil_state(&data);
+        // Depth/Stencil state
+        {
+            pso_desc.DepthStencilState = make_depth_stencil_state(&data);
+        }
 
-        // TODO: Get the pipeline inputs from the pipeline data
-        let input_descs = get_input_descriptions();
-        pso_desc.InputLayout.NumElements = input_descs.len() as u32;
-        pso_desc.InputLayout.pInputElementDescs = input_descs.as_ptr();
+        // Input Assembler state
+        {
+            // TODO: Get the pipeline inputs from the pipeline data
+            let input_descs = get_input_descriptions();
+            pso_desc.InputLayout.NumElements = input_descs.len() as u32;
+            pso_desc.InputLayout.pInputElementDescs = input_descs.as_ptr();
 
-        Err(PipelineCreationError::InvalidShader)
+            pso_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+            pso_desc.PrimitiveTopologyType = to_dx12_topology(&data.primitive_mode);
+        }
+
+        // RTV and DSV formats
+        {
+            for i in 0..pipeline_interface.color_attachments.len() {
+                let attachment_info = pipeline_interface.color_attachments.get(i).unwrap();
+                pso_desc.RTVFormats[i] = to_dxgi_format(&attachment_info.pixel_format);
+            }
+            if let Some(depth_info) = pipeline_interface.depth_texture {
+                pso_desc.DSVFormat = to_dxgi_format(&depth_info.pixel_format);
+            }
+        }
+
+        // MSAA
+        {
+            if data.msaa_support != shaderpack::MSAASupport::None {
+                pso_desc.SampleDesc.Count = 4;
+                pso_desc.SampleDesc.Quality = 1;
+            }
+        }
+
+        // Debug
+        {
+            // if debug
+            pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_TOOL_DEBUG;
+        }
+
+        // PSO creation
+        let pso = WeakPtr::<ID3D12PipelineState>::null();
+        dx_call!(
+            self.device
+                .CreateGraphicsPipelineState(&pso_desc, &ID3D12PipelineState::uuidof(), pso.mut_void()),
+            "Could not create PSO"
+        );
+
+        Ok(Dx12Pipeline {
+            pso,
+            root_sig: pipeline_interface.root_sig,
+        })
     }
 
     fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Dx12Image, MemoryError> {
