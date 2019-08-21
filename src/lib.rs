@@ -29,3 +29,5 @@ pub mod rhi;
 pub mod settings;
 pub mod shaderpack;
 pub mod surface;
+
+struct ErrorCode<T>(T, String);
