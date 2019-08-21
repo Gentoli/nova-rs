@@ -207,7 +207,7 @@ pub trait Device {
     ) -> Result<Self::Image, MemoryError>;
 
     /// Creates a new Semaphore.
-    fn create_semaphore(&self) -> Result<Self::Semaphore, MemoryError>;
+    fn create_semaphore(&self, start_signalled: bool) -> Result<Self::Semaphore, MemoryError>;
 
     /// Creates the specified number of Semaphores.
     ///
