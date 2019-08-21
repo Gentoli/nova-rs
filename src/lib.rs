@@ -33,3 +33,5 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
+
+struct ErrorCode<T>(T, String);
