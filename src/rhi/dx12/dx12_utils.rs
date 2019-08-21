@@ -12,7 +12,7 @@ use std::ffi::CStr;
 use std::mem;
 use std::ptr::null;
 use winapi::shared::dxgiformat::*;
-use winapi::shared::ntdef::{LANG_NEUTRAL, LPSTR, MAKELANGID, SUBLANG_DEFAULT};
+use winapi::shared::ntdef::{LANG_NEUTRAL, MAKELANGID, SUBLANG_DEFAULT};
 use winapi::shared::winerror::{FAILED, HRESULT};
 use winapi::um::d3d12::*;
 use winapi::um::d3d12shader::*;
@@ -31,7 +31,7 @@ macro_rules! dx_call {
     }};
 }
 
-pub impl From<HRESULT> for ErrorCode<HRESULT> {
+impl From<HRESULT> for ErrorCode<HRESULT> {
     fn from(hr: i32) -> Self {
         let message = unsafe {
             let mut error_message_buffer: [char; 1024] = ['\0'; 1024];
@@ -124,10 +124,13 @@ pub fn compile_shader(
     target: &str,
     options: hlsl::CompilerOptions,
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
-) -> Result<WeakPtr<ID3DBlob>, ErrorCode> {
+) -> Result<WeakPtr<ID3DBlob>, ErrorCode<HRESULT>> {
     let shader_module = spirv::Module::from_words(&shader.source);
     let shader_compiler = spirv::Ast::<hlsl::Target>::parse(&shader_module);
-    match shader_compiler.and_then(|ast| ast.get_shader_resources()) {
+    match shader_compiler
+        .and_then(|ast| ast.get_shader_resources())
+        .map_err(ErrorCode::<HRESULT>::from)
+    {
         Ok(resources) => {
             let mut spirv_sampled_images = HashMap::<String, spirv::Resource>::new();
             for sampled_image in resources.sampled_images {
@@ -140,44 +143,42 @@ pub fn compile_shader(
             }
 
             // I know that shader_compiler is Ok because I'm in the branch of the match where it's Ok
-            shader_compiler?.compile().and_then(|shader_hlsl| {
-                // TODO: Write HLSL to a file to help debug
-                let shader_blob = WeakPtr::<ID3DBlob>::null();
-                let shader_error_blob = WeakPtr::<ID3DBlob>::null();
+            shader_compiler?
+                .compile()
+                .map_err(ErrorCode::<HRESULT>::from)
+                .and_then(|shader_hlsl| {
+                    // TODO: Write HLSL to a file to help debug
+                    let shader_blob = WeakPtr::<ID3DBlob>::null();
+                    let shader_error_blob = WeakPtr::<ID3DBlob>::null();
 
-                let hr = dx_call!(
-                    unsafe {
-                        D3DCompile2(
-                            shader_hlsl.as_ptr() as _,
-                            shader_hlsl.len(),
-                            shader.filename.to_str().unwrap().as_ptr() as _,
-                            null as _,
-                            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                            "main".as_ptr() as _,
-                            target.as_ptr() as _,
-                            D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
-                            0,
-                            0,
-                            null as _,
-                            0,
-                            shader_blob.GetBufferPointer() as _,
-                            shader_error_blob.GetBufferPointer() as _,
-                        )
-                    },
-                    spirv_cross::ErrorCode
-                );
+                    dx_call!(D3DCompile2(
+                        shader_hlsl.as_ptr() as _,
+                        shader_hlsl.len(),
+                        shader.filename.to_str().unwrap().as_ptr() as _,
+                        null as _,
+                        D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                        "main".as_ptr() as _,
+                        target.as_ptr() as _,
+                        D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
+                        0,
+                        0,
+                        null as _,
+                        0,
+                        shader_blob.GetBufferPointer() as _,
+                        shader_error_blob.GetBufferPointer() as _,
+                    ));
 
-                match extract_descriptor_info_from_blob(
-                    tables,
-                    &shader_compiler.unwrap(),
-                    &mut spirv_sampled_images,
-                    &mut spirv_uniform_buffers,
-                    &shader_blob,
-                ) {
-                    Ok(_) => Ok(shader_blob),
-                    Err(e) => Err(e),
-                }
-            })
+                    match extract_descriptor_info_from_blob(
+                        tables,
+                        &shader_compiler.unwrap(),
+                        &mut spirv_sampled_images,
+                        &mut spirv_uniform_buffers,
+                        &shader_blob,
+                    ) {
+                        Ok(_) => Ok(shader_blob),
+                        Err(e) => Err(e),
+                    }
+                })
         }
         Err(e) => Err(e),
     }
@@ -189,7 +190,7 @@ fn extract_descriptor_info_from_blob(
     spirv_sampled_images: &mut HashMap<String, spirv::Resource>,
     spirv_uniform_buffers: &mut HashMap<String, spirv::Resource>,
     shader_blob: &WeakPtr<ID3DBlob>,
-) -> Result<bool, ErrorCode> {
+) -> Result<bool, ErrorCode<HRESULT>> {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
     dx_call!(D3DReflect(
         shader_blob.GetBufferPointer(),
@@ -201,20 +202,14 @@ fn extract_descriptor_info_from_blob(
     let mut shader_desc = D3D12_SHADER_DESC {
         ..unsafe { mem::zeroed() }
     };
-    dx_call!(
-        shader_reflector.GetDesc(&mut shader_desc),
-        "Could not get shader description"
-    );
+    dx_call!(shader_reflector.GetDesc(&mut shader_desc));
 
     let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
     for i in 0..shader_desc.BoundResources {
         let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
             ..unsafe { mem::zeroed() }
         };
-        dx_call!(
-            shader_reflector.GetResourceBindingDesc(i, &mut binding_desc),
-            "Could not get resource binding description"
-        );
+        dx_call!(shader_reflector.GetResourceBindingDesc(i, &mut binding_desc));
 
         if binding_desc.Type == D3D_SIT_CBUFFER {}
 
