@@ -57,3 +57,15 @@ pub mod shaderpack;
 pub mod surface;
 
 struct ErrorCode<T>(T, String);
+
+impl<T> From<spirv_cross::ErrorCode> for ErrorCode<T>
+where
+    T: Default,
+{
+    fn from(err: spirv_cross::ErrorCode) -> Self {
+        match err {
+            spirv_cross::ErrorCode::Unhandled => (T::default(), String::from("Unhandled error :(")),
+            spirv_cross::ErrorCode::CompilationError(msg) => (T::default(), msg),
+        }
+    }
+}
