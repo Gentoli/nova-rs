@@ -5,20 +5,53 @@ use log::*;
 
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::DescriptorType;
-use crate::shaderpack;
-use spirv_cross::{hlsl, spirv, ErrorCode};
+use crate::{shaderpack, ErrorCode};
+use spirv_cross::{hlsl, spirv};
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem;
 use std::ptr::null;
 use winapi::shared::dxgiformat::*;
-use winapi::shared::winerror::FAILED;
+use winapi::shared::ntdef::{LANG_NEUTRAL, LPSTR, MAKELANGID, SUBLANG_DEFAULT};
+use winapi::shared::winerror::{FAILED, HRESULT};
 use winapi::um::d3d12::*;
 use winapi::um::d3d12shader::*;
 use winapi::um::d3dcommon::ID3DBlob;
 use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
+use winapi::um::winbase::{FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM};
 use winapi::Interface;
+
+macro_rules! dx_call {
+    ( $x:expr ) => {{
+        let hr = $x;
+        if FAILED(hr) {
+            return Err(ErrorCode::<HRESULT>::from(hr));
+        }
+    }};
+}
+
+pub impl From<HRESULT> for ErrorCode<HRESULT> {
+    fn from(hr: i32) -> Self {
+        let message = unsafe {
+            let mut error_message_buffer: [char; 1024] = ['\0'; 1024];
+
+            FormatMessageA(
+                FORMAT_MESSAGE_FROM_SYSTEM,
+                null(),
+                hr as u32,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT) as u32,
+                *error_message_buffer,
+                1024,
+                null(),
+            );
+
+            String::from("Good message")
+        };
+
+        ErrorCode(hr, message)
+    }
+}
 
 pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_RANGE_TYPE {
     match descriptor_type {
@@ -91,7 +124,7 @@ pub fn compile_shader(
     target: &str,
     options: hlsl::CompilerOptions,
     tables: &mut HashMap<u32, Vec<D3D12_DESCRIPTOR_RANGE1>>,
-) -> Result<WeakPtr<ID3DBlob>, spirv_cross::ErrorCode> {
+) -> Result<WeakPtr<ID3DBlob>, ErrorCode> {
     let shader_module = spirv::Module::from_words(&shader.source);
     let shader_compiler = spirv::Ast::<hlsl::Target>::parse(&shader_module);
     match shader_compiler.and_then(|ast| ast.get_shader_resources()) {
@@ -131,7 +164,7 @@ pub fn compile_shader(
                             shader_error_blob.GetBufferPointer() as _,
                         )
                     },
-                    "DirectX shader compiler error"
+                    spirv_cross::ErrorCode
                 );
 
                 match extract_descriptor_info_from_blob(
@@ -156,19 +189,14 @@ fn extract_descriptor_info_from_blob(
     spirv_sampled_images: &mut HashMap<String, spirv::Resource>,
     spirv_uniform_buffers: &mut HashMap<String, spirv::Resource>,
     shader_blob: &WeakPtr<ID3DBlob>,
-) -> Result<bool, spirv_cross::ErrorCode> {
+) -> Result<bool, ErrorCode> {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
-    dx_call!(
-        unsafe {
-            D3DReflect(
-                shader_blob.GetBufferPointer(),
-                shader_blob.GetBufferSize(),
-                &ID3D12ShaderReflection::uuidof(),
-                shader_reflector.mut_void(),
-            )
-        },
-        "Could not create D3D12ShaderReflector"
-    );
+    dx_call!(D3DReflect(
+        shader_blob.GetBufferPointer(),
+        shader_blob.GetBufferSize(),
+        &ID3D12ShaderReflection::uuidof(),
+        shader_reflector.mut_void(),
+    ));
 
     let mut shader_desc = D3D12_SHADER_DESC {
         ..unsafe { mem::zeroed() }

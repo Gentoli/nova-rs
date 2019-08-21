@@ -768,8 +768,21 @@ impl Device for Dx12Device {
         Ok(Dx12Image { image })
     }
 
-    fn create_semaphore(&self) -> Result<Dx12Semaphore, MemoryError> {
-        unimplemented!()
+    fn create_semaphore(&self, start_signalled: bool) -> Result<Dx12Semaphore, MemoryError> {
+        let initial_fence_value = match start_signalled {
+            true => CPU_FENCE_SIGNALLED,
+            false => 0,
+        };
+
+        let mut fence = WeakPtr::<ID3D12Fence>::null();
+        let hr = unsafe {
+            self.device.CreateFence(
+                initial_value,
+                D3D12_FENCE_FLAG_NONE,
+                &ID3D12Fence::uuidof(),
+                fence.mut_void(),
+            )
+        };
     }
 
     fn create_semaphores(&self, count: u32) -> Result<Vec<Dx12Semaphore>, MemoryError> {

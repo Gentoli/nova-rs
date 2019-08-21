@@ -1,11 +1,3 @@
-macro_rules! dx_call {
-    ( $x:expr, $s:literal ) => {{
-        if FAILED($x) {
-            return Err(ErrorCode::CompilationError(String::from($s)));
-        }
-    }};
-}
-
 pub mod dx12_graphics_api;
 
 mod com;
