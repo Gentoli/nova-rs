@@ -46,7 +46,10 @@ impl From<HRESULT> for ErrorCode<HRESULT> {
                 null(),
             );
 
-            String::from("Good message")
+            unsafe { CStr::from_ptr(error_message_buffer as _) }
+                .to_str()
+                .unwrap()
+                .to_string()
         };
 
         ErrorCode(hr, message)
