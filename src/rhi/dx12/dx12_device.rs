@@ -39,7 +39,7 @@ use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
 use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
 use winapi::shared::winerror;
-use winapi::shared::winerror::{FAILED, SUCCEEDED};
+use winapi::shared::winerror::{FAILED, HRESULT, SUCCEEDED};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
 use winapi::Interface;
@@ -102,7 +102,7 @@ impl Dx12Device {
         self.system_info.supported_version
     }
 
-    fn handle_shader_compile_error(name: &str, e: ErrorCode) -> Result<Dx12Pipeline, PipelineCreationError> {
+    fn handle_shader_compile_error(name: &str, e: ErrorCode<HRESULT>) -> Result<Dx12Pipeline, ErrorCode<HRESULT>> {
         match e {
             ErrorCode::Unhandled => Err(PipelineCreationError::InvalidShader),
             ErrorCode::CompilationError(str) => {
@@ -588,7 +588,7 @@ impl Device for Dx12Device {
                     pso_desc.VS.BytecodeLength = blob.GetBufferSize();
                     pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
                 }
-                Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                Err(e) => return Err(PipelineCreationError::InvalidShader),
             };
 
             if let Some(geo) = data.geometry_shader {
@@ -597,7 +597,7 @@ impl Device for Dx12Device {
                         pso_desc.GS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.GS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                    Err(e) => return Err(PipelineCreationError::InvalidShader),
                 };
             }
 
@@ -607,7 +607,7 @@ impl Device for Dx12Device {
                         pso_desc.HS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.HS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                    Err(e) => return Err(PipelineCreationError::InvalidShader),
                 };
             }
 
@@ -617,7 +617,7 @@ impl Device for Dx12Device {
                         pso_desc.DS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.DS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                    Err(e) => return Err(PipelineCreationError::InvalidShader),
                 };
             }
 
@@ -627,7 +627,7 @@ impl Device for Dx12Device {
                         pso_desc.PS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.PS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Dx12Device::handle_shader_compile_error(&data.name, e),
+                    Err(e) => return Err(PipelineCreationError::InvalidShader),
                 };
             }
 
@@ -697,8 +697,7 @@ impl Device for Dx12Device {
         let pso = WeakPtr::<ID3D12PipelineState>::null();
         dx_call!(
             self.device
-                .CreateGraphicsPipelineState(&pso_desc, &ID3D12PipelineState::uuidof(), pso.mut_void()),
-            "Could not create PSO"
+                .CreateGraphicsPipelineState(&pso_desc, &ID3D12PipelineState::uuidof(), pso.mut_void())
         );
 
         Ok(Dx12Pipeline {
