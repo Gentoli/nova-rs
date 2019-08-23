@@ -588,7 +588,7 @@ impl Device for Dx12Device {
                     pso_desc.VS.BytecodeLength = blob.GetBufferSize();
                     pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
                 }
-                Err(e) => return Err(PipelineCreationError::InvalidShader),
+                Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
             };
 
             if let Some(geo) = data.geometry_shader {
@@ -597,7 +597,7 @@ impl Device for Dx12Device {
                         pso_desc.GS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.GS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Err(PipelineCreationError::InvalidShader),
+                    Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
@@ -607,7 +607,7 @@ impl Device for Dx12Device {
                         pso_desc.HS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.HS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Err(PipelineCreationError::InvalidShader),
+                    Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
@@ -617,7 +617,7 @@ impl Device for Dx12Device {
                         pso_desc.DS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.DS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Err(PipelineCreationError::InvalidShader),
+                    Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
@@ -627,7 +627,7 @@ impl Device for Dx12Device {
                         pso_desc.PS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.PS.pShaderBytecode = blob.GetBufferPointer();
                     }
-                    Err(e) => return Err(PipelineCreationError::InvalidShader),
+                    Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
