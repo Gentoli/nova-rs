@@ -192,7 +192,7 @@ pub enum PipelineCreationError {
     #[fail(
         display = "One or more shaders failed to compile or link. If debug reports are enabled, details are reported through a debug report."
     )]
-    InvalidShader,
+    InvalidShader(String),
 }
 
 /// The state of a resource. The resource will be optimized for the given use case, though it may still be used in
