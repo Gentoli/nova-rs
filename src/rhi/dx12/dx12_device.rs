@@ -17,9 +17,8 @@ use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_renderpass::Dx12Renderpass;
 use crate::rhi::dx12::dx12_semaphore::Dx12Semaphore;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
-use crate::rhi::dx12::dx12_utils::{
-    compile_shader, to_dx12_blend, to_dx12_range_type, to_dx12_topology, to_dxgi_format,
-};
+use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_range_type, to_dx12_topology, to_dxgi_format};
+use crate::rhi::dx12::get_uuid;
 use crate::rhi::dx12::pso_utils::{
     get_input_descriptions, make_depth_stencil_state, make_rasterizer_desc, make_render_target_blend_desc,
 };
@@ -29,17 +28,16 @@ use crate::rhi::{
     QueueGettingError, QueueType, ResourceBindingDescription,
 };
 use crate::shaderpack;
+use crate::ErrorCode;
 use cgmath::Vector2;
 use core::mem;
 use spirv_cross::hlsl;
-use spirv_cross::ErrorCode;
 use std::collections::HashMap;
 use std::ptr::null;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
 use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
-use winapi::shared::winerror;
-use winapi::shared::winerror::{FAILED, HRESULT, SUCCEEDED};
+use winapi::shared::winerror::{E_OUTOFMEMORY, FAILED, HRESULT, SUCCEEDED};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
 use winapi::Interface;
@@ -69,10 +67,10 @@ impl Dx12Device {
             let hr = D3D12CreateDevice(
                 adapter.as_unknown() as *const _ as *mut _,
                 D3D_FEATURE_LEVEL_11_0,
-                &ID3D12Device::uuidof(),
+                get_uuid(device),
                 device.mut_void(),
             );
-            if winerror::SUCCEEDED(hr) {
+            if SUCCEEDED(hr) {
                 Ok(device)
             } else {
                 Err(DeviceCreationError::Failed)
@@ -100,16 +98,6 @@ impl Dx12Device {
 
     pub fn get_api_version(&self) -> u32 {
         self.system_info.supported_version
-    }
-
-    fn handle_shader_compile_error(name: &str, e: ErrorCode<HRESULT>) -> Result<Dx12Pipeline, ErrorCode<HRESULT>> {
-        match e {
-            ErrorCode::Unhandled => Err(PipelineCreationError::InvalidShader),
-            ErrorCode::CompilationError(str) => {
-                warn!("Could not compile shader for {} because {}", name, str);
-                Err(PipelineCreationError::InvalidShader)
-            }
-        }
     }
 }
 
@@ -155,9 +143,9 @@ impl Device for Dx12Device {
 
         let hr = unsafe {
             self.device
-                .CreateCommandQueue(&queue_desc, &ID3D12CommandQueue::uuidof(), queue.mut_void())
+                .CreateCommandQueue(&queue_desc, get_uuid(queue), queue.mut_void())
         };
-        if winerror::SUCCEEDED(hr) {
+        if SUCCEEDED(hr) {
             Ok(Dx12Queue::new(queue))
         } else {
             Err(QueueGettingError::OutOfMemory)
@@ -221,9 +209,9 @@ impl Device for Dx12Device {
 
             let hr = unsafe {
                 self.device
-                    .CreateHeap(&heap_create_info, &ID3D12Heap::uuidof(), heap.mut_void())
+                    .CreateHeap(&heap_create_info, get_uuid(heap), heap.mut_void())
             };
-            if winerror::SUCCEEDED(hr) {
+            if SUCCEEDED(hr) {
                 Ok(Dx12Memory::new(heap, size))
             } else if memory_usage == MemoryUsage::StagingBuffer {
                 Err(AllocationError::OutOfHostMemory)
@@ -245,13 +233,10 @@ impl Device for Dx12Device {
 
         let mut allocator = WeakPtr::<ID3D12CommandAllocator>::null();
         let hr = unsafe {
-            self.device.CreateCommandAllocator(
-                command_allocator_type,
-                &ID3D12CommandAllocator::uuidof(),
-                allocator.mut_void(),
-            )
+            self.device
+                .CreateCommandAllocator(command_allocator_type, get_uuid(allocator), allocator.mut_void())
         };
-        if winerror::SUCCEEDED(hr) {
+        if SUCCEEDED(hr) {
             Ok(Dx12CommandAllocator::new(allocator))
         } else {
             Err(MemoryError::OutOfHostMemory)
@@ -366,11 +351,8 @@ impl Device for Dx12Device {
 
         let mut heap = WeakPtr::<ID3D12DescriptorHeap>::null();
         let hr = unsafe {
-            self.device.CreateDescriptorHeap(
-                &rtv_descriptor_heap_desc,
-                &ID3D12DescriptorHeap::uuidof(),
-                heap.mut_void(),
-            )
+            self.device
+                .CreateDescriptorHeap(&rtv_descriptor_heap_desc, get_uuid(heap), heap.mut_void())
         };
         if SUCCEEDED(hr) {
             let base_descriptor = unsafe { heap.GetCPUDescriptorHandleForHeapStart() };
@@ -487,7 +469,7 @@ impl Device for Dx12Device {
                     0,
                     root_sig_blob.GetBufferPointer(),
                     root_sig_blob.GetBufferSize(),
-                    &ID3D12RootSignature::uuidof(),
+                    get_uuid(root_sig),
                     root_sig.mut_void(),
                 )
             };
@@ -520,15 +502,12 @@ impl Device for Dx12Device {
 
         let mut sampler_heap = WeakPtr::<ID3D12DescriptorHeap>::null();
         let hr = unsafe {
-            self.device.CreateDescriptorHeap(
-                &sampler_heap_desc,
-                &ID3D12DescriptorHeap::uuidof(),
-                sampler_heap.mut_void(),
-            )
+            self.device
+                .CreateDescriptorHeap(&sampler_heap_desc, get_uuid(sampler_heap), sampler_heap.mut_void())
         };
         if FAILED(hr) {
             match hr {
-                winerror::E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
+                E_OUTOFMEMORY => return Err(DescriptorPoolCreationError::OutOfHostMemory),
                 _ => return Err(DescriptorPoolCreationError::Fragmentation),
             }
         }
@@ -542,11 +521,8 @@ impl Device for Dx12Device {
 
         let mut data_heap = WeakPtr::<ID3D12DescriptorHeap>::null();
         let hr = unsafe {
-            self.device.CreateDescriptorHeap(
-                &cbv_srv_uav_descriptor_heap,
-                &ID3D12DescriptorHeap::uuidof(),
-                data_heap.mut_void(),
-            )
+            self.device
+                .CreateDescriptorHeap(&cbv_srv_uav_descriptor_heap, get_uuid(data_heap), data_heap.mut_void())
         };
         if FAILED(hr) {
             match hr {
@@ -697,7 +673,7 @@ impl Device for Dx12Device {
         let pso = WeakPtr::<ID3D12PipelineState>::null();
         dx_call!(
             self.device
-                .CreateGraphicsPipelineState(&pso_desc, &ID3D12PipelineState::uuidof(), pso.mut_void())
+                .CreateGraphicsPipelineState(&pso_desc, get_uuid(pso), pso.mut_void())
         );
 
         Ok(Dx12Pipeline {
@@ -753,7 +729,7 @@ impl Device for Dx12Device {
                 &texture_desc,
                 D3D12_RESOURCE_STATE_RENDER_TARGET,
                 null,
-                &ID3D12Resource::uuidof(),
+                get_uuid(image),
                 image.mut_void(),
             )
         };
@@ -775,12 +751,8 @@ impl Device for Dx12Device {
 
         let mut fence = WeakPtr::<ID3D12Fence>::null();
         let hr = unsafe {
-            self.device.CreateFence(
-                initial_value,
-                D3D12_FENCE_FLAG_NONE,
-                &ID3D12Fence::uuidof(),
-                fence.mut_void(),
-            )
+            self.device
+                .CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, get_uuid(fence), fence.mut_void())
         };
     }
 

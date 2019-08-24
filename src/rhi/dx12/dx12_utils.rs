@@ -22,15 +22,6 @@ use winapi::um::d3dcompiler::*;
 use winapi::um::winbase::{FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM};
 use winapi::Interface;
 
-macro_rules! dx_call {
-    ( $x:expr ) => {{
-        let hr = $x;
-        if FAILED(hr) {
-            return Err(ErrorCode::<HRESULT>::from(hr));
-        }
-    }};
-}
-
 impl From<HRESULT> for ErrorCode<HRESULT> {
     fn from(hr: i32) -> Self {
         let message = unsafe {

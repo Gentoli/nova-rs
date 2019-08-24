@@ -1,3 +1,18 @@
+use winapi::shared::guiddef::REFGUID;
+
+fn get_uuid<T>(_: T) -> REFGUID {
+    &T::uuidof()
+}
+
+macro_rules! dx_call {
+    ( $x:expr ) => {{
+        let hr = unsafe { $x };
+        if FAILED(hr) {
+            return Err(ErrorCode::<HRESULT>::from(hr));
+        }
+    }};
+}
+
 pub mod dx12_graphics_api;
 
 mod com;
