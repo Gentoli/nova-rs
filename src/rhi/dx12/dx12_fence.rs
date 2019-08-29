@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::Fence;
 use winapi::um::d3d12::*;

@@ -28,7 +28,6 @@ use crate::rhi::{
     QueueGettingError, QueueType, ResourceBindingDescription,
 };
 use crate::shaderpack;
-use crate::ErrorCode;
 use cgmath::Vector2;
 use core::mem;
 use spirv_cross::hlsl;
@@ -37,11 +36,10 @@ use std::ptr::null;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
 use winapi::shared::dxgiformat::DXGI_FORMAT_R8G8B8A8_SNORM;
 use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
-use winapi::shared::winerror::{E_OUTOFMEMORY, FAILED, HRESULT, SUCCEEDED};
+use winapi::shared::winerror::{E_OUTOFMEMORY, FAILED, SUCCEEDED};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
-use winapi::um::synchapi::{CreateEventA, ResetEvent, WaitForSingleObject};
-use winapi::um::winbase::INFINITE;
+use winapi::um::synchapi::{CreateEventA, WaitForSingleObject};
 use winapi::Interface;
 
 const CPU_FENCE_SIGNALED: i32 = 16;
