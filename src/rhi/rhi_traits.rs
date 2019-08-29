@@ -209,7 +209,8 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `count` - The number of semaphores to create.
-    fn create_semaphores(&self, count: u32) -> Result<Vec<Self::Semaphore>, MemoryError>;
+    /// * `start_signalled` - True if all the semaphores should be created in a signalled state, false otherwise
+    fn create_semaphores(&self, count: u32, start_signalled: bool) -> Result<Vec<Self::Semaphore>, MemoryError>;
 
     /// Creates a new fence.
     fn create_fence(&self) -> Result<Self::Fence, MemoryError>;
