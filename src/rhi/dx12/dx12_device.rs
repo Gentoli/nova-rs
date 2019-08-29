@@ -858,7 +858,7 @@ impl Device for Dx12Device {
 
                     unsafe {
                         self.device
-                            .CreateShaderResourceView(image.resource, &srv_desc, write_handle)
+                            .CreateShaderResourceView(image.resource, &srv_descriptor, write_handle)
                     };
                 }
             }
