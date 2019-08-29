@@ -213,7 +213,7 @@ pub trait Device {
     fn create_semaphores(&self, count: u32, start_signalled: bool) -> Result<Vec<Self::Semaphore>, MemoryError>;
 
     /// Creates a new fence.
-    fn create_fence(&self) -> Result<Self::Fence, MemoryError>;
+    fn create_fence(&self, start_signalled: bool) -> Result<Self::Fence, MemoryError>;
 
     /// Creates the specified number of Fences.
     ///
