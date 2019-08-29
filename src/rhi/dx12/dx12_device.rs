@@ -774,11 +774,14 @@ impl Device for Dx12Device {
         Ok(Dx12Semaphore { fence })
     }
 
-    fn create_semaphores(&self, count: u32) -> Result<Vec<Dx12Semaphore>, MemoryError> {
-        let vec = Vec::<Dx12Semaphore>::new();
+    fn create_semaphores(&self, count: u32, start_signalled: bool) -> Result<Vec<Dx12Semaphore>, MemoryError> {
+        let mut vec = Vec::<Dx12Semaphore>::new();
 
         for i in 0..count {
-            // match create_semaphore()
+            match self.create_semaphore(start_signalled) {
+                Ok(fence) => vec.push(fence),
+                Err(e) => return Err(e),
+            }
         }
 
         Ok(vec)
