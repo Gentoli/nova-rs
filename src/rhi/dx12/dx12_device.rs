@@ -23,8 +23,8 @@ use crate::rhi::dx12::pso_utils::{
     get_input_descriptions, make_depth_stencil_state, make_rasterizer_desc, make_render_target_blend_desc,
 };
 use crate::rhi::{
-    AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, Device,
-    DeviceCreationError, DeviceProperties, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
+    AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, DescriptorUpdateInfo,
+    Device, DeviceCreationError, DeviceProperties, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
     QueueGettingError, QueueType, ResourceBindingDescription,
 };
 use crate::shaderpack;
@@ -831,6 +831,37 @@ impl Device for Dx12Device {
     }
 
     fn update_descriptor_sets(&self, updates: Vec<DescriptorSetWrite>) {
-        unimplemented!()
+        for update in updates {
+            let mut write_handle = D3D12_CPU_DESCRIPTOR_HANDLE {
+                ..unsafe { mem::zeroed() }
+            };
+
+            let descriptor_heap_start_handle = unsafe { update.heap.GetGCPUDescriptorForHeapStart() };
+
+            write_handle.ptr = descriptor_heap_start_handle.ptr + self.shader_resource_descriptor_size * update.binding;
+
+            match update.update_info {
+                DescriptorUpdateInfo::Image(image, format, sampler) => {
+                    let mut srv_descriptor = D3D12_SHADER_RESOURCE_VIEW_DESC {
+                        Format: to_dxgi_format(format.pixel_format),
+                        ViewDimension: D3D12_SRV_DIMENSION_TEXTURE2D, // TODO: Support more texture types
+                        Shader4ComponentMapping: 0,
+                        ..unsafe { mem::zeroed() }
+                    };
+
+                    srv_descriptor.Texture2D_mut() = D3D12_TEX2D_SRV {
+                        MostDetailedMip: 0,
+                        MipLevels: 1,
+                        PlaneSlice: 0,
+                        ResourceMinLODClamp: 0.0,
+                    };
+
+                    unsafe {
+                        self.device
+                            .CreateShaderResourceView(image.resource, &srv_desc, write_handle)
+                    };
+                }
+            }
+        }
     }
 }
