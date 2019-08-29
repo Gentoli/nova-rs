@@ -220,7 +220,7 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `count` - The number of fences to create.
-    fn create_fences(&self, count: u32) -> Result<Vec<Self::Fence>, MemoryError>;
+    fn create_fences(&self, count: u32, start_signalled: bool) -> Result<Vec<Self::Fence>, MemoryError>;
 
     /// Waits for all the provided fences to be signalled.
     ///
