@@ -372,8 +372,22 @@ pub trait Pipeline {}
 /// FIXME(dethraid): docs
 pub trait Semaphore {}
 
-/// FIXME(dethraid): docs
-pub trait Fence {}
+/// Represents a fence in an API-agnostic way
+///
+/// Fences are used for GPU -> CPU synchronization. Various functions take in fences to signal when an operation is
+/// complete, then you can wait on the fence itself to ensure that the GPU is finished with some work before the CPU
+/// moves ahead
+///
+/// Example use case: when you submit a command list to a queue you may pass in a fence. The GPU will signal the fence
+/// when the command list has finished executing, so the CPU can wait on the fence to know when it can destroy the
+/// resources used by that command list
+pub trait Fence {
+    /// Waits for this fence to become signalled
+    fn wait_for_signal(&self);
+
+    /// Resets this fence from a signalled to an unsignalled state
+    fn reset(&self);
+}
 
 /// Allocator for command lists.
 pub trait CommandAllocator {
