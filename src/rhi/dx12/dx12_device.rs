@@ -670,11 +670,17 @@ impl Device for Dx12Device {
         }
 
         // PSO creation
-        let pso = WeakPtr::<ID3D12PipelineState>::null();
-        dx_call!(
+        let mut pso = WeakPtr::<ID3D12PipelineState>::null();
+        let hr = unsafe {
             self.device
                 .CreateGraphicsPipelineState(&pso_desc, get_uuid(pso), pso.mut_void())
-        );
+        };
+        if FAILED(hr) {
+            match hr {
+                E_OUTOFMEMORY => return Err(PipelineCreationError::OutOfDeviceMemory),
+                _ => return Err(PipelineCreationError::OutOfHostMemory),
+            }
+        }
 
         Ok(Dx12Pipeline {
             pso,
@@ -745,19 +751,37 @@ impl Device for Dx12Device {
 
     fn create_semaphore(&self, start_signalled: bool) -> Result<Dx12Semaphore, MemoryError> {
         let initial_fence_value = match start_signalled {
-            true => CPU_FENCE_SIGNALLED,
+            true => 1,
             false => 0,
         };
 
         let mut fence = WeakPtr::<ID3D12Fence>::null();
         let hr = unsafe {
-            self.device
-                .CreateFence(initial_value, D3D12_FENCE_FLAG_NONE, get_uuid(fence), fence.mut_void())
+            self.device.CreateFence(
+                initial_fence_value,
+                D3D12_FENCE_FLAG_NONE,
+                get_uuid(fence),
+                fence.mut_void(),
+            )
         };
+        if FAILED(hr) {
+            match hr {
+                E_OUTOFMEMORY => return Err(MemoryError::OutOfHostMemory),
+                _ => return Err(MemoryError::OutOfHostMemory),
+            }
+        }
+
+        Ok(Dx12Semaphore { fence })
     }
 
     fn create_semaphores(&self, count: u32) -> Result<Vec<Dx12Semaphore>, MemoryError> {
-        unimplemented!()
+        let vec = Vec::<Dx12Semaphore>::new();
+
+        for i in 0..count {
+            // match create_semaphore()
+        }
+
+        Ok(vec)
     }
 
     fn create_fence(&self) -> Result<Dx12Fence, MemoryError> {
