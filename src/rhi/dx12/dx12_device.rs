@@ -24,7 +24,7 @@ use crate::rhi::dx12::pso_utils::{
 };
 use crate::rhi::{
     AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, DescriptorUpdateInfo,
-    Device, DeviceCreationError, DeviceProperties, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
+    Device, DeviceCreationError, DeviceProperties, Fence, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
     QueueGettingError, QueueType, ResourceBindingDescription,
 };
 use crate::shaderpack;
@@ -820,13 +820,13 @@ impl Device for Dx12Device {
 
     fn wait_for_fences(&self, fences: Vec<Dx12Fence>) {
         for fence in fences {
-            unsafe { WaitForSingleObject(fence.event, INFINITE) };
+            fence.wait_for_signal();
         }
     }
 
     fn reset_fences(&self, fences: Vec<Dx12Fence>) {
         for fence in fences {
-            unsafe { ResetEvent(fence.event) };
+            fence.reset();
         }
     }
 
@@ -841,9 +841,9 @@ impl Device for Dx12Device {
             write_handle.ptr = descriptor_heap_start_handle.ptr + self.shader_resource_descriptor_size * update.binding;
 
             match update.update_info {
-                DescriptorUpdateInfo::Image(image, format, sampler) => {
+                DescriptorUpdateInfo::Image { image, format, sampler } => {
                     let mut srv_descriptor = D3D12_SHADER_RESOURCE_VIEW_DESC {
-                        Format: to_dxgi_format(format.pixel_format),
+                        Format: to_dxgi_format(&format.pixel_format),
                         ViewDimension: D3D12_SRV_DIMENSION_TEXTURE2D, // TODO: Support more texture types
                         Shader4ComponentMapping: 0,
                         ..unsafe { mem::zeroed() }
