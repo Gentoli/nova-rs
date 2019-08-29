@@ -40,7 +40,8 @@ use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
 use winapi::shared::winerror::{E_OUTOFMEMORY, FAILED, HRESULT, SUCCEEDED};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
-use winapi::um::synchapi::CreateEventA;
+use winapi::um::synchapi::{CreateEventA, ResetEvent, WaitForSingleObject};
+use winapi::um::winbase::INFINITE;
 use winapi::Interface;
 
 const CPU_FENCE_SIGNALED: i32 = 16;
@@ -818,11 +819,15 @@ impl Device for Dx12Device {
     }
 
     fn wait_for_fences(&self, fences: Vec<Dx12Fence>) {
-        unimplemented!()
+        for fence in fences {
+            unsafe { WaitForSingleObject(fence.event, INFINITE) };
+        }
     }
 
     fn reset_fences(&self, fences: Vec<Dx12Fence>) {
-        unimplemented!()
+        for fence in fences {
+            unsafe { ResetEvent(fence.event) };
+        }
     }
 
     fn update_descriptor_sets(&self, updates: Vec<DescriptorSetWrite>) {
