@@ -40,7 +40,11 @@ use winapi::shared::dxgitype::DXGI_SAMPLE_DESC;
 use winapi::shared::winerror::{E_OUTOFMEMORY, FAILED, HRESULT, SUCCEEDED};
 use winapi::um::d3d12::*;
 use winapi::um::d3dcommon::{ID3DBlob, D3D_FEATURE_LEVEL_11_0};
+use winapi::um::synchapi::CreateEventA;
 use winapi::Interface;
+
+const CPU_FENCE_SIGNALED: i32 = 16;
+const GPU_FENCE_SIGNALED: i32 = 32;
 
 pub struct Dx12Device {
     /// Graphics adapter that we're using
@@ -751,7 +755,7 @@ impl Device for Dx12Device {
 
     fn create_semaphore(&self, start_signalled: bool) -> Result<Dx12Semaphore, MemoryError> {
         let initial_fence_value = match start_signalled {
-            true => 1,
+            true => CPU_FENCE_SIGNALED,
             false => 0,
         };
 
@@ -787,12 +791,30 @@ impl Device for Dx12Device {
         Ok(vec)
     }
 
-    fn create_fence(&self) -> Result<Dx12Fence, MemoryError> {
-        unimplemented!()
+    fn create_fence(&self, start_signalled: bool) -> Result<Dx12Fence, MemoryError> {
+        // I feel like a functional boi now
+        self.create_semaphore(start_signalled).map(|semaphore| {
+            let event = unsafe { CreateEventA(null(), false as i32, start_signalled as i32, null()) };
+            semaphore.fence.SetEventOnCompletion(CPU_FENCE_SIGNALED, event);
+
+            Dx12Fence {
+                fence: semaphore.fence,
+                event,
+            }
+        })
     }
 
-    fn create_fences(&self, count: u32) -> Result<Vec<Dx12Fence>, MemoryError> {
-        unimplemented!()
+    fn create_fences(&self, count: u32, start_signalled: bool) -> Result<Vec<Dx12Fence>, MemoryError> {
+        let mut vec = Vec::<Dx12Fence>::new();
+
+        for i in 0..count {
+            match self.create_fence(start_signalled) {
+                Ok(fence) => vec.push(fence),
+                Err(e) => Err(e),
+            }
+        }
+
+        Ok(vec)
     }
 
     fn wait_for_fences(&self, fences: Vec<Dx12Fence>) {
