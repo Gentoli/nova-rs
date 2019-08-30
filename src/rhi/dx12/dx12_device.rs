@@ -215,7 +215,7 @@ impl Device for Dx12Device {
                     .CreateHeap(&heap_create_info, get_uuid(heap), heap.mut_void())
             };
             if SUCCEEDED(hr) {
-                Ok(Dx12Memory::new(heap, size))
+                Ok(Dx12Memory::new(self.device, heap, size))
             } else if memory_usage == MemoryUsage::StagingBuffer {
                 Err(AllocationError::OutOfHostMemory)
             } else {
