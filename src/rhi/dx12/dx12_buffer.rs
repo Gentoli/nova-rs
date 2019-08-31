@@ -15,7 +15,7 @@ impl Buffer for Dx12Buffer {
     fn map(&self) -> Result<*mut (), MappingError> {
         let mapped_range = D3D12_RANGE {
             Begin: 0 as usize,
-            End: size as usize,
+            End: self.size as usize,
         };
 
         let mut mapped_buffer = ptr::null_mut();
@@ -33,7 +33,7 @@ impl Buffer for Dx12Buffer {
     fn unmap(&self) {
         let mapped_range = D3D12_RANGE {
             Begin: 0 as usize,
-            End: size as usize,
+            End: self.size as usize,
         };
 
         unsafe { self.resource.Unmap(0, &mapped_range) };

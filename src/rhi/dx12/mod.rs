@@ -1,6 +1,7 @@
+use crate::rhi::dx12::com::WeakPtr;
 use winapi::shared::guiddef::REFGUID;
 
-fn get_uuid<T>(_: T) -> REFGUID {
+fn get_uuid<T>(_: WeakPtr<T>) -> REFGUID {
     &T::uuidof()
 }
 

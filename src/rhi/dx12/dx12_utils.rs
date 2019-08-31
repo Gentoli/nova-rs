@@ -4,7 +4,7 @@
 use log::*;
 
 use crate::rhi::dx12::com::WeakPtr;
-use crate::rhi::DescriptorType;
+use crate::rhi::{DescriptorType, QueueType};
 use crate::{shaderpack, ErrorCode};
 use spirv_cross::{hlsl, spirv};
 use std::collections::HashMap;
@@ -100,6 +100,14 @@ pub fn to_dx12_topology(topology: &shaderpack::PrimitiveTopology) -> D3D12_PRIMI
     match topology {
         shaderpack::PrimitiveTopology::Triangles => D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         shaderpack::PrimitiveTopology::Lines => D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+    }
+}
+
+pub fn to_command_list_type(queue_type: &QueueType) -> D3D12_COMMAND_LIST_TYPE {
+    match queue_type {
+        QueueType::Graphics => D3D12_COMMAND_LIST_TYPE_DIRECT,
+        QueueType::Compute => D3D12_COMMAND_LIST_TYPE_COMPUTE,
+        QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
     }
 }
 
