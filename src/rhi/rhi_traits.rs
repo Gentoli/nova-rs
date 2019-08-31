@@ -292,7 +292,8 @@ pub trait Resource {}
 
 /// A data buffer.
 pub trait Buffer {
-    /// Writes data to the specified region of this buffer.
+    /// Writes data to the specified region of this buffer by mapping the buffer to a pointer, writing to the buffer,
+    /// then unmapping it
     ///
     /// Note: buffers you call this method on must _not_ be device local, because they must be
     /// CPU-addressable.
