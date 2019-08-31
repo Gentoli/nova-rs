@@ -297,18 +297,16 @@ pub trait Resource {}
 
 /// A data buffer.
 pub trait Buffer {
-    /// Writes data to the specified region of this buffer by mapping the buffer to a pointer, writing to the buffer,
-    /// then unmapping it
+    /// Maps this buffer so that you can write data directly to it
     ///
-    /// Note: buffers you call this method on must _not_ be device local, because they must be
-    /// CPU-addressable.
+    /// This method will fail if the buffer is in device-local memory, or has otherwise been created in a heap with no
+    /// CPU access
+    fn map(&self) -> Result<*mut (), MappingError>;
+
+    /// Unmaps this buffer
     ///
-    /// # Parameters
-    ///
-    /// * `data` - The data to write to the buffer.
-    /// * `num_bytes` - The number of bytes of the data to write.
-    /// * `offset` - The offset in the buffer to where you want the data to be.
-    fn write_data(&self, data: BufferCreateInfo, num_bytes: u64, offset: u64);
+    /// This method doesn't do anything interesting if the buffer isn't CPU-addressable
+    fn unmap(&self);
 }
 
 /// An raw image with no sampler.
