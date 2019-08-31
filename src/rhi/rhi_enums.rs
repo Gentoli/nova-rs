@@ -195,6 +195,18 @@ pub enum PipelineCreationError {
     InvalidShader(String),
 }
 
+/// Failure type for mapping a buffer
+#[derive(Fail, Debug, Clone, Eq, PartialEq)]
+pub enum MappingError {
+    /// The resource is in device local memory and therefore can't be mapped
+    #[fail(display = "Resource is in device local memory.")]
+    ResourceInDeviceMemory,
+
+    /// Mapping failed for a generic reason
+    #[fail(display = "Mapping failed for an unknown reason.")]
+    MappingFailed,
+}
+
 /// The state of a resource. The resource will be optimized for the given use case, though it may still be used in
 /// others.
 #[derive(Debug, Clone, Eq, PartialEq)]
