@@ -9,6 +9,7 @@ use crate::loading::{DirectoryFileTree, FileTree, LoadingError};
 use failure::Error;
 use failure::Fail;
 use futures::task::SpawnExt;
+use path_dsl::path;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -166,12 +167,7 @@ where
     let mut pipelines_futs = Vec::new();
 
     for path in materials_folder {
-        let full_path = {
-            let mut p = PathBuf::new();
-            p.push("materials");
-            p.push(&path);
-            p
-        };
+        let full_path = path!("materials" | &path).into();
         let ext = path.extension().and_then(|s| s.to_str());
         match ext {
             Some("mat") => {
@@ -188,12 +184,7 @@ where
 
     let shaders_folder: HashSet<PathBuf> = enumerate_folder(&tree, "shaders")?
         .into_iter()
-        .map(|path| {
-            let mut p = PathBuf::new();
-            p.push("shaders");
-            p.push(path);
-            p
-        })
+        .map(|path| path!("shaders" | path).into())
         .collect();
 
     let shader_futs: Vec<_> = shaders_folder.iter().map(|p| tree.read_text(p)).collect();
