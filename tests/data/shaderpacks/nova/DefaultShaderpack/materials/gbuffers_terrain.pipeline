@@ -4,8 +4,8 @@
     "states": [
         "DisableAlphaWrite"
     ],
-    "vertexShader": "shaders/gbuffers_terrain",
-    "fragmentShader": "shaders/gbuffers_terrain",
+    "vertexShader": "shaders/gbuffers_terrain.vert",
+    "fragmentShader": "shaders/gbuffers_terrain.frag",
     "vertexFields": [
         {
             "name": "position_in",

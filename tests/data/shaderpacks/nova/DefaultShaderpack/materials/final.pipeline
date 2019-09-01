@@ -6,8 +6,8 @@
         "DisableDepthWrite",
         "DisableDepthTest"
     ],
-    "vertexShader": "shaders/textured_unlit",
-    "fragmentShader": "shaders/image_passthrough",
+    "vertexShader": "shaders/textured_unlit.vert",
+    "fragmentShader": "shaders/image_passthrough.frag",
     "vertexFields": [
         {
             "name": "position_in",

@@ -5,8 +5,8 @@
     "states": [
         "DisableAlphaWrite"
     ],
-    "vertexShader": "shaders/gui",
-    "fragmentShader": "shaders/gui",
+    "vertexShader": "shaders/gui.vert",
+    "fragmentShader": "shaders/gui.frag",
     "vertexFields": [
         {
             "name": "position_in",
