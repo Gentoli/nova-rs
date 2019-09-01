@@ -1,6 +1,6 @@
 //! Loaders for user shaderpacks.
 //!
-//! There is currently a single entrypoint: [`load_nova_shaderpack`].
+//! There is currently a single entrypoint: [`load_nova_shaderpack`](shaderpack::load_nova_shaderpack).
 //! Use this function to load a shaderpack from disk.
 //!
 //! TOOD(cwfitzgerald): Unify shaderpack entrypoints.
