@@ -56,15 +56,14 @@ pub enum ResourceSpecificData {
     },
 }
 
-/// Barrier for resources.
 #[derive(Clone)]
 pub struct RenderPassCreationInfo {}
 
+/// Data for how to barrier a resource
+///
+/// The resource isn't specified in this struct because making it Rusty is lame
 #[derive(Clone)]
 pub struct ResourceBarrier {
-    /// The resource the barrier is guarding.
-    pub resource: Arc<dyn Resource>,
-
     /// Initial resource state before the barrier.
     pub initial_state: ResourceState,
 

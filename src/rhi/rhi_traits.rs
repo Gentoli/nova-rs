@@ -294,8 +294,10 @@ pub trait Memory {
 
 /// A buffer or texture. Often interchangeable.
 pub trait Resource {
+    type ResourceType;
+
     /// Gets the API-specific object that this Resource wraps
-    fn get_api_resource<ResourceType>(&self) -> *mut ResourceType;
+    fn get_api_resource(&self) -> &Self::ResourceType;
 }
 
 /// A data buffer.
@@ -425,6 +427,11 @@ pub trait CommandList {
     type DescriptorSet: DescriptorSet;
     /// CommandList's pipeline interface type.
     type PipelineInterface: PipelineInterface;
+    /// API-specific type for a Resource
+    ///
+    /// D3D12 uses ID3D12Resource for everything so this is fine. Vulkan has separate VkImage and VkBuffer so this won't
+    /// be fine, but that's an issue for later
+    type Resource: Resource;
 
     /// Records resource barriers which happen after all the stages in the `stages_before_barrier`
     /// bitmask, and before all the stages in the `stages_after_barrier` bitmask.
@@ -438,7 +445,7 @@ pub trait CommandList {
         &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
-        barriers: &Vec<ResourceBarrier>,
+        barriers: &Vec<(Self::Resource, ResourceBarrier)>,
     );
 
     /// Records a command to copy data from one buffer to another.

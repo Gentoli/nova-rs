@@ -8,11 +8,12 @@
 
 use failure::{Error, Fail};
 use futures::Future;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod dir;
 
 pub use dir::*;
+use std::collections::HashSet;
 
 /// View over an abstract tree of directories and files.
 ///
@@ -21,56 +22,69 @@ pub use dir::*;
 ///
 /// All paths passes in are relative to the `FileTree` root, and paths which go outside this `FileTree` are not allowed.
 /// The one exception is the [`from_path`](FileTree::from_path) method which accepts a path to the `FileTree` root.
-pub trait FileTree<'a> {
-    /// The result from creating a new file tree using [`from_path`](FileTree::from_path).
-    ///
-    /// This is often `Self`.
-    type CreateResult: FileTree<'a>;
-
-    /// Iterator type to iterate over the members of a directory.
-    type DirIter: Iterator<Item = &'a Path>;
+pub trait FileTree: Sized {
+    // /// Iterator type to iterate over the members of a directory.
+    // // This will not compile without GAT, and that's a while out.
+    // // Use a Vec<PathBuf> instead
+    // type DirIter<'a>: Iterator<Item = &'a Path>;
 
     /// Create a file tree from the path provided.
     ///
     /// May be expensive depending on the target you are opening.
-    fn from_path(path: &Path) -> Box<dyn Future<Output = Result<Self::CreateResult, LoadingError>>>;
+    fn from_path(path: &Path) -> Self::FromPathResult;
+    /// Associated return type for [`FileTree::from_path`].
+    ///
+    /// Stopgap until async fn in traits happens.
+    type FromPathResult: Future<Output = Result<Self, LoadingError>> + Send;
 
     /// Checks is file path exists within the current file tree.
-    fn exists(&'a self, path: &Path) -> bool;
+    fn exists(&self, path: &Path) -> bool;
 
     /// Checks if the path points to a file.
     ///
     /// File Exists -> `Ok(true)`
     /// Exists but isn't file -> `Ok(false)`
     /// Path doesn't exist -> [`LoadingError::PathNotFound`]
-    fn is_file(&'a self, path: &Path) -> Result<bool, LoadingError>;
+    fn is_file(&self, path: &Path) -> Result<bool, LoadingError>;
 
     /// Checks if the path points to a directory.
     ///
     /// Directory Exists -> `Ok(true)`
     /// Exists but isn't directory -> `Ok(false)`
     /// Path doesn't exist -> [`LoadingError::PathNotFound`]
-    fn is_dir(&'a self, path: &Path) -> Result<bool, LoadingError>;
+    fn is_dir(&self, path: &Path) -> Result<bool, LoadingError>;
 
-    /// Returns an iterator over all paths in the specified directory.
+    /// Returns an ~~iterator~~ [`HashSet`] over all paths in the specified directory.
     ///
     /// Fails if the directory doesn't exist, or is unreadable.
-    fn read_dir(&'a self, path: &Path) -> Result<Self::DirIter, LoadingError>;
+    fn read_dir(&self, path: &Path) -> Result<HashSet<PathBuf>, LoadingError>;
 
     /// Reads a file into a vector of u8.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u8>, LoadingError>>>;
+    fn read(&self, path: &Path) -> Self::ReadResult;
+    /// Associated return type for [`FileTree::read`].
+    ///
+    /// Stopgap until async fn in traits happens.
+    type ReadResult: Future<Output = Result<Vec<u8>, LoadingError>> + Send;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_u32(&'a self, path: &Path) -> Box<dyn Future<Output = Result<Vec<u32>, LoadingError>>>;
+    fn read_u32(&self, path: &Path) -> Self::ReadU32Result;
+    /// Associated return type for [`FileTree::read_u32`].
+    ///
+    /// Stopgap until async fn in traits happens.
+    type ReadU32Result: Future<Output = Result<Vec<u32>, LoadingError>> + Send;
 
     /// Reads a file as little endian into an array of u32.
     ///
     /// Fails if file doesn't exist or isn't readable.
-    fn read_text(&'a self, path: &Path) -> Box<dyn Future<Output = Result<String, LoadingError>>>;
+    fn read_text(&self, path: &Path) -> Self::ReadTextResult;
+    /// Associated return type for [`FileTree::read_u32`].
+    ///
+    /// Stopgap until async fn in traits happens.
+    type ReadTextResult: Future<Output = Result<String, LoadingError>> + Send;
 }
 
 /// Error when trying to load a resource.
