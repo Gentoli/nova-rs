@@ -103,9 +103,6 @@ pub enum DescriptorUpdateInfo {
 /// Data for writing to a descriptor set.
 #[derive(Clone)]
 pub struct DescriptorSetWrite {
-    /// Set to be written to.
-    pub set: Arc<dyn DescriptorSet>,
-
     /// Descriptor binding id.
     pub binding: u32,
 
