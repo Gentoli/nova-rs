@@ -427,11 +427,8 @@ pub trait CommandList {
     type DescriptorSet: DescriptorSet;
     /// CommandList's pipeline interface type.
     type PipelineInterface: PipelineInterface;
-    /// API-specific type for a Resource
-    ///
-    /// D3D12 uses ID3D12Resource for everything so this is fine. Vulkan has separate VkImage and VkBuffer so this won't
-    /// be fine, but that's an issue for later
-    type Resource: Resource;
+    /// API-specific type for an image
+    type Image: Image;
 
     /// Records resource barriers which happen after all the stages in the `stages_before_barrier`
     /// bitmask, and before all the stages in the `stages_after_barrier` bitmask.
@@ -445,7 +442,8 @@ pub trait CommandList {
         &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
-        barriers: &Vec<(Self::Resource, ResourceBarrier)>,
+        image_barriers: &Vec<(Self::Image, ResourceBarrier)>,
+        buffer_barriers: &Vec<(Self::Buffer, ResourceBarrier)>,
     );
 
     /// Records a command to copy data from one buffer to another.
