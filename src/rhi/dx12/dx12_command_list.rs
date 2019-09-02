@@ -108,7 +108,19 @@ impl CommandList for Dx12CommandList {
         source_offset: u64,
         num_bytes: u64,
     ) {
-        unimplemented!()
+        if num_bytes == destination_buffer.size && num_bytes == source_buffer.size {
+            // If we're copying the whole buffer region, use the faster CopyResource
+            self.list
+                .CopyResource(destination_buffer.resource.as_ptr(), source_buffer.resource.as_ptr());
+        } else {
+            self.list.CopyBufferRegion(
+                destination_buffer.resource.as_ptr(),
+                destination_offset,
+                source_buffer.resource.as_ptr(),
+                source_offset,
+                num_bytes,
+            );
+        }
     }
 
     fn execute_command_lists(&self, lists: &Vec<Dx12CommandList>) {
