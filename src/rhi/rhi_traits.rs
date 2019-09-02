@@ -202,7 +202,7 @@ pub trait Device {
     /// * `swapchain_size` - The size of the swapchain, in pixels. Used to resolve the size of swapchain-relative images
     fn create_image(
         &self,
-        data: shaderpack::TextureCreateInfo,
+        data: &shaderpack::TextureCreateInfo,
         swapchain_size: &Vector2<u32>,
     ) -> Result<Self::Image, MemoryError>;
 
