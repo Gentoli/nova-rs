@@ -67,8 +67,6 @@ pub trait Device {
     /// Device's fence type.
     type Fence: Fence;
 
-    type DescriptorSet: DescriptorSet;
-
     /// Accesses all properties of the physical device.
     fn get_properties(&self) -> DeviceProperties;
 
@@ -248,7 +246,7 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `updates` - The DescriptorSetWrites to execute.
-    fn update_descriptor_sets(&self, updates: Vec<(Self::DescriptorSet, DescriptorSetWrite)>);
+    fn update_descriptor_sets(&self, updates: Vec<(Self::DescriptorPool, DescriptorSetWrite)>);
 }
 
 /// Represents a queue of command lists to run.
