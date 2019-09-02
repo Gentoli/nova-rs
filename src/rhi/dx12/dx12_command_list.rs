@@ -96,6 +96,8 @@ impl CommandList for Dx12CommandList {
 
             dx12_barriers.append(&mut translated_dx12_barriers);
         }
+
+        unsafe { self.list.ResourceBarriers(dx12_barriers.num(), dx12_barriers.as_ptr()) };
     }
 
     fn copy_buffer(
