@@ -170,22 +170,27 @@ pub fn compile_shader(
                     let shader_blob = WeakPtr::<ID3DBlob>::null();
                     let shader_error_blob = WeakPtr::<ID3DBlob>::null();
 
-                    dx_call!(D3DCompile2(
-                        shader_hlsl.as_ptr() as _,
-                        shader_hlsl.len(),
-                        shader.filename.to_str().unwrap().as_ptr() as _,
-                        null as _,
-                        D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                        "main".as_ptr() as _,
-                        target.as_ptr() as _,
-                        D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
-                        0,
-                        0,
-                        null as _,
-                        0,
-                        shader_blob.GetBufferPointer() as _,
-                        shader_error_blob.GetBufferPointer() as _,
-                    ));
+                    let hr = unsafe {
+                        D3DCompile2(
+                            shader_hlsl.as_ptr() as _,
+                            shader_hlsl.len(),
+                            shader.filename.to_str().unwrap().as_ptr() as _,
+                            null as _,
+                            D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                            "main".as_ptr() as _,
+                            target.as_ptr() as _,
+                            D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
+                            0,
+                            0,
+                            null as _,
+                            0,
+                            shader_blob.GetBufferPointer() as _,
+                            shader_error_blob.GetBufferPointer() as _,
+                        )
+                    };
+                    if FAILED(hr) {
+                        return Err(ErrorCode::<HRESULT>::from(hr));
+                    }
 
                     match extract_descriptor_info_from_blob(
                         tables,
@@ -211,24 +216,24 @@ fn extract_descriptor_info_from_blob(
     shader_blob: &WeakPtr<ID3DBlob>,
 ) -> Result<bool, ErrorCode<HRESULT>> {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
-    dx_call!(D3DReflect(
+    D3DReflect(
         shader_blob.GetBufferPointer(),
         shader_blob.GetBufferSize(),
         &ID3D12ShaderReflection::uuidof(),
         shader_reflector.mut_void(),
-    ));
+    );
 
     let mut shader_desc = D3D12_SHADER_DESC {
         ..unsafe { mem::zeroed() }
     };
-    dx_call!(shader_reflector.GetDesc(&mut shader_desc));
+    shader_reflector.GetDesc(&mut shader_desc);
 
     let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
     for i in 0..shader_desc.BoundResources {
         let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
             ..unsafe { mem::zeroed() }
         };
-        dx_call!(shader_reflector.GetResourceBindingDesc(i, &mut binding_desc));
+        shader_reflector.GetResourceBindingDesc(i, &mut binding_desc);
 
         if binding_desc.Type == D3D_SIT_CBUFFER {}
 

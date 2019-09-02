@@ -4,9 +4,9 @@ use crate::rhi::dx12::dx12_image::Dx12Image;
 use crate::rhi::Swapchain;
 use cgmath::Vector2;
 
-struct Dx12Swapchain<'a> {}
+struct Dx12Swapchain {}
 
-impl<'a> Swapchain<'a> for Dx12Swapchain<'a> {
+impl<'a> Swapchain<'a> for Dx12Swapchain {
     type Framebuffer = Dx12Framebuffer;
     type Image = Dx12Image;
     type Fence = Dx12Fence;

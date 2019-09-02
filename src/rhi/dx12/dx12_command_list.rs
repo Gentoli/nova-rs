@@ -13,6 +13,7 @@ use crate::rhi::{
 use crate::rhi::dx12::dx12_utils::to_dx12_state;
 use core::mem;
 use std::ptr;
+use std::ptr::null;
 use winapi::um::d3d12::*;
 
 pub struct Dx12CommandList {
@@ -217,4 +218,8 @@ impl CommandList for Dx12CommandList {
 fn unwrap_to_lame(
     ds_descriptor_option: &Option<D3D12_CPU_DESCRIPTOR_HANDLE>,
 ) -> (bool, *const D3D12_CPU_DESCRIPTOR_HANDLE) {
+    match ds_descriptor_option {
+        Some(handle) => (true, &*handle),
+        None => (false, null()),
+    }
 }
