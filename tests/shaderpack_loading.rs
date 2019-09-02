@@ -5,10 +5,12 @@ use futures::executor::ThreadPoolBuilder;
 use nova_rs::shaderpack::*;
 use path_dsl::{path, PathDSL};
 
+/// Utility function that extracts the option, expecting it to be Some
 fn check_shader_option(shaders: &[LoadedShader], shader: &Option<ShaderSource>, filename: PathDSL) {
     check_shader(shaders, shader.as_ref().expect("Expected shader to exist"), filename);
 }
 
+/// Checks a shader is in the proper state, has the proper name, and an entry in the shader list
 fn check_shader(shaders: &[LoadedShader], shader: &ShaderSource, filename: PathDSL) {
     if let ShaderSource::Loaded(idx) = shader {
         let idx = *idx as usize;

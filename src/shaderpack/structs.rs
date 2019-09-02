@@ -416,7 +416,7 @@ pub struct MaterialPass {
     /// Name of the material itself.
     ///
     /// This is not populated by serde, this is populated by a post processing pass _after_ serde.
-    /// This happens in the function `material_postprocess`.
+    /// This happens in the function `shaderpack::set_material_pass_material_name`.
     #[serde(default)]
     pub material_name: String,
 
