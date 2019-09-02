@@ -2,7 +2,7 @@
 
 #![allow(unsafe_code)]
 
-use crate::rhi::dx12::dx12_utils::{to_dx12_blend, to_dx12_compare_func, to_dx12_stencil_op};
+use crate::rhi::dx12::util::enum_conversions::{to_dx12_blend, to_dx12_compare_func, to_dx12_stencil_op};
 use crate::shaderpack;
 use std::mem;
 use winapi::shared::dxgiformat::*;

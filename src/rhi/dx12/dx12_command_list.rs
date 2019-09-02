@@ -189,7 +189,17 @@ impl CommandList for Dx12CommandList {
         descriptor_sets: &Vec<Dx12DescriptorSet>,
         pipeline_interface: &Dx12PipelineInterface,
     ) {
-        unimplemented!()
+        // IIRC Vulkan doesn't have an explicit "set root signature" equivalent, so we'll set the root signature and
+        // bind to it right now
+        // TODO: Figure out if this is what Vulkan does
+        unsafe {
+            self.list
+                .SetGraphicsRootSignature(pipeline_interface.root_sig.as_mut_ptr())
+        };
+
+        for (i, descriptor_set) in descriptor_sets.iter().enumerate() {
+            // unsafe { self.list.SetGraphicsRootDescriptorTable(i as u32, descriptor_set.) }
+        }
     }
 
     fn bind_vertex_buffers(&self, buffers: &Vec<Dx12Buffer>) {

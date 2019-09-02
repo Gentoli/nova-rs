@@ -49,7 +49,7 @@ impl Memory for Dx12Memory {
         let mut buffer = WeakPtr::<ID3D12Resource>::null();
         let hr = unsafe {
             self.device.CreatePlacedResource(
-                self.heap,
+                self.heap.as_mut_ptr(),
                 data.allocation.allocation_info.offset,
                 &resource_desc,
                 states,
