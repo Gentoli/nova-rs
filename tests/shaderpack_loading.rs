@@ -3,18 +3,18 @@
 
 use futures::executor::ThreadPoolBuilder;
 use nova_rs::shaderpack::*;
-use path_dsl::path;
+use path_dsl::{path, PathDSL};
 
-fn check_shader_option(shaders: &[LoadedShader], shader: &Option<ShaderSource>, filename: &str) {
+fn check_shader_option(shaders: &[LoadedShader], shader: &Option<ShaderSource>, filename: PathDSL) {
     check_shader(shaders, shader.as_ref().expect("Expected shader to exist"), filename);
 }
 
-fn check_shader(shaders: &[LoadedShader], shader: &ShaderSource, filename: &str) {
+fn check_shader(shaders: &[LoadedShader], shader: &ShaderSource, filename: PathDSL) {
     if let ShaderSource::Loaded(idx) = shader {
         let idx = *idx as usize;
         assert_eq!(idx < shaders.len(), true);
         let loaded = &shaders[idx];
-        assert_eq!(loaded.filename.to_str(), Some(filename));
+        assert_eq!(loaded.filename.to_str(), filename.to_str());
     } else {
         panic!("ShaderSource not loaded.");
     }
