@@ -199,7 +199,12 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `data` - The ImageData to create the image from.
-    fn create_image(&self, data: shaderpack::TextureCreateInfo) -> Result<Self::Image, MemoryError>;
+    /// * `swapchain_size` - The size of the swapchain, in pixels. Used to resolve the size of swapchain-relative images
+    fn create_image(
+        &self,
+        data: &shaderpack::TextureCreateInfo,
+        swapchain_size: &Vector2<u32>,
+    ) -> Result<Self::Image, MemoryError>;
 
     /// Creates a new Semaphore.
     fn create_semaphore(&self, start_signalled: bool) -> Result<Self::Semaphore, MemoryError>;
