@@ -4,7 +4,7 @@
 use log::*;
 
 use crate::rhi::dx12::com::WeakPtr;
-use crate::rhi::{DescriptorType, QueueType};
+use crate::rhi::{DescriptorType, QueueType, ResourceState};
 use crate::{shaderpack, ErrorCode};
 use spirv_cross::{hlsl, spirv};
 use std::collections::HashMap;
@@ -100,6 +100,23 @@ pub fn to_dx12_topology(topology: &shaderpack::PrimitiveTopology) -> D3D12_PRIMI
     match topology {
         shaderpack::PrimitiveTopology::Triangles => D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         shaderpack::PrimitiveTopology::Lines => D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+    }
+}
+
+pub fn to_dx12_state(state: &ResourceState) -> D3D12_RESOURCE_STATES {
+    match state {
+        ResourceState::Undefined => D3D12_RESOURCE_STATE_COMMON,
+        ResourceState::General => D3D12_RESOURCE_STATE_COMMON,
+        ResourceState::ColorAttachment => D3D12_RESOURCE_STATE_RENDER_TARGET,
+        ResourceState::DepthStencilAttachment => D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        ResourceState::DepthReadOnlyStencilAttachment => D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        ResourceState::DepthAttachmentStencilReadOnly => D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        ResourceState::DepthStencilReadOnlyAttachment => D3D12_RESOURCE_STATE_DEPTH_READ,
+        ResourceState::PresentSource => D3D12_RESOURCE_STATE_PRESENT,
+        ResourceState::NonFragmentShaderReadOnly => D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        ResourceState::FragmentShaderReadOnly => D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+        ResourceState::TransferSource => D3D12_RESOURCE_STATE_COPY_SOURCE,
+        ResourceState::TransferDestination => D3D12_RESOURCE_STATE_COPY_DEST,
     }
 }
 

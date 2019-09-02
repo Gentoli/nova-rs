@@ -10,6 +10,8 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
+use crate::rhi::dx12::dx12_utils::to_dx12_state;
+use core::mem;
 use std::ptr;
 use winapi::um::d3d12::*;
 
@@ -56,6 +58,44 @@ impl CommandList for Dx12CommandList {
         stages_after_barrier: PipelineStageFlags,
         barriers: Vec<ResourceBarrier>,
     ) {
+        let mut dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
+
+        for barrier in barriers {
+            // ResourceBarrier is an API-agnostic strugt that maps better to Vulkan than DX12, because Vulkan barriers
+            // are stupid. We need to translate the Vulkan barrier to multiple DX12 barriers
+            let mut translated_dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
+
+            let mut memory_barrier = D3D12_RESOURCE_BARRIER {
+                Type: D3D12_RESOURCE_BARRIER_TYPE_UAV,
+                Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
+                ..unsafe { mem::zeroed() }
+            };
+
+            memory_barrier.UAV_mut() = D3D12_RESOURCE_UAV_BARRIER {
+                pResource: barrier.resource.get_api_resource::<ID3D12Resource>(),
+            };
+
+            translated_dx12_barriers.push(memory_barrier);
+
+            let mut transition_barrier = D3D12_RESOURCE_BARRIER {
+                Type: D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+                Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
+                ..unsafe { mem::zeroed() }
+            };
+
+            transition_barrier.Transition_mut() = D3D12_RESOURCE_TRANSITION_BARRIER {
+                pResource: barrier.resource.get_api_resource::<ID3D12Resource>(),
+                Subresource: 0,
+                StateBefore: to_dx12_state(barrier.initial_state),
+                StateAfter: to_dx12_state(barrier.final_state),
+            };
+
+            translated_dx12_barriers.push(transition_barrier);
+
+            // TODO: Handle cross-queue sharing
+
+            dx12_barriers.append(&mut translated_dx12_barriers);
+        }
     }
 
     fn copy_buffer(
@@ -70,7 +110,9 @@ impl CommandList for Dx12CommandList {
     }
 
     fn execute_command_lists(&self, lists: Vec<Dx12CommandList>) {
-        unimplemented!()
+        for command_list in lists {
+            self.list.ExecuteBundle(command_list.list.as_ptr());
+        }
     }
 
     fn begin_renderpass(&self, renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
