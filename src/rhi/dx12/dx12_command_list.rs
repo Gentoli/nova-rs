@@ -143,7 +143,7 @@ impl CommandList for Dx12CommandList {
                 render_target_descs.push(new_desc);
             }
 
-            match renderpass.depth_stencil {
+            match &renderpass.depth_stencil {
                 Some(ds_info) => {
                     let depth_stencil_desc = D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
                         cpuDescriptor: framebuffer.depth_attachment.unwrap(),
@@ -171,6 +171,15 @@ impl CommandList for Dx12CommandList {
                     );
                 },
             }
+        } else {
+            let (has_ds_descriptors, ds_descriptor_ptr) = unwrap_to_lame(&framebuffer.depth_attachment);
+
+            self.list.OMSetRenderTargets(
+                framebuffer.color_attachments.num(),
+                framebuffer.color_attachments.as_ptr(),
+                has_ds_descriptors,
+                ds_descriptor_ptr,
+            );
         }
     }
 
@@ -203,4 +212,9 @@ impl CommandList for Dx12CommandList {
     fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32) {
         unimplemented!()
     }
+}
+
+fn unwrap_to_lame(
+    ds_descriptor_option: &Option<D3D12_CPU_DESCRIPTOR_HANDLE>,
+) -> (bool, *const D3D12_CPU_DESCRIPTOR_HANDLE) {
 }
