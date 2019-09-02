@@ -237,8 +237,16 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableDepthWrite), true);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableDepthTest), true);
 
-        check_shader(shader_list, &pipeline.vertex_shader, "shaders/textured_unlit.vert");
-        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/image_passthrough.frag");
+        check_shader(
+            shader_list,
+            &pipeline.vertex_shader,
+            path!("shaders" | "textured_unlit.vert"),
+        );
+        check_shader_option(
+            shader_list,
+            &pipeline.fragment_shader,
+            path!("shaders" | "image_passthrough.frag"),
+        );
 
         assert_eq!(pipeline.vertex_fields.len(), 2);
         let vertex_field = &pipeline.vertex_fields[0];
@@ -259,8 +267,16 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.len(), 1);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableAlphaWrite), true);
 
-        check_shader(shader_list, &pipeline.vertex_shader, "shaders/gbuffers_terrain.vert");
-        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/gbuffers_terrain.frag");
+        check_shader(
+            shader_list,
+            &pipeline.vertex_shader,
+            path!("shaders" | "gbuffers_terrain.vert"),
+        );
+        check_shader_option(
+            shader_list,
+            &pipeline.fragment_shader,
+            path!("shaders" | "gbuffers_terrain.frag"),
+        );
 
         assert_eq!(pipeline.vertex_fields.len(), 9);
         let vertex_field = &pipeline.vertex_fields[0];
@@ -310,8 +326,8 @@ fn default_nova_shaderpack() -> Result<(), ShaderpackLoadingFailure> {
         assert_eq!(pipeline.states.len(), 1);
         assert_eq!(pipeline.states.contains(&RasterizerState::DisableAlphaWrite), true);
 
-        check_shader(shader_list, &pipeline.vertex_shader, "shaders/gui.vert");
-        check_shader_option(shader_list, &pipeline.fragment_shader, "shaders/gui.frag");
+        check_shader(shader_list, &pipeline.vertex_shader, path!("shaders" | "gui.vert"));
+        check_shader_option(shader_list, &pipeline.fragment_shader, path!("shaders" | "gui.frag"));
 
         assert_eq!(pipeline.vertex_fields.len(), 4);
         let vertex_field = &pipeline.vertex_fields[0];
