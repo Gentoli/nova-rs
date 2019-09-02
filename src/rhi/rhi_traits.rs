@@ -438,7 +438,7 @@ pub trait CommandList {
         &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
-        barriers: Vec<ResourceBarrier>,
+        barriers: &Vec<ResourceBarrier>,
     );
 
     /// Records a command to copy data from one buffer to another.
@@ -452,9 +452,9 @@ pub trait CommandList {
     /// * `num_bytes` - The number of bytes to copy.
     fn copy_buffer(
         &self,
-        destination_buffer: Self::Buffer,
+        destination_buffer: &Self::Buffer,
         destination_offset: u64,
-        source_buffer: Self::Buffer,
+        source_buffer: &Self::Buffer,
         source_offset: u64,
         num_bytes: u64,
     );
@@ -464,7 +464,7 @@ pub trait CommandList {
     /// # Parameters
     ///
     /// * `lists` - The command lists to execute
-    fn execute_command_lists(&self, lists: Vec<Self::CommandList>);
+    fn execute_command_lists(&self, lists: &Vec<Self::CommandList>);
 
     /// Records a command to begin a renderpass with a framebuffer.
     ///
@@ -472,7 +472,7 @@ pub trait CommandList {
     ///
     /// * `renderpass` - The renderpass to begin
     /// * `framebuffer` - The framebuffer to begin the renderpass with
-    fn begin_renderpass(&self, renderpass: Self::Renderpass, framebuffer: Self::Framebuffer);
+    fn begin_renderpass(&self, renderpass: &Self::Renderpass, framebuffer: &Self::Framebuffer);
 
     /// Records a command to end the current renderpass
     fn end_renderpass(&self);
@@ -482,7 +482,7 @@ pub trait CommandList {
     /// # Parameters
     ///
     /// * `pipeline` - The pipeline to bind
-    fn bind_pipeline(&self, pipeline: Self::Pipeline);
+    fn bind_pipeline(&self, pipeline: &Self::Pipeline);
 
     /// Records a command to bind DescriptorSet to a PipelineInterface.
     ///
@@ -492,8 +492,8 @@ pub trait CommandList {
     /// * `pipeline_interface` - The PipelineInterface to bind the descriptor sets to
     fn bind_descriptor_sets(
         &self,
-        descriptor_sets: Vec<Self::DescriptorSet>,
-        pipeline_interface: Self::PipelineInterface,
+        descriptor_sets: &Vec<Self::DescriptorSet>,
+        pipeline_interface: &Self::PipelineInterface,
     );
 
     /// Records a command to bind vertex buffers.
@@ -503,14 +503,14 @@ pub trait CommandList {
     /// # Parameters
     ///
     /// * `buffers` - The buffers to bind
-    fn bind_vertex_buffers(&self, buffers: Vec<Self::Buffer>);
+    fn bind_vertex_buffers(&self, buffers: &Vec<Self::Buffer>);
 
     /// Binds an index buffer.
     ///
     /// # Parameters
     ///
     /// * `buffer` - The buffer to bind as an index buffer
-    fn bind_index_buffer(&self, buffer: Self::Buffer);
+    fn bind_index_buffer(&self, buffer: &Self::Buffer);
 
     /// Records a drawcall to grab `num_indices` indices from the currently bound index buffer and
     /// draw them `num_instances` times.
