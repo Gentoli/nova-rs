@@ -187,11 +187,19 @@ impl CommandList for Dx12CommandList {
     }
 
     fn bind_vertex_buffers(&self, buffers: &Vec<Dx12Buffer>) {
-        let buffer_views = buffers.iter().map(|buffer| D3D12_VERTEX_BUFFER_VIEW {
-            BufferLocation: buffer.resource.GetGPUVirtualAddress(),
-            SizeInBytes: buffer.size as u32,
-            StrideInBytes: size_of::<FullVertex>() as u32,
-        });
+        let buffer_views = buffers
+            .iter()
+            .map(|buffer| D3D12_VERTEX_BUFFER_VIEW {
+                BufferLocation: buffer.resource.GetGPUVirtualAddress(),
+                SizeInBytes: buffer.size as u32,
+                StrideInBytes: size_of::<FullVertex>() as u32,
+            })
+            .collect::<Vec<_>>();
+
+        unsafe {
+            self.list
+                .IASetVertexBuffers(0, buffer_views.len() as u32, buffer_views.as_ptr())
+        };
     }
 
     fn bind_index_buffer(&self, buffer: &Dx12Buffer) {
