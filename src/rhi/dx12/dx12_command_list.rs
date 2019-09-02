@@ -56,7 +56,7 @@ impl CommandList for Dx12CommandList {
         &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
-        barriers: Vec<ResourceBarrier>,
+        barriers: &Vec<ResourceBarrier>,
     ) {
         let mut dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
 
@@ -86,8 +86,8 @@ impl CommandList for Dx12CommandList {
             transition_barrier.Transition_mut() = D3D12_RESOURCE_TRANSITION_BARRIER {
                 pResource: barrier.resource.get_api_resource::<ID3D12Resource>(),
                 Subresource: 0,
-                StateBefore: to_dx12_state(barrier.initial_state),
-                StateAfter: to_dx12_state(barrier.final_state),
+                StateBefore: to_dx12_state(&barrier.initial_state),
+                StateAfter: to_dx12_state(&barrier.final_state),
             };
 
             translated_dx12_barriers.push(transition_barrier);
@@ -100,22 +100,22 @@ impl CommandList for Dx12CommandList {
 
     fn copy_buffer(
         &self,
-        destination_buffer: Dx12Buffer,
+        destination_buffer: &Dx12Buffer,
         destination_offset: u64,
-        source_buffer: Dx12Buffer,
+        source_buffer: &Dx12Buffer,
         source_offset: u64,
         num_bytes: u64,
     ) {
         unimplemented!()
     }
 
-    fn execute_command_lists(&self, lists: Vec<Dx12CommandList>) {
+    fn execute_command_lists(&self, lists: &Vec<Dx12CommandList>) {
         for command_list in lists {
             self.list.ExecuteBundle(command_list.list.as_ptr());
         }
     }
 
-    fn begin_renderpass(&self, renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
+    fn begin_renderpass(&self, renderpass: &Dx12Renderpass, framebuffer: &Dx12Framebuffer) {
         if !self.list4.is_null() {
             let mut render_target_descs = Vec::<D3D12_RENDER_PASS_RENDER_TARGET_DESC>::new();
             render_target_descs.reserve(renderpass.render_targets.len());
@@ -166,19 +166,23 @@ impl CommandList for Dx12CommandList {
         }
     }
 
-    fn bind_pipeline(&self, pipeline: Dx12Pipeline) {
+    fn bind_pipeline(&self, pipeline: &Dx12Pipeline) {
         unimplemented!()
     }
 
-    fn bind_descriptor_sets(&self, descriptor_sets: Vec<Dx12DescriptorSet>, pipeline_interface: Dx12PipelineInterface) {
+    fn bind_descriptor_sets(
+        &self,
+        descriptor_sets: &Vec<Dx12DescriptorSet>,
+        pipeline_interface: Dx12PipelineInterface,
+    ) {
         unimplemented!()
     }
 
-    fn bind_vertex_buffers(&self, buffers: Vec<Dx12Buffer>) {
+    fn bind_vertex_buffers(&self, buffers: &Vec<Dx12Buffer>) {
         unimplemented!()
     }
 
-    fn bind_index_buffer(&self, buffer: Dx12Buffer) {
+    fn bind_index_buffer(&self, buffer: &Dx12Buffer) {
         unimplemented!()
     }
 
