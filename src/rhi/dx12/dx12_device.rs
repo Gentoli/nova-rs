@@ -6,6 +6,7 @@ use log::*;
 use crate::rhi::dx12::com::WeakPtr;
 use crate::rhi::dx12::dx12_command_allocator::Dx12CommandAllocator;
 use crate::rhi::dx12::dx12_descriptor_pool::Dx12DescriptorPool;
+use crate::rhi::dx12::dx12_descriptor_set::Dx12DescriptorSet;
 use crate::rhi::dx12::dx12_fence::Dx12Fence;
 use crate::rhi::dx12::dx12_framebuffer::Dx12Framebuffer;
 use crate::rhi::dx12::dx12_image::Dx12Image;
@@ -569,49 +570,49 @@ impl Device for Dx12Device {
         // Shaders
         {
             match compile_shader(data.vertex_shader, "vs_5_1", spv_cross_options, &mut shader_inputs) {
-                Ok(blob) => {
+                Ok(blob) => unsafe {
                     pso_desc.VS.BytecodeLength = blob.GetBufferSize();
                     pso_desc.VS.pShaderBytecode = blob.GetBufferPointer();
-                }
+                },
                 Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
             };
 
             if let Some(geo) = data.geometry_shader {
                 match compile_shader(geo, "gs_5_1", spv_cross_options, &mut shader_inputs) {
-                    Ok(blob) => {
+                    Ok(blob) => unsafe {
                         pso_desc.GS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.GS.pShaderBytecode = blob.GetBufferPointer();
-                    }
+                    },
                     Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
             if let Some(tesc) = data.tessellation_control_shader {
                 match compile_shader(tesc, "hs_5_1", spv_cross_options, &mut shader_inputs) {
-                    Ok(blob) => {
+                    Ok(blob) => unsafe {
                         pso_desc.HS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.HS.pShaderBytecode = blob.GetBufferPointer();
-                    }
+                    },
                     Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
             if let Some(tese) = data.tessellation_evaluation_shader {
                 match compile_shader(tese, "ds_5_1", spv_cross_options, &mut shader_inputs) {
-                    Ok(blob) => {
+                    Ok(blob) => unsafe {
                         pso_desc.DS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.DS.pShaderBytecode = blob.GetBufferPointer();
-                    }
+                    },
                     Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
 
             if let Some(frag) = data.fragment_shader {
                 match compile_shader(frag, "ps_5_1", spv_cross_options, &mut shader_inputs) {
-                    Ok(blob) => {
+                    Ok(blob) => unsafe {
                         pso_desc.PS.BytecodeLength = blob.GetBufferSize();
                         pso_desc.PS.pShaderBytecode = blob.GetBufferPointer();
-                    }
+                    },
                     Err((err, msg)) => return Err(PipelineCreationError::InvalidShader(msg)),
                 };
             }
@@ -703,8 +704,10 @@ impl Device for Dx12Device {
         swapchain_size: &Vector2<u32>,
     ) -> Result<Dx12Image, MemoryError> {
         let dimensions = match data.format.dimension_type {
-            shaderpack::TextureDimensionType::ScreenRelative => Vector2::<u32>::new(),
-            shaderpack::TextureDimensionType::Absolute => swapchain_size,
+            shaderpack::TextureDimensionType::ScreenRelative => {
+                swapchain_size * Vector2::<f32>::new(data.format.width, data.format.height)
+            }
+            shaderpack::TextureDimensionType::Absolute => Vector2::<f32>::new(data.format.width, data.format.height),
         };
 
         let mut texture_desc = D3D12_RESOURCE_DESC {
@@ -743,7 +746,7 @@ impl Device for Dx12Device {
                 D3D12_HEAP_FLAG_NONE,
                 &texture_desc,
                 D3D12_RESOURCE_STATE_RENDER_TARGET,
-                null,
+                null(),
                 get_uuid(image),
                 image.mut_void(),
             )
@@ -800,7 +803,7 @@ impl Device for Dx12Device {
         // I feel like a functional boi now
         self.create_semaphore(start_signalled).map(|semaphore| {
             let event = unsafe { CreateEventA(null() as _, false as i32, start_signalled as i32, null()) };
-            semaphore.fence.SetEventOnCompletion(CPU_FENCE_SIGNALED as u64, event);
+            unsafe { semaphore.fence.SetEventOnCompletion(CPU_FENCE_SIGNALED as u64, event) };
 
             Dx12Fence {
                 fence: semaphore.fence,
@@ -834,15 +837,17 @@ impl Device for Dx12Device {
         }
     }
 
-    fn update_descriptor_sets(&self, updates: Vec<DescriptorSetWrite>) {
-        for update in updates {
+    fn update_descriptor_sets(&self, updates: Vec<(Dx12DescriptorPool, DescriptorSetWrite)>) {
+        for (pool, update) in updates {
             let mut write_handle = D3D12_CPU_DESCRIPTOR_HANDLE {
                 ..unsafe { mem::zeroed() }
             };
 
-            let descriptor_heap_start_handle = unsafe { update.heap.GetGCPUDescriptorForHeapStart() };
+            let descriptor_heap_start_handle = unsafe { pool.data_heap.GetCPUDescriptorHandleForHeapStart() };
 
-            write_handle.ptr = descriptor_heap_start_handle.ptr + self.shader_resource_descriptor_size * update.binding;
+            let offset = (self.shader_resource_descriptor_size * update.binding) as usize;
+
+            write_handle.ptr = descriptor_heap_start_handle.ptr + offset;
 
             match update.update_info {
                 DescriptorUpdateInfo::Image { image, format, sampler } => {

@@ -7,8 +7,10 @@ use std::mem;
 use std::ptr::null;
 use winapi::shared::winerror::{FAILED, HRESULT};
 use winapi::um::d3d12::*;
-use winapi::um::d3dcommon::ID3DBlob;
+use winapi::um::d3d12shader::*;
+use winapi::um::d3dcommon::{ID3DBlob, D3D_SIT_CBUFFER};
 use winapi::um::d3dcompiler::*;
+use winapi::Interface;
 
 pub fn compile_shader(
     shader: shaderpack::ShaderSource,
@@ -100,16 +102,18 @@ fn extract_descriptor_info_from_blob(
     let mut shader_desc = D3D12_SHADER_DESC {
         ..unsafe { mem::zeroed() }
     };
-    shader_reflector.GetDesc(&mut shader_desc);
+    unsafe { shader_reflector.GetDesc(&mut shader_desc) };
 
     let shader_inputs = HashMap::<String, D3D12_SHADER_INPUT_BIND_DESC>::new();
     for i in 0..shader_desc.BoundResources {
         let mut binding_desc = D3D12_SHADER_INPUT_BIND_DESC {
             ..unsafe { mem::zeroed() }
         };
-        shader_reflector.GetResourceBindingDesc(i, &mut binding_desc);
+        unsafe { shader_reflector.GetResourceBindingDesc(i, &mut binding_desc) };
 
-        if binding_desc.Type == D3D_SIT_CBUFFER {}
+        if binding_desc.Type == D3D_SIT_CBUFFER {
+            // TODO: This
+        }
 
         save_descriptor_info(
             tables,
