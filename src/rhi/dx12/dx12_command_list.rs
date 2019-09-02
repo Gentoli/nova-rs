@@ -10,9 +10,10 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
+use crate::mesh::FullVertex;
 use crate::rhi::dx12::dx12_image::Dx12Image;
 use crate::rhi::dx12::util::barriers::to_dx12_barriers;
-use futures::StreamExt;
+use std::mem::size_of;
 use std::ptr;
 use std::ptr::null;
 use winapi::um::d3d12::*;
@@ -186,7 +187,11 @@ impl CommandList for Dx12CommandList {
     }
 
     fn bind_vertex_buffers(&self, buffers: &Vec<Dx12Buffer>) {
-        unimplemented!()
+        let buffer_views = buffers.iter().map(|buffer| D3D12_VERTEX_BUFFER_VIEW {
+            BufferLocation: buffer.resource.GetGPUVirtualAddress(),
+            SizeInBytes: buffer.size as u32,
+            StrideInBytes: size_of::<FullVertex>() as u32,
+        });
     }
 
     fn bind_index_buffer(&self, buffer: &Dx12Buffer) {
