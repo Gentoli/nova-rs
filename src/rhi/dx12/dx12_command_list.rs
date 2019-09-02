@@ -10,7 +10,6 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
-use core::mem;
 use std::ptr;
 use winapi::um::d3d12::*;
 
@@ -57,23 +56,6 @@ impl CommandList for Dx12CommandList {
         stages_after_barrier: PipelineStageFlags,
         barriers: Vec<ResourceBarrier>,
     ) {
-        let dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
-
-        for barrier in barriers {
-            // ResourceBarrier is an API-agnostic strugt that maps better to Vulkan than DX12, because Vulkan barriers
-            // are stupid. We need to translate the Vulkan barrier to multiple DX12 barriers
-            let mut translated_dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
-
-            let mut memory_barrier = D3D12_RESOURCE_BARRIER {
-                Type: D3D12_RESOURCE_BARRIER_TYPE_UAV,
-                Flags: D3D12_RESOURCE_FLAG_NONE,
-                ..unsafe { mem::zeroed() }
-            };
-
-            memory_barrier.UAV_mut() = D3D12_RESOURCE_UAV_BARRIER {
-                pResource: barrier.resource.get_api_resource::<*mut ID3D12Resource>(),
-            };
-        }
     }
 
     fn copy_buffer(
@@ -88,9 +70,7 @@ impl CommandList for Dx12CommandList {
     }
 
     fn execute_command_lists(&self, lists: Vec<Dx12CommandList>) {
-        for command_list in lists {
-            self.list.ExecuteBundle(command_list.list.as_ptr());
-        }
+        unimplemented!()
     }
 
     fn begin_renderpass(&self, renderpass: Dx12Renderpass, framebuffer: Dx12Framebuffer) {
