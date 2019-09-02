@@ -174,7 +174,7 @@ impl CommandList for Dx12CommandList {
     }
 
     fn bind_pipeline(&self, pipeline: &Dx12Pipeline) {
-        unimplemented!()
+        unsafe { self.list.SetPipelineState(pipeline.pso.as_mut_ptr()) };
     }
 
     fn bind_descriptor_sets(
