@@ -21,7 +21,7 @@ impl Buffer for Dx12Buffer {
         let mut mapped_buffer = ptr::null_mut();
 
         unsafe {
-            let hr = self.resource.Map(0, &mapped_range, &mapped_buffer);
+            let hr = self.resource.Map(0, &mapped_range, mapped_buffer);
             if SUCCEEDED(hr) {
                 Ok(mapped_buffer)
             } else {

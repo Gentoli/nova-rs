@@ -749,7 +749,7 @@ impl Device for Dx12Device {
             }
         }
 
-        Ok(Dx12Image { image })
+        Ok(Dx12Image { resource: image })
     }
 
     fn create_semaphore(&self, start_signalled: bool) -> Result<Dx12Semaphore, MemoryError> {

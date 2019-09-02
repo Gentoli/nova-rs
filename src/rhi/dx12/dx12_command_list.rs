@@ -10,8 +10,9 @@ use crate::rhi::{
     CommandList, ResourceBarrier,
 };
 
-use crate::rhi::dx12::dx12_utils::to_dx12_state;
-use core::mem;
+use crate::rhi::dx12::dx12_image::Dx12Image;
+use crate::rhi::dx12::util::barriers::to_dx12_barriers;
+use futures::StreamExt;
 use std::ptr;
 use std::ptr::null;
 use winapi::um::d3d12::*;
@@ -52,53 +53,33 @@ impl CommandList for Dx12CommandList {
     type Pipeline = Dx12Pipeline;
     type DescriptorSet = Dx12DescriptorSet;
     type PipelineInterface = Dx12PipelineInterface;
+    type Image = Dx12Image;
 
     fn resource_barriers(
         &self,
         stages_before_barrier: PipelineStageFlags,
         stages_after_barrier: PipelineStageFlags,
-        barriers: &Vec<ResourceBarrier>,
+        image_barriers: &Vec<(Dx12Image, ResourceBarrier)>,
+        buffer_barriers: &Vec<(Dx12Buffer, ResourceBarrier)>,
     ) {
-        let mut dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
+        // We always generate two DX12 barriers for each API-agnostic barrier
+        let mut dx12_barriers =
+            Vec::<D3D12_RESOURCE_BARRIER>::with_capacity(image_barriers.len() * 2 + buffer_barriers.len() * 2);
 
-        for barrier in barriers {
-            // ResourceBarrier is an API-agnostic strugt that maps better to Vulkan than DX12, because Vulkan barriers
-            // are stupid. We need to translate the Vulkan barrier to multiple DX12 barriers
-            let mut translated_dx12_barriers = Vec::<D3D12_RESOURCE_BARRIER>::new();
-
-            let mut memory_barrier = D3D12_RESOURCE_BARRIER {
-                Type: D3D12_RESOURCE_BARRIER_TYPE_UAV,
-                Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
-                ..unsafe { mem::zeroed() }
-            };
-
-            memory_barrier.UAV_mut() = D3D12_RESOURCE_UAV_BARRIER {
-                pResource: barrier.resource.get_api_resource::<ID3D12Resource>(),
-            };
-
-            translated_dx12_barriers.push(memory_barrier);
-
-            let mut transition_barrier = D3D12_RESOURCE_BARRIER {
-                Type: D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-                Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
-                ..unsafe { mem::zeroed() }
-            };
-
-            transition_barrier.Transition_mut() = D3D12_RESOURCE_TRANSITION_BARRIER {
-                pResource: barrier.resource.get_api_resource::<ID3D12Resource>(),
-                Subresource: 0,
-                StateBefore: to_dx12_state(&barrier.initial_state),
-                StateAfter: to_dx12_state(&barrier.final_state),
-            };
-
-            translated_dx12_barriers.push(transition_barrier);
-
-            // TODO: Handle cross-queue sharing
-
-            dx12_barriers.append(&mut translated_dx12_barriers);
+        for (image, barrier) in image_barriers {
+            let mut image_barriers = to_dx12_barriers(barrier, image.resource.as_mut_ptr());
+            dx12_barriers.append(&mut image_barriers);
         }
 
-        unsafe { self.list.ResourceBarriers(dx12_barriers.num(), dx12_barriers.as_ptr()) };
+        for (buffer, barrier) in buffer_barriers {
+            let mut buffer_barriers = to_dx12_barriers(barrier, buffer.resource.as_mut_ptr());
+            dx12_barriers.append(&mut buffer_barriers);
+        }
+
+        unsafe {
+            self.list
+                .ResourceBarrier(dx12_barriers.num() as u32, dx12_barriers.as_ptr())
+        };
     }
 
     fn copy_buffer(
@@ -111,13 +92,15 @@ impl CommandList for Dx12CommandList {
     ) {
         if num_bytes == destination_buffer.size && num_bytes == source_buffer.size {
             // If we're copying the whole buffer region, use the faster CopyResource
-            self.list
-                .CopyResource(destination_buffer.resource.as_ptr(), source_buffer.resource.as_ptr());
+            self.list.CopyResource(
+                destination_buffer.resource.as_mut_ptr(),
+                source_buffer.resource.as_mut_ptr(),
+            );
         } else {
             self.list.CopyBufferRegion(
-                destination_buffer.resource.as_ptr(),
+                destination_buffer.resource.as_mut_ptr(),
                 destination_offset,
-                source_buffer.resource.as_ptr(),
+                source_buffer.resource.as_mut_ptr(),
                 source_offset,
                 num_bytes,
             );
@@ -126,7 +109,7 @@ impl CommandList for Dx12CommandList {
 
     fn execute_command_lists(&self, lists: &Vec<Dx12CommandList>) {
         for command_list in lists {
-            self.list.ExecuteBundle(command_list.list.as_ptr());
+            self.list.ExecuteBundle(command_list.list.as_mut_ptr());
         }
     }
 
@@ -176,9 +159,9 @@ impl CommandList for Dx12CommandList {
             let (has_ds_descriptors, ds_descriptor_ptr) = unwrap_to_lame(&framebuffer.depth_attachment);
 
             self.list.OMSetRenderTargets(
-                framebuffer.color_attachments.num(),
+                framebuffer.color_attachments.len() as u32,
                 framebuffer.color_attachments.as_ptr(),
-                has_ds_descriptors,
+                has_ds_descriptors as i32,
                 ds_descriptor_ptr,
             );
         }

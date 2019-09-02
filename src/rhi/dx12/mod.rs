@@ -25,7 +25,7 @@ mod dx12_renderpass;
 mod dx12_semaphore;
 mod dx12_swapchain;
 mod dx12_system_info;
-mod dx12_utils;
 mod pso_utils;
+mod util;
 
 pub use dx12_graphics_api::Dx12GraphicsApi;

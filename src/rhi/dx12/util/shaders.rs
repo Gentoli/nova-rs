@@ -1,142 +1,14 @@
-#![allow(unsafe_code)]
-
-#[macro_use]
-use log::*;
-
 use crate::rhi::dx12::com::WeakPtr;
-use crate::rhi::{DescriptorType, QueueType, ResourceState};
 use crate::{shaderpack, ErrorCode};
 use spirv_cross::{hlsl, spirv};
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::mem;
 use std::ptr::null;
-use winapi::shared::dxgiformat::*;
-use winapi::shared::ntdef::{LANG_NEUTRAL, MAKELANGID, SUBLANG_DEFAULT};
 use winapi::shared::winerror::{FAILED, HRESULT};
 use winapi::um::d3d12::*;
-use winapi::um::d3d12shader::*;
 use winapi::um::d3dcommon::ID3DBlob;
-use winapi::um::d3dcommon::*;
 use winapi::um::d3dcompiler::*;
-use winapi::um::winbase::{FormatMessageA, FORMAT_MESSAGE_FROM_SYSTEM};
-use winapi::Interface;
-
-impl From<HRESULT> for ErrorCode<HRESULT> {
-    fn from(hr: i32) -> Self {
-        let message = unsafe {
-            let mut error_message_buffer: [char; 1024] = ['\0'; 1024];
-
-            FormatMessageA(
-                FORMAT_MESSAGE_FROM_SYSTEM,
-                null(),
-                hr as u32,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT) as u32,
-                *error_message_buffer,
-                1024,
-                null(),
-            );
-
-            unsafe { CStr::from_ptr(error_message_buffer as _) }
-                .to_str()
-                .unwrap()
-                .to_string()
-        };
-
-        ErrorCode(hr, message)
-    }
-}
-
-pub fn to_dx12_range_type(descriptor_type: &DescriptorType) -> D3D12_DESCRIPTOR_RANGE_TYPE {
-    match descriptor_type {
-        DescriptorType::CombinedImageSampler => D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-        DescriptorType::UniformBuffer => D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
-        DescriptorType::StorageBuffer => D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
-    }
-}
-
-pub fn to_dx12_blend(blend_factor: &shaderpack::BlendFactor) -> D3D12_BLEND {
-    match blend_factor {
-        shaderpack::BlendFactor::One => D3D12_BLEND_ONE,
-        shaderpack::BlendFactor::Zero => D3D12_BLEND_ZERO,
-        shaderpack::BlendFactor::SrcColor => D3D12_BLEND_SRC_COLOR,
-        shaderpack::BlendFactor::DstColor => D3D12_BLEND_DEST_COLOR,
-        shaderpack::BlendFactor::OneMinusSrcColor => D3D12_BLEND_INV_SRC_COLOR,
-        shaderpack::BlendFactor::OneMinusDstColor => D3D12_BLEND_INV_DEST_COLOR,
-        shaderpack::BlendFactor::SrcAlpha => D3D12_BLEND_SRC_ALPHA,
-        shaderpack::BlendFactor::DstAlpha => D3D12_BLEND_DEST_ALPHA,
-        shaderpack::BlendFactor::OneMinusSrcAlpha => D3D12_BLEND_INV_SRC_ALPHA,
-        shaderpack::BlendFactor::OneMinusDstAlpha => D3D12_BLEND_INV_DEST_ALPHA,
-    }
-}
-
-pub fn to_dx12_compare_func(op: &shaderpack::CompareOp) -> D3D12_COMPARISON_FUNC {
-    match op {
-        shaderpack::CompareOp::Never => D3D12_COMPARISON_FUNC_NEVER,
-        shaderpack::CompareOp::Less => D3D12_COMPARISON_FUNC_LESS,
-        shaderpack::CompareOp::LessEqual => D3D12_COMPARISON_FUNC_LESS_EQUAL,
-        shaderpack::CompareOp::Greater => D3D12_COMPARISON_FUNC_GREATER,
-        shaderpack::CompareOp::GreaterEqual => D3D12_COMPARISON_FUNC_GREATER_EQUAL,
-        shaderpack::CompareOp::Equal => D3D12_COMPARISON_FUNC_EQUAL,
-        shaderpack::CompareOp::NotEqual => D3D12_COMPARISON_FUNC_NOT_EQUAL,
-        shaderpack::CompareOp::Always => D3D12_COMPARISON_FUNC_NEVER,
-    }
-}
-
-pub fn to_dx12_stencil_op(op: &shaderpack::StencilOp) -> D3D12_STENCIL_OP {
-    match op {
-        shaderpack::StencilOp::Keep => D3D12_STENCIL_OP_KEEP,
-        shaderpack::StencilOp::Zero => D3D12_STENCIL_OP_ZERO,
-        shaderpack::StencilOp::Replace => D3D12_STENCIL_OP_REPLACE,
-        shaderpack::StencilOp::Incr => D3D12_STENCIL_OP_INCR,
-        shaderpack::StencilOp::IncrWrap => D3D12_STENCIL_OP_INCR_SAT,
-        shaderpack::StencilOp::Decr => D3D12_STENCIL_OP_DECR,
-        shaderpack::StencilOp::DecrWrap => D3D12_STENCIL_OP_DECR_SAT,
-        shaderpack::StencilOp::Invert => D3D12_STENCIL_OP_INVERT,
-    }
-}
-
-pub fn to_dx12_topology(topology: &shaderpack::PrimitiveTopology) -> D3D12_PRIMITIVE_TOPOLOGY_TYPE {
-    match topology {
-        shaderpack::PrimitiveTopology::Triangles => D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-        shaderpack::PrimitiveTopology::Lines => D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
-    }
-}
-
-pub fn to_dx12_state(state: &ResourceState) -> D3D12_RESOURCE_STATES {
-    match state {
-        ResourceState::Undefined => D3D12_RESOURCE_STATE_COMMON,
-        ResourceState::General => D3D12_RESOURCE_STATE_COMMON,
-        ResourceState::ColorAttachment => D3D12_RESOURCE_STATE_RENDER_TARGET,
-        ResourceState::DepthStencilAttachment => D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        ResourceState::DepthReadOnlyStencilAttachment => D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        ResourceState::DepthAttachmentStencilReadOnly => D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        ResourceState::DepthStencilReadOnlyAttachment => D3D12_RESOURCE_STATE_DEPTH_READ,
-        ResourceState::PresentSource => D3D12_RESOURCE_STATE_PRESENT,
-        ResourceState::NonFragmentShaderReadOnly => D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
-        ResourceState::FragmentShaderReadOnly => D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-        ResourceState::TransferSource => D3D12_RESOURCE_STATE_COPY_SOURCE,
-        ResourceState::TransferDestination => D3D12_RESOURCE_STATE_COPY_DEST,
-    }
-}
-
-pub fn to_command_list_type(queue_type: &QueueType) -> D3D12_COMMAND_LIST_TYPE {
-    match queue_type {
-        QueueType::Graphics => D3D12_COMMAND_LIST_TYPE_DIRECT,
-        QueueType::Compute => D3D12_COMMAND_LIST_TYPE_COMPUTE,
-        QueueType::Copy => D3D12_COMMAND_LIST_TYPE_COPY,
-    }
-}
-
-pub fn to_dxgi_format(format: &shaderpack::PixelFormat) -> DXGI_FORMAT {
-    match format {
-        shaderpack::PixelFormat::RGBA8 => DXGI_FORMAT_R8G8B8A8_UNORM,
-        shaderpack::PixelFormat::RGBA16F => DXGI_FORMAT_R16G16B16A16_FLOAT,
-        shaderpack::PixelFormat::RGBA32F => DXGI_FORMAT_R32G32B32A32_FLOAT,
-        shaderpack::PixelFormat::Depth => DXGI_FORMAT_D32_FLOAT,
-        shaderpack::PixelFormat::DepthStencil => DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
-    }
-}
 
 pub fn compile_shader(
     shader: shaderpack::ShaderSource,
@@ -216,12 +88,14 @@ fn extract_descriptor_info_from_blob(
     shader_blob: &WeakPtr<ID3DBlob>,
 ) -> Result<bool, ErrorCode<HRESULT>> {
     let mut shader_reflector = WeakPtr::<ID3D12ShaderReflection>::null();
-    D3DReflect(
-        shader_blob.GetBufferPointer(),
-        shader_blob.GetBufferSize(),
-        &ID3D12ShaderReflection::uuidof(),
-        shader_reflector.mut_void(),
-    );
+    unsafe {
+        D3DReflect(
+            shader_blob.GetBufferPointer(),
+            shader_blob.GetBufferSize(),
+            &ID3D12ShaderReflection::uuidof(),
+            shader_reflector.mut_void(),
+        )
+    };
 
     let mut shader_desc = D3D12_SHADER_DESC {
         ..unsafe { mem::zeroed() }
