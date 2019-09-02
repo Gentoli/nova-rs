@@ -78,7 +78,7 @@ impl CommandList for Dx12CommandList {
 
         unsafe {
             self.list
-                .ResourceBarrier(dx12_barriers.num() as u32, dx12_barriers.as_ptr())
+                .ResourceBarrier(dx12_barriers.len() as u32, dx12_barriers.as_ptr())
         };
     }
 
@@ -180,7 +180,7 @@ impl CommandList for Dx12CommandList {
     fn bind_descriptor_sets(
         &self,
         descriptor_sets: &Vec<Dx12DescriptorSet>,
-        pipeline_interface: Dx12PipelineInterface,
+        pipeline_interface: &Dx12PipelineInterface,
     ) {
         unimplemented!()
     }

@@ -17,11 +17,12 @@ use crate::rhi::dx12::dx12_renderpass::Dx12RenderPassAccessInfo;
 use crate::rhi::dx12::dx12_renderpass::Dx12Renderpass;
 use crate::rhi::dx12::dx12_semaphore::Dx12Semaphore;
 use crate::rhi::dx12::dx12_system_info::Dx12SystemInfo;
-use crate::rhi::dx12::dx12_utils::{compile_shader, to_dx12_range_type, to_dx12_topology, to_dxgi_format};
 use crate::rhi::dx12::get_uuid;
 use crate::rhi::dx12::pso_utils::{
     get_input_descriptions, make_depth_stencil_state, make_rasterizer_desc, make_render_target_blend_desc,
 };
+use crate::rhi::dx12::util::enum_conversions::{to_dx12_range_type, to_dx12_topology, to_dxgi_format};
+use crate::rhi::dx12::util::shaders::compile_shader;
 use crate::rhi::{
     AllocationError, CommandAllocatorCreateInfo, DescriptorPoolCreationError, DescriptorSetWrite, DescriptorUpdateInfo,
     Device, DeviceCreationError, DeviceProperties, Fence, MemoryError, MemoryUsage, ObjectType, PipelineCreationError,
@@ -31,6 +32,7 @@ use crate::shaderpack;
 use cgmath::Vector2;
 use core::mem;
 use spirv_cross::hlsl;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::ptr::null;
 use winapi::shared::dxgi1_2::IDXGIAdapter2;
@@ -240,7 +242,11 @@ impl Device for Dx12Device {
                 .CreateCommandAllocator(command_allocator_type, get_uuid(allocator), allocator.mut_void())
         };
         if SUCCEEDED(hr) {
-            Ok(Dx12CommandAllocator::new(allocator))
+            Ok(Dx12CommandAllocator::new(
+                self.device,
+                allocator,
+                create_info.command_list_type,
+            ))
         } else {
             Err(MemoryError::OutOfHostMemory)
         }
@@ -719,7 +725,7 @@ impl Device for Dx12Device {
         if data.format.pixel_format == shaderpack::PixelFormat::Depth
             || data.format.pixel_format == shaderpack::PixelFormat::DepthStencil
         {
-            texture_desc.flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+            texture_desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
         }
 
         let mut image = WeakPtr::<ID3D12Resource>::null();
@@ -761,7 +767,7 @@ impl Device for Dx12Device {
         let mut fence = WeakPtr::<ID3D12Fence>::null();
         let hr = unsafe {
             self.device.CreateFence(
-                initial_fence_value,
+                initial_fence_value as u64,
                 D3D12_FENCE_FLAG_NONE,
                 get_uuid(fence),
                 fence.mut_void(),
@@ -793,8 +799,8 @@ impl Device for Dx12Device {
     fn create_fence(&self, start_signalled: bool) -> Result<Dx12Fence, MemoryError> {
         // I feel like a functional boi now
         self.create_semaphore(start_signalled).map(|semaphore| {
-            let event = unsafe { CreateEventA(null(), false as i32, start_signalled as i32, null()) };
-            semaphore.fence.SetEventOnCompletion(CPU_FENCE_SIGNALED, event);
+            let event = unsafe { CreateEventA(null() as _, false as i32, start_signalled as i32, null()) };
+            semaphore.fence.SetEventOnCompletion(CPU_FENCE_SIGNALED as u64, event);
 
             Dx12Fence {
                 fence: semaphore.fence,
@@ -809,7 +815,7 @@ impl Device for Dx12Device {
         for i in 0..count {
             match self.create_fence(start_signalled) {
                 Ok(fence) => vec.push(fence),
-                Err(e) => Err(e),
+                Err(e) => return Err(e),
             }
         }
 
@@ -847,7 +853,7 @@ impl Device for Dx12Device {
                         ..unsafe { mem::zeroed() }
                     };
 
-                    srv_descriptor.Texture2D_mut() = D3D12_TEX2D_SRV {
+                    *unsafe { srv_descriptor.u.Texture2D_mut() } = D3D12_TEX2D_SRV {
                         MostDetailedMip: 0,
                         MipLevels: 1,
                         PlaneSlice: 0,
@@ -855,8 +861,11 @@ impl Device for Dx12Device {
                     };
 
                     unsafe {
-                        self.device
-                            .CreateShaderResourceView(image.resource, &srv_descriptor, write_handle)
+                        self.device.CreateShaderResourceView(
+                            image.borrow().resource.as_mut_ptr(),
+                            &srv_descriptor,
+                            write_handle,
+                        )
                     };
                 }
             }

@@ -1,8 +1,8 @@
 #![allow(unsafe_code)]
 
 use super::com::WeakPtr;
-use crate::rhi::dx12::dx12_utils::to_command_list_type;
 use crate::rhi::dx12::get_uuid;
+use crate::rhi::dx12::util::enum_conversions::to_command_list_type;
 use crate::rhi::{dx12::dx12_command_list::Dx12CommandList, CommandAllocator, MemoryError, QueueType};
 use std::ptr::null;
 use winapi::shared::winerror::FAILED;
@@ -47,8 +47,8 @@ impl CommandAllocator for Dx12CommandAllocator {
             self.device.CreateCommandList(
                 0,
                 command_list_type,
-                self.command_allocator,
-                null(),
+                self.allocator.as_mut_ptr(),
+                null() as _,
                 get_uuid(command_list),
                 command_list.mut_void(),
             )
