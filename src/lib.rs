@@ -7,6 +7,9 @@
 #![feature(async_closure)]
 #![feature(seek_convenience)]
 #![feature(test)]
+#![feature(type_alias_impl_trait)]
+#![allow(clippy::cognitive_complexity)]
+#![allow(clippy::float_cmp)]
 #![deny(nonstandard_style)]
 #![deny(future_incompatible)]
 #![deny(rust_2018_idioms)]
@@ -23,11 +26,3 @@ pub mod rhi;
 pub mod settings;
 pub mod shaderpack;
 pub mod surface;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}

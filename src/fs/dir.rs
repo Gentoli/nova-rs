@@ -123,7 +123,7 @@ where
     P: AsRef<Path>,
 {
     let root = std::fs::canonicalize(root)?;
-    let entry = read_recursive_impl(&root, Path::new("/"))?;
+    let entry = read_recursive_impl(&root, Path::new(""))?;
 
     Ok(DirectoryTree {
         root: std::fs::canonicalize(root)?,
