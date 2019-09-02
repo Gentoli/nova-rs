@@ -293,12 +293,7 @@ pub trait Memory {
 }
 
 /// A buffer or texture. Often interchangeable.
-pub trait Resource {
-    type ResourceType;
-
-    /// Gets the API-specific object that this Resource wraps
-    fn get_api_resource(&self) -> &Self::ResourceType;
-}
+pub trait Resource {}
 
 /// A data buffer.
 pub trait Buffer {
