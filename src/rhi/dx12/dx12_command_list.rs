@@ -1,6 +1,9 @@
 #![allow(unsafe_code)]
 
+use crate::mesh::FullVertex;
 use crate::rhi::dx12::com::WeakPtr;
+use crate::rhi::dx12::dx12_image::Dx12Image;
+use crate::rhi::dx12::util::barriers::to_dx12_barriers;
 use crate::rhi::{
     dx12::{
         dx12_buffer::Dx12Buffer, dx12_descriptor_set::Dx12DescriptorSet, dx12_framebuffer::Dx12Framebuffer,
@@ -9,13 +12,10 @@ use crate::rhi::{
     rhi_enums::PipelineStageFlags,
     CommandList, ResourceBarrier,
 };
-
-use crate::mesh::FullVertex;
-use crate::rhi::dx12::dx12_image::Dx12Image;
-use crate::rhi::dx12::util::barriers::to_dx12_barriers;
 use std::mem::size_of;
 use std::ptr;
 use std::ptr::null;
+use winapi::shared::dxgiformat::*;
 use winapi::um::d3d12::*;
 
 pub struct Dx12CommandList {
@@ -93,24 +93,28 @@ impl CommandList for Dx12CommandList {
     ) {
         if num_bytes == destination_buffer.size && num_bytes == source_buffer.size {
             // If we're copying the whole buffer region, use the faster CopyResource
-            self.list.CopyResource(
-                destination_buffer.resource.as_mut_ptr(),
-                source_buffer.resource.as_mut_ptr(),
-            );
+            unsafe {
+                self.list.CopyResource(
+                    destination_buffer.resource.as_mut_ptr(),
+                    source_buffer.resource.as_mut_ptr(),
+                )
+            };
         } else {
-            self.list.CopyBufferRegion(
-                destination_buffer.resource.as_mut_ptr(),
-                destination_offset,
-                source_buffer.resource.as_mut_ptr(),
-                source_offset,
-                num_bytes,
-            );
+            unsafe {
+                self.list.CopyBufferRegion(
+                    destination_buffer.resource.as_mut_ptr(),
+                    destination_offset,
+                    source_buffer.resource.as_mut_ptr(),
+                    source_offset,
+                    num_bytes,
+                )
+            };
         }
     }
 
     fn execute_command_lists(&self, lists: &Vec<Dx12CommandList>) {
         for command_list in lists {
-            self.list.ExecuteBundle(command_list.list.as_mut_ptr());
+            unsafe { self.list.ExecuteBundle(command_list.list.as_mut_ptr()) };
         }
     }
 
@@ -159,12 +163,14 @@ impl CommandList for Dx12CommandList {
         } else {
             let (has_ds_descriptors, ds_descriptor_ptr) = unwrap_to_lame(&framebuffer.depth_attachment);
 
-            self.list.OMSetRenderTargets(
-                framebuffer.color_attachments.len() as u32,
-                framebuffer.color_attachments.as_ptr(),
-                has_ds_descriptors as i32,
-                ds_descriptor_ptr,
-            );
+            unsafe {
+                self.list.OMSetRenderTargets(
+                    framebuffer.color_attachments.len() as u32,
+                    framebuffer.color_attachments.as_ptr(),
+                    has_ds_descriptors as i32,
+                    ds_descriptor_ptr,
+                )
+            };
         }
     }
 
@@ -190,7 +196,7 @@ impl CommandList for Dx12CommandList {
         let buffer_views = buffers
             .iter()
             .map(|buffer| D3D12_VERTEX_BUFFER_VIEW {
-                BufferLocation: buffer.resource.GetGPUVirtualAddress(),
+                BufferLocation: unsafe { buffer.resource.GetGPUVirtualAddress() },
                 SizeInBytes: buffer.size as u32,
                 StrideInBytes: size_of::<FullVertex>() as u32,
             })
@@ -203,11 +209,17 @@ impl CommandList for Dx12CommandList {
     }
 
     fn bind_index_buffer(&self, buffer: &Dx12Buffer) {
-        unimplemented!()
+        let buffer_view = D3D12_INDEX_BUFFER_VIEW {
+            BufferLocation: unsafe { buffer.resource.GetGPUVirtualAddress() },
+            SizeInBytes: buffer.size as u32,
+            Format: DXGI_FORMAT_R32_UINT,
+        };
+
+        unsafe { self.list.IASetIndexBuffer(&buffer_view) };
     }
 
     fn draw_indexed_mesh(&self, num_indices: u32, num_instances: u32) {
-        unimplemented!()
+        unsafe { self.list.DrawInstanced(num_indices, num_instances, 0, 0) };
     }
 }
 
