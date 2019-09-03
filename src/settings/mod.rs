@@ -4,3 +4,5 @@
 //! possibly by reading from an on-disk configuration file or asking the end user for settings. The settings are then
 //! used throughout Nova for various purposes. While most of these settings will be pretty technical and only useful to
 //! the application developer, a few of these, such as the API to use, will likely be more interesting for the end user.
+
+pub struct Settings {}
