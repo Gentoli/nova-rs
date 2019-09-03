@@ -17,6 +17,7 @@
 #![warn(missing_docs)]
 #![warn(unused)]
 
+pub mod async_utils;
 pub mod core;
 pub mod debugging;
 pub mod fs;
