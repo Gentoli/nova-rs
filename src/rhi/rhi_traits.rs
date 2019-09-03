@@ -17,9 +17,57 @@ use cgmath::Vector2;
 use std::rc::Rc;
 
 /// Top-level trait for functions that don't belong to any specific device object.
+///
+/// This trait has associated types for all the API-specific types, which allows clients of the RHI to refer to
+/// everything
 pub trait GraphicsApi {
     /// Corresponding physical device.
     type Device: Device;
+
+    /// Graphics's API's queue type.
+    type Queue: Queue;
+
+    /// Graphics's API's memory type.
+    type Memory: Memory;
+
+    /// Graphics's API's buffer type
+    type Buffer: Buffer;
+
+    /// Graphics's API's image type.
+    type Image: Image;
+
+    /// Graphics's API's sampler type
+    type Sampler: Sampler;
+
+    /// Graphics's API's descriptor pool type.
+    type DescriptorPool: DescriptorPool;
+
+    /// Graphics's API's descriptor set type
+    type DescriptorSet: DescriptorSet;
+
+    /// Graphics's API's renderpass type.
+    type Renderpass: Renderpass;
+
+    /// Graphics's API's framebuffer type.
+    type Framebuffer: Framebuffer;
+
+    /// Graphics's API's pipeline interface type.
+    type PipelineInterface: PipelineInterface;
+
+    /// Graphics's API's pipeline type.
+    type Pipeline: Pipeline;
+
+    /// Graphics's API's semaphore type.
+    type Semaphore: Semaphore;
+
+    /// Graphics's API's fence type.
+    type Fence: Fence;
+
+    /// Graphics's API's command allocator type
+    type CommandAllocator: CommandAllocator;
+
+    /// Graphics's API's command list type
+    type CommandList: CommandList;
 
     /// Corresponding platform surface.
     type PlatformSurface;
@@ -295,9 +343,6 @@ pub trait Memory {
     /// * `data` - The BufferData to create the new buffer from.
     fn create_buffer(&self, data: BufferCreateInfo) -> Result<Self::Buffer, MemoryError>;
 }
-
-/// A buffer or texture. Often interchangeable.
-pub trait Resource {}
 
 /// A data buffer.
 pub trait Buffer {
