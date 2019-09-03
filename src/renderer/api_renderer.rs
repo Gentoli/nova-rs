@@ -2,7 +2,6 @@ use crate::mesh::MeshData;
 use crate::renderer::Renderer;
 use crate::rhi;
 use crate::settings::Settings;
-use crate::shaderpack;
 use crate::shaderpack::ShaderpackData;
 
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
