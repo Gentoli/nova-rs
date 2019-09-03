@@ -1,4 +1,4 @@
-use cgmath::{Vector2, Vector3, Vector4};
+use cgmath::{Matrix4, Vector2, Vector3, Vector4};
 
 /// A single vertex in a mesh that Nova handles
 ///
@@ -43,3 +43,21 @@ pub struct MeshData {
 
 /// ID of a mesh that's been added to Nova
 pub type MeshId = u32;
+
+/// ID of a renderable object
+pub type DrawCommandId = u32;
+
+/// A command to render a single model
+///
+/// These commands don't reference the model they're rendering because the way they're stored means that we know what
+/// model they're drawing
+pub struct StaticMeshDrawCommand {
+    /// ID of the draw command to render
+    pub id: DrawCommandId,
+
+    /// Whether or not the model drawn by this command is currently visible
+    pub is_visible: bool,
+
+    /// Model matrix that this draw command should use
+    pub model_matrix: Matrix4<f32>,
+}
