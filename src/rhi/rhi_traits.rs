@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 
 use super::{rhi_enums::*, rhi_structs::*};
+use crate::settings::Settings;
 use crate::shaderpack;
 use crate::surface::Surface;
 use cgmath::Vector2;
@@ -22,6 +23,9 @@ pub trait GraphicsApi {
 
     /// Corresponding platform surface.
     type PlatformSurface;
+
+    /// Instantiates the graphics API
+    fn new(settings: Settings) -> Self;
 
     /// Gets a list of all available graphics adapters.
     fn get_adapters(&self) -> Vec<Self::Device>;
