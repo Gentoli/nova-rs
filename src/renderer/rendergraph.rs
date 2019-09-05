@@ -16,6 +16,9 @@ where
     /// Pipelines which will be drawn by this renderpass
     pub pipelines: Vec<Pipeline<GraphicsApi>>,
 
+    /// Whether or not this renderpass will write to the backbuffer
+    pub writes_to_backbuffer: bool,
+
     /// Barriers to get this renderpass's read-only image resources into a state needed by this renderpass
     ///
     /// Probably most useful for transitioning images into shader read optimal
