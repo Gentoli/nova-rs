@@ -8,6 +8,7 @@ use crate::shaderpack::{
     TextureCreateInfo,
 };
 use cgmath::Vector2;
+use spirv_cross::msl::ResourceBinding;
 use std::collections::HashMap;
 
 #[macro_use]
@@ -28,9 +29,9 @@ enum PlatformRendererCreationError {
 /// Actual renderer boi
 ///
 /// A Renderer which is specialized for a graphics API
-pub struct ApiRenderer<GraphicsApi>
+pub struct ApiRenderer<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     device: GraphicsApi::Device,
 
@@ -50,9 +51,9 @@ where
     swapchain: GraphicsApi::Swapchain,
 }
 
-impl<GraphicsApi> ApiRenderer<GraphicsApi>
+impl<'a, GraphicsApi> ApiRenderer<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     /// Creates a new renderer
     pub fn new(settings: Settings) -> Result<Self, PlatformRendererCreationError> {
@@ -69,6 +70,7 @@ where
                 renderpasses: Default::default(),
                 renderpass_textures: Default::default(),
                 renderpass_texture_infos: Default::default(),
+                swapchain: graphics_api.get_swapchain(),
             }),
         }
     }
@@ -121,7 +123,9 @@ where
         passes: &Vec<RenderPassCreationInfo>,
         pipelines: &Vec<PipelineCreationInfo>,
         materials: &Vec<MaterialData>,
-    ) {
+    ) -> bool {
+        let mut success = true;
+
         let mut total_num_descriptors = 0;
         for material_data in materials {
             for material_pass in material_data.passes {
@@ -134,43 +138,112 @@ where
             .create_descriptor_pool(total_num_descriptors, 0, total_num_descriptors);
 
         for pass_info in passes {
-            let rhi_renderpass_result = self.device.create_renderpass(pass_info);
-            if let Ok(rhi_renderpass) = rhi_renderpass_result {
-                let mut renderpass: Renderpass<GraphicsApi> = Default::default();
-                renderpass.renderpass = rhi_renderpass;
+            let mut renderpass: Renderpass<GraphicsApi> = Default::default();
 
-                let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
-                let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
-                let mut framebuffer_size = Vector2::<f32>::new(0, 0);
+            let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
+            let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
+            let mut framebuffer_size = Vector2::<f32>::new(0.0, 0.0);
 
-                for attachment_info in pass_info.texture_outputs {
-                    if attachment_info.name == "Backbuffer" {
-                        // Nova itself handles the backbuffer, but it needs renderpasses to be able to use it, so it
-                        // needs some special handling
-                        if pass_info.texture_outputs.len() == 0 {
-                            renderpass.writes_to_backbuffer = true;
-                        } else {
-                            attachment_errors
+            for attachment_info in pass_info.texture_outputs {
+                if attachment_info.name == "Backbuffer" {
+                    // Nova itself handles the backbuffer, but it needs renderpasses to be able to use it, so it
+                    // needs some special handling
+                    if pass_info.texture_outputs.len() == 0 {
+                        renderpass.writes_to_backbuffer = true;
+                    } else {
+                        attachment_errors
                                 .push(format!("Pass {} writes to the backbuffer and {} other textures, but that's not allowed. If a pass writes to the backbuffer, it can't write to any other textures", pass_info.name, pass_info.texture_outputs.len()))
+                    }
+                } else {
+                    let image = self.renderpass_textures.get(&attachment_info.name).unwrap();
+                    output_images.push(image);
+
+                    let image_info = self.renderpass_texture_infos.get(&attachment_info.name).unwrap();
+                    let attachment_size = image_info.format.get_size_in_pixels(self.swapchain.get_size());
+
+                    if framebuffer_size.x > 0.0 {
+                        if attachment_size != framebuffer_size {
+                            attachment_errors.push(format!("Attachment {} has a size of {}, but the framebuffer for pass {} has a size of {} - these must match! All attachments of a single renderpass must have the same size", attachment_info.name, attachment_size, pass_info.name, framebuffer_size));
                         }
                     } else {
-                        let image = self.renderpass_textures.get(&attachment_info.name).unwrap();
-                        output_images.push(image);
-
-                        let image_info = self.renderpass_texture_infos.get(&attachment_info.name).unwrap();
-                        let attachment_size = image_info.format.get_size_in_pixels(self.swapchain.get_size());
+                        framebuffer_size = attachment_size;
                     }
                 }
-            } else if let Err(err) = rhi_renderpass_result {
-                error!("Could not create renderpass {}: {}", pass_info.name, err);
+            }
+
+            if !attachment_errors.is_empty() {
+                for error in attachment_errors {
+                    error!("{}", error);
+                }
+
+                error!(
+                    "Could not create renderpass {} because of errors in its attachment specifications",
+                    pass_info.name
+                );
+
+                success = false;
+                continue;
+            }
+
+            match self.device.create_renderpass(pass_info) {
+                Ok(rhi_renderpass) => renderpass.renderpass = rhi_renderpass,
+                Err(err) => {
+                    error!("Could not create RHI object for renderpass {}: {}", pass_info.name, err);
+
+                    success = false;
+                    continue;
+                }
+            }
+
+            match self
+                .device
+                .create_framebuffer(&renderpass.renderpass, &output_images, &framebuffer_size)
+            {
+                Ok(rhi_framebuffer) => renderpass.framebuffer = rhi_framebuffer,
+                Err(err) => {
+                    error!(
+                        "Could not create framebuffer for renderpass {}: {}",
+                        pass_info.name, err
+                    );
+
+                    success = false;
+                    continue;
+                }
+            }
+
+            renderpass.pipelines.reserve(pipelines.len());
+            for pipeline_info in pipelines {
+                if pipeline_info.pass == pipeline_info.name {
+                    let mut bindings = HashMap::<String, ResourceBinding>::new();
+
+                    let pipeline_interface = self
+                        .device
+                        .create_pipeline_interface(pipeline_info, pass_info.texture_outputs, pass_info.depth_texture)
+                        .unwrap();
+
+                    match create_graphics_pipeline(pipeline_interface, pipeline_info) {
+                        Ok(graphics_pipeline) => {}
+                        Err(err) => {
+                            error!(
+                                "Could not create pipeline {} for pass {}: {}",
+                                pipeline_info.name, pass_info.name, err
+                            );
+
+                            success = false;
+                            continue;
+                        }
+                    }
+                }
             }
         }
+
+        success
     }
 }
 
-impl<GraphicsApi> Renderer for ApiRenderer<GraphicsApi>
+impl<'a, GraphicsApi> Renderer for ApiRenderer<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     fn set_render_graph(&mut self, graph: &ShaderpackData) {
         if !self.renderpasses.is_empty() {
