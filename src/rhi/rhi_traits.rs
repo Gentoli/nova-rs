@@ -20,7 +20,7 @@ use std::rc::Rc;
 ///
 /// This trait has associated types for all the API-specific types, which allows clients of the RHI to refer to
 /// everything
-pub trait GraphicsApi {
+pub trait GraphicsApi<'a> {
     /// Corresponding physical device.
     type Device: Device;
 
@@ -68,6 +68,9 @@ pub trait GraphicsApi {
 
     /// Graphics's API's command list type
     type CommandList: CommandList;
+
+    /// Graphics API's swapchain type
+    type Swapchain: Swapchain<'a>;
 
     /// Corresponding platform surface.
     type PlatformSurface;
