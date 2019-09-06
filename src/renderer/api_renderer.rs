@@ -1,7 +1,8 @@
 use crate::mesh::MeshData;
-use crate::renderer::rendergraph::Renderpass;
+use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
 use crate::renderer::Renderer;
 use crate::rhi;
+use crate::rhi::PipelineInterface;
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
@@ -221,8 +222,24 @@ where
                         .create_pipeline_interface(pipeline_info, pass_info.texture_outputs, pass_info.depth_texture)
                         .unwrap();
 
-                    match create_graphics_pipeline(pipeline_interface, pipeline_info) {
-                        Ok(graphics_pipeline) => {}
+                    match self.create_graphics_pipeline(pipeline_interface, pipeline_info) {
+                        Ok(graphics_pipeline) => {
+                            let template_key = MaterialPassKey {
+                                renderpass_index: self.renderpasses.num() as u32,
+                                pipeline_index: renderpass.pipelines.num() as u32,
+                                material_pass_key: 0,
+                            };
+
+                            self.create_materials_for_pipeline(
+                                graphics_pipeline.pipeline,
+                                graphics_pipeline.pipeline_metadata.material_metadatas,
+                                materials,
+                                pipeline_info.name,
+                                pipeline_interface,
+                                descriptor_pool,
+                                template_key,
+                            );
+                        }
                         Err(err) => {
                             error!(
                                 "Could not create pipeline {} for pass {}: {}",
@@ -238,6 +255,24 @@ where
         }
 
         success
+    }
+
+    fn create_graphics_pipeline(
+        &self,
+        interface: GraphicsApi::PipelineInterface,
+        create_info: PipelineCreationInfo,
+    ) -> Result<(Pipeline<'_, GraphicsApi>, PipelineMetadata), String> {
+        let mut metadata = PipelineMetadata {
+            data: create_info,
+            material_metadatas: vec![],
+        };
+
+        // TODO: Create the material metadatas
+
+        self.device
+            .create_graphics_pipeline(&create_info)
+            .map_error(|e| format!("Could not create pipeline {}: {}", create_info.name, e))
+            .map(|pipeline| (pipeline, metadata))
     }
 }
 

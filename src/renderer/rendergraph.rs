@@ -1,11 +1,13 @@
 use crate::mesh::StaticMeshDrawCommand;
-use crate::rhi;
 use crate::rhi::ResourceBarrier;
+use crate::{rhi, shaderpack};
+use std::collections::HashMap;
+use std::fmt;
 
 /// All the runtime data needed to execute a single renderpass
-pub struct Renderpass<GraphicsApi>
+pub struct Renderpass<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     /// RHI renderpass object
     pub renderpass: GraphicsApi::Renderpass,
@@ -14,7 +16,7 @@ where
     pub framebuffer: GraphicsApi::Framebuffer,
 
     /// Pipelines which will be drawn by this renderpass
-    pub pipelines: Vec<Pipeline<GraphicsApi>>,
+    pub pipelines: Vec<Pipeline<'a, GraphicsApi>>,
 
     /// Whether or not this renderpass will write to the backbuffer
     pub writes_to_backbuffer: bool,
@@ -31,24 +33,24 @@ where
 }
 
 /// All the data needed to issue all drawcalls that use a specific pipeline
-pub struct Pipeline<GraphicsApi>
+pub struct Pipeline<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     /// RHI object for the actual pipeline to use
     pub pipeline: GraphicsApi::Pipeline,
 
     /// All the material passes that use this pipeline
-    pub passes: Vec<MaterialPass<GraphicsApi>>,
+    pub passes: Vec<MaterialPass<'a, GraphicsApi>>,
 }
 
 /// A single pass from a material
-pub struct MaterialPass<GraphicsApi>
+pub struct MaterialPass<'a, GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     /// All the static mesh draws that use this material
-    pub static_mesh_draws: Vec<MeshBatch<GraphicsApi, StaticMeshDrawCommand>>,
+    pub static_mesh_draws: Vec<MeshBatch<'a, GraphicsApi, StaticMeshDrawCommand>>,
 
     /// The material's descriptor sets
     pub descriptor_sets: Vec<GraphicsApi::DescriptorSet>,
@@ -60,9 +62,9 @@ where
 /// A match of mesh calls
 ///
 /// Equivalent to one drawcall
-pub struct MeshBatch<GraphicsApi, DrawCommandType>
+pub struct MeshBatch<'a, GraphicsApi, DrawCommandType>
 where
-    GraphicsApi: rhi::GraphicsApi,
+    GraphicsApi: rhi::GraphicsApi<'a>,
 {
     /// Vertex buffer that this mesh batch uses
     pub vertex_buffer: GraphicsApi::Buffer,
@@ -76,4 +78,44 @@ where
     /// All the actual draw commands which generated this mesh batch
     /// TODO: Is this needed?
     pub renderables: Vec<DrawCommandType>,
+}
+
+/// A key to where a material pass is in a compiled rendergraph
+pub struct MaterialPassKey {
+    /// Index of this material's renderpass
+    pub renderpass_index: u32,
+
+    /// Index of this material's pipeline    
+    pub pipeline_index: u32,
+
+    /// Index of this material
+    pub material_pass_key: u32,
+}
+
+/// Metadata about a pipeline
+pub struct PipelineMetadata {
+    /// The data that this pipeline was created with
+    pub data: shaderpack::PipelineCreationInfo,
+
+    /// Metadata about all the material passes in this pipeline
+    pub material_metadatas: HashMap<FullMaterialPassName, MaterialPassMetadata>,
+}
+
+/// The full name of a material pass, mostly useful for logging
+pub struct FullMaterialPassName {
+    /// Name of the material that this material pass belongs to
+    pub material_name: String,
+    pub pass_name: String,
+}
+
+impl fmt::Display for FullMaterialPassName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Material Pass {} in Material {}", self.pass_name, self.material_name)
+    }
+}
+
+/// Metadata about a material pass
+pub struct MaterialPassMetadata {
+    /// The data that the material pass was created with
+    pub data: shaderpack::MaterialPass,
 }
