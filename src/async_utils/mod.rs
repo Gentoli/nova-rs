@@ -219,7 +219,6 @@ macro_rules! async_invoke {
     }};
     // Invoke without calling off to the executor
     (inline: $ctx:expr, $func:expr $(, executor: $executor:expr)? $(, stack: $call_stack:expr)? $(, args: $($args:expr),+)? ) => {{
-        use futures::task::SpawnExt;
         let new_executor = $crate::async_executor!($ctx $(, $executor)?).clone();
         let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().add_stack_frame(file!(), line!(), column!());
         let new_context = $crate::async_utils::Context {
@@ -241,7 +240,6 @@ macro_rules! async_invoke {
     }};
     // Invoke on the executor using `run` instead of `spawn_with_handle`
     (primary: $func:expr, executor: $executor:expr $(, handler: $handler:expr)? $(, args: $($args:expr),+)?) => {{
-        use futures::task::SpawnExt;
         let stack = $crate::async_utils::StackFrame::new(file!(), line!(), column!());
         let new_executor = $crate::async_executor!(x, $executor).clone();
         let new_context = $crate::async_utils::Context {
@@ -257,13 +255,13 @@ mod test {
     use crate::async_utils::Context;
     use futures::executor::ThreadPoolBuilder;
 
-    async fn async_sub_fn(mut ctx: Context, v: i32) -> i32 {
+    async fn async_sub_fn(ctx: Context, v: i32) -> i32 {
         println!("{:?}", ctx.call_stack);
         assert_eq!(v, 2);
         3
     }
 
-    async fn async_fn(mut ctx: Context) {
+    async fn async_fn(ctx: Context) {
         let f = async_invoke!(inline: ctx, async_sub_fn, args: 2);
         let v: i32 = f.await;
         assert_eq!(v, 3);
