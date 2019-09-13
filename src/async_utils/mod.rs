@@ -5,11 +5,16 @@ use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::sync::Arc;
 
+/// Asynchronous context, provided by [`async_call`] macro. Contains an
+/// executor and a call stack.
 pub struct Context {
+    /// Executor in this context.
     pub executor: ThreadPool,
+    /// Asynchronous call stack that called this function.
     pub call_stack: Arc<StackFrame>,
 }
 
+/// Debug printable stack frame, representing the current async call stack.
 pub struct StackFrame {
     file: &'static str,
     line: u32,
@@ -18,6 +23,8 @@ pub struct StackFrame {
 }
 
 impl StackFrame {
+    #[doc(hidden)]
+    /// Create new callstack. Only used by macro.
     pub fn new(file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
         Arc::new(StackFrame {
             file,
@@ -27,6 +34,8 @@ impl StackFrame {
         })
     }
 
+    #[doc(hidden)]
+    /// Append a new callstack. Only used by macro.
     pub fn add_stack_frame(self: Arc<Self>, file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
         Arc::new(StackFrame {
             file,
@@ -115,8 +124,8 @@ macro_rules! async_call_stack {
 ///   if you have no arguments.
 /// - `<executor>` is the executor to use. **REQUIRED in a sync context**. If omitted in an sync context, will use the
 ///   provided `ctx`'s executor instead.
-/// - `<stack>` is the stack to use. **REQUIRED in a sync context**. If omitted in an sync context, will use the
-///   provided `ctx`'s stack instead.
+/// - `<stack>` is the stack to use. If omitted in an async context, will use the provided `ctx`'s stack instead. If
+///   ommitted in a sync context, will create a new callstack with this call at the top.
 /// - `<handler>` is the error handler to use. The error handler is a function that will be passed to `map_err`. This
 ///   result is then passed to the try operator `?`. This is never required. If not provided it will use a simple
 ///   `unwrap`.
@@ -130,7 +139,7 @@ macro_rules! async_call_stack {
 /// # use nova_rs::async_utils::Context;
 /// # use nova_rs::async_invoke;
 /// # use futures::executor::ThreadPoolBuilder;
-/// async fn doubler(ctx: Context, v: i32) -> i32 {
+/// async fn doubler(mut _ctx: Context, v: i32) -> i32 {
 ///     v * 2
 /// }
 ///
@@ -139,9 +148,57 @@ macro_rules! async_call_stack {
 /// # assert_eq!(res, 4);
 /// ```
 ///
-/// A normal async -> async call
+/// async -> async call
 ///
 /// ```edition2018
+/// # #![feature(async_await)]
+/// # use nova_rs::async_utils::Context;
+/// # use nova_rs::async_invoke;
+/// # use futures::executor::ThreadPoolBuilder;
+/// # async fn doubler(mut ctx: Context, v: i32) -> i32 {
+/// #     v * 2
+/// # }
+/// #
+/// async fn call_doubler(mut ctx: Context) -> i32 {
+///     // Call via executor
+///     let a = async_invoke!(exec: ctx, doubler, args: 4).await;
+///     // Call directly
+///     let b = async_invoke!(inline: ctx, doubler, args: 5).await;
+///     a + b
+/// }
+///
+/// # let mut tp = ThreadPoolBuilder::new().create().unwrap();
+/// # let res = async_invoke!(primary: call_doubler, executor: tp);
+/// # assert_eq!(res, 4 * 2 + 5 * 2);
+/// ```
+///
+/// sync -> async call
+///
+/// ```edition2018
+/// # #![feature(async_await)]
+/// # use nova_rs::async_utils::Context;
+/// # use nova_rs::async_invoke;
+/// # use futures::executor::ThreadPoolBuilder;
+/// # async fn doubler(mut ctx: Context, v: i32) -> i32 {
+/// #     v * 2
+/// # }
+/// #
+/// // Some pre-existing threadpool
+/// let mut tp = ThreadPoolBuilder::new().create().unwrap();
+///
+/// // Execute future on already running thread pool.
+/// // Gives back handle.
+/// let handle = async_invoke!(from-sync: doubler, executor: tp, args: 2);
+/// # let handle = async_invoke!(from-sync: doubler, executor: tp, args: 2);
+///
+/// // Execute future on thread pool, running or not.
+/// // Blocks until finished.
+/// let result = async_invoke!(primary: doubler, executor: tp, args: 2);
+/// # let result = async_invoke!(primary: doubler, executor: tp, args: 2);
+///
+/// # let result1 = tp.run(handle);
+/// # assert_eq!(result1, 4);
+/// # assert_eq!(result, 4);
 /// ```
 ///
 /// [`Context`]: async_utils::Context
@@ -153,7 +210,7 @@ macro_rules! async_invoke {
     (exec: $ctx:expr, $func:expr $(, executor: $executor:expr)? $(, stack: $call_stack:expr)? $(, handler: $handler:expr)? $(, args: $($args:expr),+)? ) => {{
         use futures::task::SpawnExt;
         let new_executor = $crate::async_executor!($ctx $(, $executor)?).clone();
-        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).add_stack_frame(file!(), line!(), column!());
+        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().add_stack_frame(file!(), line!(), column!());
         let new_context = $crate::async_utils::Context {
             executor: new_executor,
             call_stack: stack,
@@ -164,7 +221,7 @@ macro_rules! async_invoke {
     (inline: $ctx:expr, $func:expr $(, executor: $executor:expr)? $(, stack: $call_stack:expr)? $(, args: $($args:expr),+)? ) => {{
         use futures::task::SpawnExt;
         let new_executor = $crate::async_executor!($ctx $(, $executor)?).clone();
-        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).add_stack_frame(file!(), line!(), column!());
+        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().add_stack_frame(file!(), line!(), column!());
         let new_context = $crate::async_utils::Context {
             executor: new_executor,
             call_stack: stack,
