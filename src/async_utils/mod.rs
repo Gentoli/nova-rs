@@ -1,11 +1,13 @@
 //! Utility structures for making writing async code easier.
+//!
+//! Provides [`async_call`](../macro.async_invoke.html) macro.
 
 use futures::executor::ThreadPool;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::sync::Arc;
 
-/// Asynchronous context, provided by [`async_call`] macro. Contains an
+/// Asynchronous context, provided by [`async_call`](../macro.async_invoke.html) macro. Contains an
 /// executor and a call stack.
 pub struct Context {
     /// Executor in this context.
@@ -90,6 +92,8 @@ macro_rules! async_call_stack {
 }
 
 /// Simple async function call wrapper.
+///
+/// Defined by [`async_utils`].
 ///
 /// This macro has three primary purposes:
 /// - Remove the boilerplate from spawning an async call on an executor.
