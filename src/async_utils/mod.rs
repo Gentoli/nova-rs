@@ -37,8 +37,8 @@ impl StackFrame {
     }
 
     #[doc(hidden)]
-    /// Append a new callstack. Only used by macro.
-    pub fn add_stack_frame(self: Arc<Self>, file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
+    /// Consume and append a new stack frame. Only used by macro.
+    pub fn create_new_stack_frame(self: Arc<Self>, file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
         Arc::new(StackFrame {
             file,
             line,
@@ -214,7 +214,7 @@ macro_rules! async_invoke {
     (exec: $ctx:expr, $func:expr $(, executor: $executor:expr)? $(, stack: $call_stack:expr)? $(, handler: $handler:expr)? $(, args: $($args:expr),+)? ) => {{
         use futures::task::SpawnExt;
         let new_executor = $crate::async_executor!($ctx $(, $executor)?).clone();
-        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().add_stack_frame(file!(), line!(), column!());
+        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().create_new_stack_frame(file!(), line!(), column!());
         let new_context = $crate::async_utils::Context {
             executor: new_executor,
             call_stack: stack,
@@ -224,7 +224,7 @@ macro_rules! async_invoke {
     // Invoke without calling off to the executor
     (inline: $ctx:expr, $func:expr $(, executor: $executor:expr)? $(, stack: $call_stack:expr)? $(, args: $($args:expr),+)? ) => {{
         let new_executor = $crate::async_executor!($ctx $(, $executor)?).clone();
-        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().add_stack_frame(file!(), line!(), column!());
+        let stack = $crate::async_call_stack!($ctx $(, $call_stack)?).clone().create_new_stack_frame(file!(), line!(), column!());
         let new_context = $crate::async_utils::Context {
             executor: new_executor,
             call_stack: stack,
