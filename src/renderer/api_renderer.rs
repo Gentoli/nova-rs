@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 #[macro_use]
 use log::*;
-use crate::rhi::{MemoryUsage, ObjectType};
+use crate::rhi::{BufferCreateInfo, BufferUsage, DeviceMemoryAllocation, MemoryUsage, ObjectType};
 use spirv_cross::msl::ResourceBinding;
 use std::mem::size_of;
 
@@ -75,7 +75,7 @@ where
             let mesh_memory =
                 adapter.allocated_memory(mesh_memory_size, MemoryUsage::LowFrequencyUpload, ObjectType::Buffer)?;
 
-            let mut renderer = ApiRenderer {
+            ApiRenderer {
                 device: adapter,
                 can_render: true,
                 has_rendergraph: false,
@@ -84,9 +84,7 @@ where
                 renderpass_texture_infos: Default::default(),
                 swapchain: graphics_api.get_swapchain(),
                 mesh_memory,
-            };
-
-            renderer
+            }
         })
         .unwrap()
     }
@@ -313,7 +311,11 @@ where
     fn add_mesh(&mut self, mesh_data: &MeshData) -> u32 {
         let vertex_buffer_size = mesh_data.vertex_data.len() * size_of::<FullVertex>();
 
-        self.device.create_buffer(self.mesh_memory);
+        self.mesh_memory.create_buffer(BufferCreateInfo {
+            size: vertex_buffer_size,
+            buffer_usage: BufferUsage::VertexBuffer,
+            allocation: DeviceMemoryAllocation,
+        });
     }
 
     fn tick(&self, delta_time: f32) {
