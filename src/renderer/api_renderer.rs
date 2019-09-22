@@ -1,19 +1,20 @@
-use crate::mesh::MeshData;
+use crate::mesh::{FullVertex, MeshData};
 use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
 use crate::renderer::Renderer;
 use crate::rhi;
-use crate::rhi::PipelineInterface;
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
     TextureCreateInfo,
 };
 use cgmath::Vector2;
-use spirv_cross::msl::ResourceBinding;
 use std::collections::HashMap;
 
 #[macro_use]
-extern crate log;
+use log::*;
+use crate::rhi::{MemoryUsage, ObjectType};
+use spirv_cross::msl::ResourceBinding;
+use std::mem::size_of;
 
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
     unimplemented!();
@@ -43,13 +44,16 @@ where
     has_rendergraph: bool,
 
     /// All the current shaderpack's renderpasses, in submission order
-    renderpasses: Vec<Renderpass<GraphicsApi>>,
+    renderpasses: Vec<Renderpass<'a, GraphicsApi>>,
 
     /// All the textures that the current render graph needs
     renderpass_textures: HashMap<String, GraphicsApi::Image>,
     renderpass_texture_infos: HashMap<String, TextureCreateInfo>,
 
     swapchain: GraphicsApi::Swapchain,
+
+    /// Memory allocation where all mesh data will go
+    mesh_memory: GraphicsApi::Memory,
 }
 
 impl<'a, GraphicsApi> ApiRenderer<'a, GraphicsApi>
@@ -64,16 +68,27 @@ where
 
         match adapters.len() {
             0 => Err(PlatformRendererCreationError::ApiNotSupported),
-            _ => Ok(ApiRenderer {
-                device: adapters.remove(0),
+            _ => Ok(adapters.remove(0)),
+        }
+        .map(|adapter| {
+            let mesh_memory_size = 256000000; // About 256 MB for no real reason. TODO: Real number
+            let mesh_memory =
+                adapter.allocated_memory(mesh_memory_size, MemoryUsage::LowFrequencyUpload, ObjectType::Buffer)?;
+
+            let mut renderer = ApiRenderer {
+                device: adapter,
                 can_render: true,
                 has_rendergraph: false,
                 renderpasses: Default::default(),
                 renderpass_textures: Default::default(),
                 renderpass_texture_infos: Default::default(),
                 swapchain: graphics_api.get_swapchain(),
-            }),
-        }
+                mesh_memory,
+            };
+
+            renderer
+        })
+        .unwrap()
     }
 
     fn destroy_render_passes(&mut self) {
@@ -139,7 +154,7 @@ where
             .create_descriptor_pool(total_num_descriptors, 0, total_num_descriptors);
 
         for pass_info in passes {
-            let mut renderpass: Renderpass<GraphicsApi> = Default::default();
+            let mut renderpass: Renderpass<'a, GraphicsApi> = Default::default();
 
             let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
             let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
@@ -222,7 +237,7 @@ where
                         .create_pipeline_interface(pipeline_info, pass_info.texture_outputs, pass_info.depth_texture)
                         .unwrap();
 
-                    match self.create_graphics_pipeline(pipeline_interface, pipeline_info) {
+                    match self.create_graphics_pipeline(pipeline_interface, &pipeline_info) {
                         Ok(graphics_pipeline) => {
                             let template_key = MaterialPassKey {
                                 renderpass_index: self.renderpasses.num() as u32,
@@ -296,10 +311,18 @@ where
     }
 
     fn add_mesh(&mut self, mesh_data: &MeshData) -> u32 {
-        unimplemented!()
+        let vertex_buffer_size = mesh_data.vertex_data.len() * size_of::<FullVertex>();
+
+        self.device.create_buffer(self.mesh_memory);
     }
 
     fn tick(&self, delta_time: f32) {
+        // Schedule all deletes
+        // Schedule all uploads
+        // Read the previous virtual texture ID buffer
+        // Schedule uploads to the virtual texture atlas
+        // Issue renderpass drawcalls
+
         unimplemented!()
     }
 }
