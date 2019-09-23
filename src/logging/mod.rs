@@ -43,8 +43,8 @@ impl BasicLogger {
     ///
     /// Here the debug and trace levels can be enabled, all other levels are always enabled
     /// with the `BasicLogger`.
-    pub fn new(debug: bool, trace: bool) -> BasicLogger {
-        BasicLogger { debug, trace }
+    pub const fn new(debug: bool, trace: bool) -> Self {
+        Self { debug, trace }
     }
 }
 
@@ -57,6 +57,7 @@ impl log::Log for BasicLogger {
         }
     }
 
+    #[allow(clippy::print_stdout)]
     fn log(&self, record: &log::Record<'_>) {
         if self.enabled(record.metadata()) {
             if record.metadata().level() <= log::Level::Warn {

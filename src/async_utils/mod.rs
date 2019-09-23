@@ -27,8 +27,8 @@ pub struct StackFrame {
 impl StackFrame {
     #[doc(hidden)]
     /// Create new callstack. Only used by macro.
-    pub fn new(file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
-        Arc::new(StackFrame {
+    pub fn new(file: &'static str, line: u32, column: u32) -> Arc<Self> {
+        Arc::new(Self {
             file,
             line,
             column,
@@ -38,8 +38,8 @@ impl StackFrame {
 
     #[doc(hidden)]
     /// Consume and append a new stack frame. Only used by macro.
-    pub fn create_new_stack_frame(self: Arc<Self>, file: &'static str, line: u32, column: u32) -> Arc<StackFrame> {
-        Arc::new(StackFrame {
+    pub fn create_new_stack_frame(self: Arc<Self>, file: &'static str, line: u32, column: u32) -> Arc<Self> {
+        Arc::new(Self {
             file,
             line,
             column,
@@ -51,7 +51,7 @@ impl StackFrame {
 impl Debug for StackFrame {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         writeln!(f, "{}:{}:{}", self.file, self.line, self.column)?;
-        self.last.as_ref().map(|l| l.fmt(f)).unwrap_or(Ok(()))
+        self.last.as_ref().map_or(Ok(()), |l| l.fmt(f))
     }
 }
 
@@ -259,8 +259,7 @@ mod test {
     use crate::async_utils::Context;
     use futures::executor::ThreadPoolBuilder;
 
-    async fn async_sub_fn(ctx: Context, v: i32) -> i32 {
-        println!("{:?}", ctx.call_stack);
+    async fn async_sub_fn(_ctx: Context, v: i32) -> i32 {
         assert_eq!(v, 2);
         3
     }
@@ -273,7 +272,7 @@ mod test {
 
     #[test]
     fn async_invoke() {
-        let mut exec = ThreadPoolBuilder::new().create().unwrap();
+        let mut exec = ThreadPoolBuilder::new().create().expect("ThreadPool failed to start.");
         async_invoke!(primary: async_fn, executor: exec);
     }
 }

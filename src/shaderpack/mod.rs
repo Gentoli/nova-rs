@@ -104,7 +104,11 @@ where
     // This function is a wrapper which properly dispatches to various sub functions
 
     // This should actually really be a if let chain, but that's not in the language yet
-    match (path.exists(), path.is_dir(), path.extension().and_then(|s| s.to_str())) {
+    match (
+        path.exists(),
+        path.is_dir(),
+        path.extension().and_then(std::ffi::OsStr::to_str),
+    ) {
         // Directory
         (true, true, _) => {
             // Get the file tree
@@ -198,7 +202,7 @@ where
     // Iterate through the materials directory to find the useful files in the files with the needed extant
     for path in materials_folder {
         let full_path = path!("materials" | &path).into();
-        let ext = path.extension().and_then(|s| s.to_str());
+        let ext = path.extension().and_then(std::ffi::OsStr::to_str);
         // Match on the extension
         match ext {
             Some("mat") => {
@@ -237,7 +241,7 @@ where
 
     // Pull all pipelines as we also can do stuff with them immediately
     let mut pipelines = await_result_vector!(pipelines_futs);
-    pipeline_postprocess(&mut pipelines, shader_mapping);
+    pipeline_postprocess(&mut pipelines, &shader_mapping);
 
     let shaders = ShaderSet::Sources({
         let mut vec = Vec::with_capacity(shader_futs.len());
@@ -289,7 +293,7 @@ fn set_material_pass_material_name(materials: &mut [MaterialData]) {
 /// During loading, a ShaderSource is a path to a shader file. These have been
 /// loaded into an array of shader sources. Using the mapping of path to index we generated before,
 /// we not replace the path with a index.
-fn pipeline_postprocess(pipelines: &mut [PipelineCreationInfo], shader_mapping: HashMap<&PathBuf, u32>) {
+fn pipeline_postprocess(pipelines: &mut [PipelineCreationInfo], shader_mapping: &HashMap<&PathBuf, u32>) {
     // A helpful closure that processes a single shader. Needs to be a closure
     // because it captures the surrounding arguments.
     let process_shader = |shader: &mut ShaderSource| {

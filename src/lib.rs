@@ -6,6 +6,7 @@
 // Rust features
 #![feature(async_await)]
 #![feature(async_closure)]
+#![feature(const_string_new)]
 #![feature(seek_convenience)]
 #![feature(test)]
 // Rust warnings
@@ -20,10 +21,14 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::restriction)]
 // Annoying regular clippy warnings
-#![allow(clippy::cast_sign_loss)] // Annoying
-#![allow(clippy::cast_precision_loss)] // Annoying
 #![allow(clippy::cast_possible_truncation)] // Annoying
+#![allow(clippy::cast_possible_wrap)] // Annoying
+#![allow(clippy::cast_precision_loss)] // Annoying
+#![allow(clippy::cast_sign_loss)] // Annoying
 #![allow(clippy::cognitive_complexity)] // This is dumb
+#![allow(clippy::doc_markdown)] // Too picky
+#![allow(clippy::module_name_repetitions)] // Causes name conflicts
+#![allow(clippy::pub_enum_variant_names)] // Conventional names are redundant
 // Annoying/irrelevant clippy Restrictions
 #![allow(clippy::decimal_literal_representation)]
 #![allow(clippy::else_if_without_else)]
@@ -37,6 +42,7 @@
 #![allow(clippy::missing_inline_in_public_items)]
 #![allow(clippy::shadow_reuse)]
 #![allow(clippy::shadow_same)]
+#![allow(clippy::unimplemented)] // Annoying during early prototyping
 #![allow(clippy::wildcard_enum_match_arm)]
 
 pub mod async_utils;

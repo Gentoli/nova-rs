@@ -41,10 +41,10 @@ where
         let (send, recv) = unbounded();
         let reactor = Arc::new(SingleThreadedReactorImpl { receiver: recv });
         {
-            let reactor = reactor.clone();
+            let reactor = Arc::clone(&reactor);
             thread::spawn(move || reactor.run(f));
         }
-        SingleThreadReactor { sender: send, reactor }
+        Self { sender: send, reactor }
     }
 
     /// Send an input to the reactor for processing.
@@ -83,15 +83,15 @@ where
     R: Send + 'static,
 {
     fn clone(&self) -> Self {
-        SingleThreadReactor {
+        Self {
             sender: self.sender.clone(),
-            reactor: self.reactor.clone(),
+            reactor: Arc::clone(&self.reactor),
         }
     }
 
     fn clone_from(&mut self, source: &Self) {
         self.sender = source.sender.clone();
-        self.reactor = source.reactor.clone();
+        self.reactor = Arc::clone(&self.reactor);
     }
 }
 

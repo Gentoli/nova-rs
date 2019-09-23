@@ -31,7 +31,7 @@ pub struct FileSystemOpError {
 
 impl FileSystemOpError {
     fn from_path(error: io::Error, operation: FileSystemOp) -> Self {
-        FileSystemOpError {
+        Self {
             error,
             operation,
             backtrace: Backtrace::new(),
@@ -44,16 +44,16 @@ pub(in crate::loading::dir) fn file_system_reactor_core(op: FileSystemOp) -> Fil
     match &op {
         FileSystemOp::RecursiveEnumerate(path) => match fs::dir::read_recursive(path) {
             Ok(cache) => FileSystemOpResult::RecursiveEnumerate(cache),
-            Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+            Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
         },
         FileSystemOp::FileRead(path) => {
             let file = std::fs::File::open(path);
             match file {
                 Ok(reader) => match fs::file::read_stream_u8(reader) {
                     Ok(result) => FileSystemOpResult::FileRead(result),
-                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
                 },
-                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
             }
         }
         FileSystemOp::FileReadU32(path) => {
@@ -61,9 +61,9 @@ pub(in crate::loading::dir) fn file_system_reactor_core(op: FileSystemOp) -> Fil
             match file {
                 Ok(reader) => match fs::file::read_stream_u32(reader) {
                     Ok(result) => FileSystemOpResult::FileReadU32(result),
-                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
                 },
-                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
             }
         }
         FileSystemOp::FileReadText(path) => {
@@ -71,9 +71,9 @@ pub(in crate::loading::dir) fn file_system_reactor_core(op: FileSystemOp) -> Fil
             match file {
                 Ok(reader) => match fs::file::read_stream_string(reader) {
                     Ok(result) => FileSystemOpResult::FileReadText(result),
-                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                    Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
                 },
-                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op.clone())),
+                Err(err) => FileSystemOpResult::Error(FileSystemOpError::from_path(err, op)),
             }
         }
     }
