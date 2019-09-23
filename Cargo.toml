@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["David Dubois <dexcelstraun7@gmail.com>"]
 edition = "2018"
 build = "build.rs"
+
+license = "MIT"
+repository = "https://github.com/NovaMods/nova-rs"
+readme = "README.md"
 description = "A modern, high-performance, customizable rendering engine"
 keywords = ["nova", "renderer", "directx-12", "vulkan", "minecraft"]
 categories = ["rendering::engine", "graphics"]
