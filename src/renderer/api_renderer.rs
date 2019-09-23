@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 #[macro_use]
 use log::*;
-use crate::rhi::{BufferCreateInfo, BufferUsage, DeviceMemoryAllocation, MemoryUsage, ObjectType};
+use crate::rhi::{BufferCreateInfo, BufferUsage, MemoryAllocationInfo, MemoryUsage, ObjectType};
 use spirv_cross::msl::ResourceBinding;
 use std::mem::size_of;
 
@@ -314,7 +314,7 @@ where
         self.mesh_memory.create_buffer(BufferCreateInfo {
             size: vertex_buffer_size,
             buffer_usage: BufferUsage::VertexBuffer,
-            allocation: DeviceMemoryAllocation,
+            allocation: MemoryAllocationInfo,
         });
     }
 

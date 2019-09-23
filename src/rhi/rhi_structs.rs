@@ -139,9 +139,9 @@ pub struct BufferCreateInfo {
     pub buffer_usage: BufferUsage,
 
     /// The allocation to use for the buffer
-    pub allocation: DeviceMemoryAllocation,
+    pub allocation: MemoryAllocationInfo,
 }
 
 /// Memory allocation on a specific device.
 #[derive(Debug, Clone)]
-pub struct DeviceMemoryAllocation;
+pub struct MemoryAllocationInfo;
