@@ -306,6 +306,34 @@ pub trait Device {
     ///
     /// * `updates` - The DescriptorSetWrites to execute.
     fn update_descriptor_sets(&self, updates: Vec<(Self::DescriptorPool, DescriptorSetWrite)>);
+
+    /// Destroys the renderpass object
+    ///
+    /// # Parameters
+    ///
+    /// * `renderpass` - The renderpass to destroy
+    fn destroy_renderpass(&self, renderpass: Self::Renderpass);
+
+    /// Destroys the framebuffer object
+    ///
+    /// # Parameters
+    ///
+    /// * `framebuffer` - The framebuffer to destroy
+    fn destroy_framebuffer(&self, framebuffer: Self::Framebuffer);
+
+    /// Destroys the pipeline object
+    ///
+    /// # Parameters
+    ///
+    /// * `pipeline` - The pipeline to destroy
+    fn destroy_pipeline(&self, pipeline: Self::Pipeline);
+
+    /// Destroys the image object
+    ///
+    /// # Parameters
+    ///
+    /// * `image` - The image to destroy
+    fn destroy_image(&self, image: Self::Pipeline);
 }
 
 /// Represents a queue of command lists to run.
