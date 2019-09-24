@@ -5,9 +5,9 @@ use std::collections::HashMap;
 use std::fmt;
 
 /// All the runtime data needed to execute a single renderpass
-pub struct Renderpass<'a, GraphicsApi>
+pub struct Renderpass<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     /// RHI renderpass object
     pub renderpass: GraphicsApi::Renderpass,
@@ -16,7 +16,7 @@ where
     pub framebuffer: GraphicsApi::Framebuffer,
 
     /// Pipelines which will be drawn by this renderpass
-    pub pipelines: Vec<Pipeline<'a, GraphicsApi>>,
+    pub pipelines: Vec<Pipeline<GraphicsApi>>,
 
     /// Whether or not this renderpass will write to the backbuffer
     pub writes_to_backbuffer: bool,
@@ -33,24 +33,24 @@ where
 }
 
 /// All the data needed to issue all drawcalls that use a specific pipeline
-pub struct Pipeline<'a, GraphicsApi>
+pub struct Pipeline<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     /// RHI object for the actual pipeline to use
     pub pipeline: GraphicsApi::Pipeline,
 
     /// All the material passes that use this pipeline
-    pub passes: Vec<MaterialPass<'a, GraphicsApi>>,
+    pub passes: Vec<MaterialPass<GraphicsApi>>,
 }
 
 /// A single pass from a material
-pub struct MaterialPass<'a, GraphicsApi>
+pub struct MaterialPass<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     /// All the static mesh draws that use this material
-    pub static_mesh_draws: Vec<MeshBatch<'a, GraphicsApi, StaticMeshDrawCommand>>,
+    pub static_mesh_draws: Vec<MeshBatch<GraphicsApi, StaticMeshDrawCommand>>,
 
     /// The material's descriptor sets
     pub descriptor_sets: Vec<GraphicsApi::DescriptorSet>,
@@ -62,9 +62,9 @@ where
 /// A match of mesh calls
 ///
 /// Equivalent to one drawcall
-pub struct MeshBatch<'a, GraphicsApi, DrawCommandType>
+pub struct MeshBatch<GraphicsApi, DrawCommandType>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     /// Vertex buffer that this mesh batch uses
     pub vertex_buffer: GraphicsApi::Buffer,

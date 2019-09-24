@@ -21,15 +21,27 @@ use std::sync::Arc;
 ///
 /// This trait has associated types for all the API-specific types, which allows clients of the RHI to refer to
 /// everything
-pub trait GraphicsApi<'a> {
+pub trait GraphicsApi {
     /// Corresponding physical device.
-    type Device: Device;
+    type Device: Device<
+        Queue = Self::Queue,
+        Memory = Self::Memory,
+        CommandAllocator = Self::CommandAllocator,
+        Image = Self::Image,
+        Renderpass = Self::Renderpass,
+        Framebuffer = Self::Framebuffer,
+        PipelineInterface = Self::PipelineInterface,
+        DescriptorPool = Self::DescriptorPool,
+        Pipeline = Self::Pipeline,
+        Semaphore = Self::Semaphore,
+        Fence = Self::Fence,
+    >;
 
     /// Graphics's API's queue type.
-    type Queue: Queue;
+    type Queue: Queue<CommandList = Self::CommandList, Fence = Self::Fence, Semaphore = Self::Semaphore>;
 
     /// Graphics's API's memory type.
-    type Memory: Memory;
+    type Memory: Memory<Buffer = Self::Buffer>;
 
     /// Graphics's API's buffer type
     type Buffer: Buffer;
@@ -41,7 +53,10 @@ pub trait GraphicsApi<'a> {
     type Sampler: Sampler;
 
     /// Graphics's API's descriptor pool type.
-    type DescriptorPool: DescriptorPool;
+    type DescriptorPool: DescriptorPool<
+        PipelineInterface = Self::PipelineInterface,
+        DescriptorSet = Self::DescriptorSet,
+    >;
 
     /// Graphics's API's descriptor set type
     type DescriptorSet: DescriptorSet;
@@ -65,13 +80,22 @@ pub trait GraphicsApi<'a> {
     type Fence: Fence;
 
     /// Graphics's API's command allocator type
-    type CommandAllocator: CommandAllocator;
+    type CommandAllocator: CommandAllocator<CommandList = Self::CommandList>;
 
     /// Graphics's API's command list type
-    type CommandList: CommandList;
+    type CommandList: CommandList<
+        Buffer = Self::Buffer,
+        CommandList = Self::CommandList,
+        Renderpass = Self::Renderpass,
+        Framebuffer = Self::Framebuffer,
+        Pipeline = Self::Pipeline,
+        DescriptorSet = Self::DescriptorSet,
+        PipelineInterface = Self::PipelineInterface,
+        Image = Self::Image,
+    >;
 
     /// Graphics API's swapchain type
-    type Swapchain: Swapchain<'a>;
+    type Swapchain: Swapchain<Framebuffer = Self::Framebuffer, Image = Self::Image, Fence = Self::Fence>;
 
     /// Corresponding platform surface.
     type PlatformSurface;
@@ -430,7 +454,7 @@ pub trait Framebuffer {}
 /// A swapchain that Nova can render to
 ///
 /// Contains all the framebuffers and images needed!
-pub trait Swapchain<'a> {
+pub trait Swapchain {
     type Framebuffer: Framebuffer;
     type Image: Image;
     type Fence: Fence;
@@ -445,10 +469,10 @@ pub trait Swapchain<'a> {
     fn present(index: u32);
 
     /// Borrows the framebuffer that can render to the swapchain image at the specified index
-    fn get_framebuffer(index: u32) -> &'a Self::Framebuffer;
+    fn get_framebuffer(index: u32) -> Arc<Self::Framebuffer>;
 
     /// Borrows the graphics API's representation of the swapchain image at the specified index
-    fn get_image(index: u32) -> &'a Self::Image;
+    fn get_image(index: u32) -> Arc<Self::Image>;
 
     /// Gets the size, in pixels,  of the swapchain
     fn get_size() -> Vector2<u32>;

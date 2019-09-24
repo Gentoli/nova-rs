@@ -28,9 +28,9 @@ enum PlatformRendererCreationError {
 /// Actual renderer boi
 ///
 /// A Renderer which is specialized for a graphics API
-pub struct ApiRenderer<'a, GraphicsApi>
+pub struct ApiRenderer<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     device: GraphicsApi::Device,
 
@@ -41,7 +41,7 @@ where
     has_rendergraph: bool,
 
     /// All the current shaderpack's renderpasses, in submission order
-    renderpasses: Vec<Renderpass<'a, GraphicsApi>>,
+    renderpasses: Vec<Renderpass<GraphicsApi>>,
 
     /// All the textures that the current render graph needs
     renderpass_textures: HashMap<String, GraphicsApi::Image>,
@@ -50,9 +50,9 @@ where
     swapchain: Arc<GraphicsApi::Swapchain>,
 }
 
-impl<'a, GraphicsApi> ApiRenderer<'a, GraphicsApi>
+impl<GraphicsApi> ApiRenderer<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     /// Creates a new renderer
     pub fn new(settings: Settings) -> Result<Self, PlatformRendererCreationError> {
@@ -137,7 +137,7 @@ where
             .create_descriptor_pool(total_num_descriptors, 0, total_num_descriptors);
 
         for pass_info in passes {
-            let mut renderpass: Renderpass<'a, GraphicsApi> = Default::default();
+            let mut renderpass: Renderpass<GraphicsApi> = Default::default();
 
             let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
             let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
@@ -259,7 +259,7 @@ where
         &self,
         interface: GraphicsApi::PipelineInterface,
         create_info: &PipelineCreationInfo,
-    ) -> Result<(Pipeline<'a, GraphicsApi>, PipelineMetadata), String> {
+    ) -> Result<(Pipeline<GraphicsApi>, PipelineMetadata), String> {
         let mut metadata = PipelineMetadata {
             data: create_info.clone(),
             material_metadatas: vec![],
@@ -274,9 +274,9 @@ where
     }
 }
 
-impl<'a, GraphicsApi> Renderer for ApiRenderer<'a, GraphicsApi>
+impl<GraphicsApi> Renderer for ApiRenderer<GraphicsApi>
 where
-    GraphicsApi: rhi::GraphicsApi<'a>,
+    GraphicsApi: rhi::GraphicsApi,
 {
     fn set_render_graph(&mut self, graph: &ShaderpackData) {
         if !self.renderpasses.is_empty() {
