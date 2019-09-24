@@ -2,6 +2,7 @@ use crate::mesh::MeshData;
 use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
 use crate::renderer::Renderer;
 use crate::rhi;
+use crate::rhi::Device;
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
