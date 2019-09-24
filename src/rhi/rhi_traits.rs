@@ -347,8 +347,11 @@ pub trait Memory {
     fn create_buffer(&self, data: BufferCreateInfo) -> Result<Self::Buffer, MemoryError>;
 }
 
+/// Any resource, such as a buffer or an image
+pub trait Resource {}
+
 /// A data buffer.
-pub trait Buffer {
+pub trait Buffer: Resource {
     /// Maps this buffer so that you can write data directly to it
     ///
     /// This method will fail if the buffer is in device-local memory, or has otherwise been created in a heap with no
@@ -362,7 +365,7 @@ pub trait Buffer {
 }
 
 /// An raw image with no sampler.
-pub trait Image {}
+pub trait Image: Resource {}
 
 /// An image sampler.
 pub trait Sampler {}
