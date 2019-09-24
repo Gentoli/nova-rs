@@ -2,14 +2,13 @@ use crate::mesh::MeshData;
 use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
 use crate::renderer::Renderer;
 use crate::rhi;
-use crate::rhi::PipelineInterface;
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
     TextureCreateInfo,
 };
 use cgmath::Vector2;
-use spirv_cross::msl::ResourceBinding;
+use spirv_cross::spirv::Resource;
 use std::collections::HashMap;
 
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
@@ -40,7 +39,7 @@ where
     has_rendergraph: bool,
 
     /// All the current shaderpack's renderpasses, in submission order
-    renderpasses: Vec<Renderpass<GraphicsApi>>,
+    renderpasses: Vec<Renderpass<'a, GraphicsApi>>,
 
     /// All the textures that the current render graph needs
     renderpass_textures: HashMap<String, GraphicsApi::Image>,
@@ -136,7 +135,7 @@ where
             .create_descriptor_pool(total_num_descriptors, 0, total_num_descriptors);
 
         for pass_info in passes {
-            let mut renderpass: Renderpass<GraphicsApi> = Default::default();
+            let mut renderpass: Renderpass<'a, GraphicsApi> = Default::default();
 
             let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
             let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
@@ -212,7 +211,7 @@ where
             renderpass.pipelines.reserve(pipelines.len());
             for pipeline_info in pipelines {
                 if pipeline_info.pass == pipeline_info.name {
-                    let mut bindings = HashMap::<String, ResourceBinding>::new();
+                    let mut bindings = HashMap::<String, Resource>::new();
 
                     let pipeline_interface = self
                         .device
@@ -257,17 +256,17 @@ where
     fn create_graphics_pipeline(
         &self,
         interface: GraphicsApi::PipelineInterface,
-        create_info: PipelineCreationInfo,
-    ) -> Result<(Pipeline<'_, GraphicsApi>, PipelineMetadata), String> {
+        create_info: &PipelineCreationInfo,
+    ) -> Result<(Pipeline<'a, GraphicsApi>, PipelineMetadata), String> {
         let mut metadata = PipelineMetadata {
-            data: create_info,
+            data: create_info.clone(),
             material_metadatas: vec![],
         };
 
         // TODO: Create the material metadatas
 
         self.device
-            .create_graphics_pipeline(&create_info)
+            .create_graphics_pipeline(create_info)
             .map_error(|e| format!("Could not create pipeline {}: {}", create_info.name, e))
             .map(|pipeline| (pipeline, metadata))
     }

@@ -67,8 +67,8 @@ where
 {
     fn from(err: spirv_cross::ErrorCode) -> Self {
         match err {
-            spirv_cross::ErrorCode::Unhandled => (T::default(), String::from("Unhandled error :(")),
-            spirv_cross::ErrorCode::CompilationError(msg) => (T::default(), msg),
+            spirv_cross::ErrorCode::Unhandled => ErrorCode::<T>(T::default(), String::from("Unhandled error :(")),
+            spirv_cross::ErrorCode::CompilationError(msg) => ErrorCode::<T>(T::default(), msg),
         }
     }
 }
