@@ -10,6 +10,7 @@ use crate::shaderpack::{
 use cgmath::Vector2;
 use spirv_cross::spirv::Resource;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
     unimplemented!();
@@ -45,7 +46,7 @@ where
     renderpass_textures: HashMap<String, GraphicsApi::Image>,
     renderpass_texture_infos: HashMap<String, TextureCreateInfo>,
 
-    swapchain: GraphicsApi::Swapchain,
+    swapchain: Arc<GraphicsApi::Swapchain>,
 }
 
 impl<'a, GraphicsApi> ApiRenderer<'a, GraphicsApi>
