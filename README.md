@@ -42,7 +42,7 @@ is still in active development.
 
 [Contributing](docs/contributing.md).
 
-You must have a Rust nightly-2019-08-08 toolchain setup. If you want to help develop the Nova Renderer you must also have
+You must have a Rust nightly-2019-09-24 toolchain setup. If you want to help develop the Nova Renderer you must also have
 rustfmt installed for that toolchain so the automatically installed pre-commit hook works.
 
 Please read the following to help get a feel for the project:

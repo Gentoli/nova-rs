@@ -40,14 +40,14 @@ environment:
     # Nightly 64-bit MSVC
     - channel: nightly
       target: x86_64-pc-windows-msvc
-    - channel: nightly-2019-08-08
+    - channel: nightly-2019-09-24
       target: x86_64-pc-windows-msvc
       #cargoflags: --features "unstable"
 
     # Nightly 64-bit GNU
     - channel: nightly
       target: x86_64-pc-windows-gnu
-    - channel: nightly-2019-08-08
+    - channel: nightly-2019-09-24
       target: x86_64-pc-windows-gnu
       #cargoflags: --features "unstable"
 
