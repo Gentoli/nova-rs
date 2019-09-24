@@ -12,9 +12,6 @@ use cgmath::Vector2;
 use spirv_cross::msl::ResourceBinding;
 use std::collections::HashMap;
 
-#[macro_use]
-extern crate log;
-
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
     unimplemented!();
 }

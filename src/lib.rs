@@ -43,6 +43,9 @@
 #![allow(clippy::unimplemented)] // Annoying during early prototyping
 #![allow(clippy::wildcard_enum_match_arm)]
 
+#[macro_use]
+extern crate log;
+
 pub mod async_utils;
 pub mod core;
 pub mod debugging;
