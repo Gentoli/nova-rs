@@ -11,7 +11,7 @@ use failure::Fail;
 use futures::task::SpawnExt;
 use path_dsl::path;
 use std::collections::{HashMap, HashSet};
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 
 mod structs;
@@ -104,11 +104,7 @@ where
     // This function is a wrapper which properly dispatches to various sub functions
 
     // This should actually really be a if let chain, but that's not in the language yet
-    match (
-        path.exists(),
-        path.is_dir(),
-        path.extension().and_then(std::ffi::OsStr::to_str),
-    ) {
+    match (path.exists(), path.is_dir(), path.extension().and_then(OsStr::to_str)) {
         // Directory
         (true, true, _) => {
             // Get the file tree
@@ -202,7 +198,7 @@ where
     // Iterate through the materials directory to find the useful files in the files with the needed extant
     for path in materials_folder {
         let full_path = path!("materials" | &path).into();
-        let ext = path.extension().and_then(std::ffi::OsStr::to_str);
+        let ext = path.extension().and_then(OsStr::to_str);
         // Match on the extension
         match ext {
             Some("mat") => {
