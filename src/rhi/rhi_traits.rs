@@ -15,6 +15,7 @@ use crate::shaderpack;
 use crate::surface::Surface;
 use cgmath::Vector2;
 use std::rc::Rc;
+use std::sync::Arc;
 
 /// Top-level trait for functions that don't belong to any specific device object.
 ///
@@ -83,6 +84,9 @@ pub trait GraphicsApi<'a> {
 
     /// Gets the surface this API was created with.
     fn get_surface(&self) -> Rc<dyn Surface<Self::PlatformSurface>>;
+
+    /// Retrieves the swapchain that
+    fn get_swapchain(&self) -> Arc<Self::Swapchain>;
 }
 
 /// An implementation of the rendering API for a specific device.
