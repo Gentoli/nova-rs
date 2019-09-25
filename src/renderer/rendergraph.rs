@@ -32,6 +32,22 @@ where
     pub write_texture_barriers: Vec<(GraphicsApi::Image, ResourceBarrier)>,
 }
 
+impl<GraphicsApi> Default for Renderpass<GraphicsApi>
+where
+    GraphicsApi: rhi::GraphicsApi,
+{
+    fn default() -> Self {
+        Renderpass {
+            renderpass: (),
+            framebuffer: (),
+            pipelines: vec![],
+            writes_to_backbuffer: false,
+            read_texture_barriers: vec![],
+            write_texture_barriers: vec![],
+        }
+    }
+}
+
 /// All the data needed to issue all drawcalls that use a specific pipeline
 pub struct Pipeline<GraphicsApi>
 where

@@ -2,8 +2,7 @@ use crate::mesh::MeshData;
 use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
 use crate::renderer::Renderer;
 use crate::rhi;
-use crate::rhi::Device;
-use crate::rhi::Swapchain;
+use crate::rhi::{Device, Swapchain};
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
@@ -11,6 +10,7 @@ use crate::shaderpack::{
 };
 use cgmath::Vector2;
 use spirv_cross::spirv::Resource;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -104,25 +104,36 @@ where
         // TODO: Destroy dynamic buffers when Nova supports them
     }
 
-    fn create_rendergraph_resources(&mut self, resource_info: &ShaderpackResourceData) {
-        self.renderpass_textures = resource_info
-            .textures
-            .iter()
-            .map(|info| (info.name, self.device.create_image(info)))
-            .collect();
+    fn create_rendergraph_resources(&mut self, resource_info: ShaderpackResourceData) {
+        let swapchain: &GraphicsApi::Swapchain = self.swapchain.borrow();
+        let swapchain_size = swapchain.get_size();
 
-        self.renderpass_texture_infos = resource_info.textures.iter().map(|info| (info.name, info)).collect();
+        // This is kinda garbage but I don't know a better way
+        self.renderpass_textures = HashMap::with_capacity(resource_info.textures.len());
+        resource_info.textures.iter().for_each(|info| {
+            match self.device.create_image(info, &swapchain_size) {
+                Ok(image) => {
+                    self.renderpass_textures.insert(info.name, image);
+                }
+                Err(e) => error!("{}", e),
+            };
+        });
 
-        // TODO: Create rendergraph buffers
+        self.renderpass_texture_infos = HashMap::with_capacity(resource_info.textures.len());
+        resource_info.textures.iter().for_each(|info| {
+            self.renderpass_texture_infos.insert(info.name, info.clone());
+        });
+
+        // TODO: Create rendergraph buffers, once the rendergraph loader can handle them
     }
 
     fn create_rendergraph_textures(&mut self, &texture_infos: &Vec<TextureCreateInfo>) {}
 
     fn create_render_passes(
         &mut self,
-        passes: &Vec<RenderPassCreationInfo>,
-        pipelines: &Vec<PipelineCreationInfo>,
-        materials: &Vec<MaterialData>,
+        passes: Vec<RenderPassCreationInfo>,
+        pipelines: Vec<PipelineCreationInfo>,
+        materials: Vec<MaterialData>,
     ) -> bool {
         let mut success = true;
 
@@ -136,6 +147,9 @@ where
         let descriptor_pool =
             self.device
                 .create_descriptor_pool(total_num_descriptors as u32, 0, total_num_descriptors as u32);
+
+        let swapchain: &GraphicsApi::Swapchain = self.swapchain.borrow();
+        let swapchain_size = swapchain.get_size();
 
         for pass_info in passes {
             let mut renderpass: Renderpass<GraphicsApi> = Default::default();
@@ -159,7 +173,7 @@ where
                     output_images.push(*image);
 
                     let image_info = self.renderpass_texture_infos.get(&attachment_info.name).unwrap();
-                    let attachment_size = image_info.format.get_size_in_pixels(GraphicsApi::Swapchain::get_size());
+                    let attachment_size = image_info.format.get_size_in_pixels(swapchain_size);
 
                     if framebuffer_size.x > 0.0 {
                         if attachment_size != framebuffer_size {
@@ -185,7 +199,7 @@ where
                 continue;
             }
 
-            match self.device.create_renderpass(pass_info) {
+            match self.device.create_renderpass(pass_info.clone()) {
                 Ok(rhi_renderpass) => renderpass.renderpass = rhi_renderpass,
                 Err(err) => {
                     error!("Could not create RHI object for renderpass {}: {}", pass_info.name, err);
@@ -197,7 +211,7 @@ where
 
             match self
                 .device
-                .create_framebuffer(&renderpass.renderpass, &output_images, &framebuffer_size)
+                .create_framebuffer(&renderpass.renderpass, &output_images, framebuffer_size.clone())
             {
                 Ok(rhi_framebuffer) => renderpass.framebuffer = rhi_framebuffer,
                 Err(err) => {
@@ -216,22 +230,24 @@ where
                 if pipeline_info.pass == pipeline_info.name {
                     let mut bindings = HashMap::<String, Resource>::new();
 
+                    // TODO: Get bindings BEFORE MERGING
+
                     let pipeline_interface = self
                         .device
-                        .create_pipeline_interface(pipeline_info, pass_info.texture_outputs, pass_info.depth_texture)
+                        .create_pipeline_interface(&bindings, &pass_info.texture_outputs, &pass_info.depth_texture)
                         .unwrap();
 
-                    match self.create_graphics_pipeline(pipeline_interface, pipeline_info) {
-                        Ok(graphics_pipeline) => {
+                    match self.create_graphics_pipeline(pipeline_interface, &pipeline_info) {
+                        Ok((pipeline, pipeline_metadata)) => {
                             let template_key = MaterialPassKey {
-                                renderpass_index: self.renderpasses.num() as u32,
-                                pipeline_index: renderpass.pipelines.num() as u32,
+                                renderpass_index: self.renderpasses.len() as u32,
+                                pipeline_index: renderpass.pipelines.len() as u32,
                                 material_pass_key: 0,
                             };
 
                             self.create_materials_for_pipeline(
-                                graphics_pipeline.pipeline,
-                                graphics_pipeline.pipeline_metadata.material_metadatas,
+                                pipeline,
+                                pipeline_metadata.material_metadatas,
                                 materials,
                                 pipeline_info.name,
                                 pipeline_interface,
@@ -266,12 +282,16 @@ where
             material_metadatas: vec![],
         };
 
-        // TODO: Create the material metadatas
+        // TODO: Create the material metadatas BEFORE MERGING
 
         self.device
             .create_graphics_pipeline(create_info)
             .map_error(|e| format!("Could not create pipeline {}: {}", create_info.name, e))
             .map(|pipeline| (pipeline, metadata))
+    }
+
+    fn create_materials_for_pipeline(&self, pipeline: &GraphicsApi::Pipeline) -> bool {
+        unimplemented!();
     }
 }
 
@@ -279,7 +299,7 @@ impl<GraphicsApi> Renderer for ApiRenderer<GraphicsApi>
 where
     GraphicsApi: rhi::GraphicsApi,
 {
-    fn set_render_graph(&mut self, graph: &ShaderpackData) {
+    fn set_render_graph(&mut self, graph: ShaderpackData) {
         if !self.renderpasses.is_empty() {
             self.destroy_render_passes();
             self.destroy_rendergraph_resources();
@@ -287,14 +307,14 @@ where
             info!("Destroyed old render graph's resources");
         }
 
-        self.create_rendergraph_resources(&graph.resources);
+        self.create_rendergraph_resources(graph.resources);
         info!("Created render graph's textures");
 
-        self.create_render_passes(&graph.passes, &graph.pipelines, &graph.materials);
+        self.create_render_passes(graph.passes, graph.pipelines, graph.materials);
         info!("Loaded render graph");
     }
 
-    fn add_mesh(&mut self, mesh_data: &MeshData) -> u32 {
+    fn add_mesh(&mut self, mesh_data: MeshData) -> u32 {
         unimplemented!()
     }
 
