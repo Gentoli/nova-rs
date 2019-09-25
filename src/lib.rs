@@ -3,7 +3,6 @@
 //! This is a rewrite of the old [Nova Renderer](https://github.com/NovaMods/nova-renderer) project
 //! from C++ to Rust.
 
-#![feature(async_await)]
 #![feature(async_closure)]
 #![feature(seek_convenience)]
 #![feature(test)]
