@@ -5,7 +5,6 @@
 
 // Rust features
 #![feature(async_closure)]
-#![feature(const_string_new)]
 #![feature(seek_convenience)]
 #![feature(test)]
 // Rust warnings
