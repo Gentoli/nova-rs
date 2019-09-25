@@ -227,8 +227,8 @@ pub trait Device {
     /// * `framebuffer_size` - The size of the framebuffer, in pixels.
     fn create_framebuffer(
         &self,
-        renderpass: Self::Renderpass,
-        attachments: Vec<Self::Image>,
+        renderpass: &Self::Renderpass,
+        attachments: &Vec<Self::Image>,
         framebuffer_size: Vector2<f32>,
     ) -> Result<Self::Framebuffer, MemoryError>;
 
@@ -266,7 +266,7 @@ pub trait Device {
     ///
     /// * `pipeline_interface` - The interface you want the new pipeline to have.
     /// * `data` - The data to create a pipeline from.
-    fn create_pipeline(
+    fn create_graphics_pipeline(
         &self,
         pipeline_interface: Self::PipelineInterface,
         data: shaderpack::PipelineCreationInfo,
@@ -475,7 +475,7 @@ pub trait Swapchain {
     fn get_image(index: u32) -> Arc<Self::Image>;
 
     /// Gets the size, in pixels,  of the swapchain
-    fn get_size() -> Vector2<u32>;
+    fn get_size(&self) -> Vector2<u32>;
 }
 
 /// FIXME(dethraid): docs
