@@ -158,7 +158,7 @@ macro_rules! await_result_vector {
 async fn load_nova_shaderpack_impl<E, T>(mut executor: E, tree: T) -> Result<ShaderpackData, ShaderpackLoadingFailure>
 where
     E: SpawnExt + Clone + 'static,
-    T: FileTree + Send + Clone + 'static,
+    T: FileTree + Send + Sync + Clone + 'static,
 {
     // To maximize parallelism in an highly async function, you need to dispatch new tasks as soon as you can,
     // and wait on their results as late as you can. This way you give each async job as much time as possible to

@@ -4,7 +4,6 @@
 //! from C++ to Rust.
 
 // Rust features
-#![feature(async_await)]
 #![feature(async_closure)]
 #![feature(const_string_new)]
 #![feature(seek_convenience)]
