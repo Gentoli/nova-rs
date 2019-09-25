@@ -357,7 +357,7 @@ pub trait Device {
     /// # Parameters
     ///
     /// * `image` - The image to destroy
-    fn destroy_image(&self, image: Self::Pipeline);
+    fn destroy_image(&self, image: Self::Image);
 }
 
 /// Represents a queue of command lists to run.

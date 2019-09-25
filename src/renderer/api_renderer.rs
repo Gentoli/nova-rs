@@ -3,6 +3,7 @@ use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, 
 use crate::renderer::Renderer;
 use crate::rhi;
 use crate::rhi::Device;
+use crate::rhi::Swapchain;
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
@@ -132,9 +133,9 @@ where
             }
         }
 
-        let descriptor_pool = self
-            .device
-            .create_descriptor_pool(total_num_descriptors, 0, total_num_descriptors);
+        let descriptor_pool =
+            self.device
+                .create_descriptor_pool(total_num_descriptors as u32, 0, total_num_descriptors as u32);
 
         for pass_info in passes {
             let mut renderpass: Renderpass<GraphicsApi> = Default::default();
@@ -155,14 +156,14 @@ where
                     }
                 } else {
                     let image = self.renderpass_textures.get(&attachment_info.name).unwrap();
-                    output_images.push(image);
+                    output_images.push(*image);
 
                     let image_info = self.renderpass_texture_infos.get(&attachment_info.name).unwrap();
-                    let attachment_size = image_info.format.get_size_in_pixels(self.swapchain.get_size());
+                    let attachment_size = image_info.format.get_size_in_pixels(GraphicsApi::Swapchain::get_size());
 
                     if framebuffer_size.x > 0.0 {
                         if attachment_size != framebuffer_size {
-                            attachment_errors.push(format!("Attachment {} has a size of {}, but the framebuffer for pass {} has a size of {} - these must match! All attachments of a single renderpass must have the same size", attachment_info.name, attachment_size, pass_info.name, framebuffer_size));
+                            attachment_errors.push(format!("Attachment {} has a size of {:?}, but the framebuffer for pass {} has a size of {:?} - these must match! All attachments of a single renderpass must have the same size", attachment_info.name, attachment_size, pass_info.name, framebuffer_size));
                         }
                     } else {
                         framebuffer_size = attachment_size;
