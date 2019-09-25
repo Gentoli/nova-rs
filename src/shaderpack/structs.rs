@@ -139,46 +139,46 @@ pub struct PipelineCreationInfo {
 }
 
 impl PipelineCreationInfo {
-    fn default_depth_bias() -> f32 {
+    const fn default_depth_bias() -> f32 {
         0.0
     }
-    fn default_slope_scaled_depth_bias() -> f32 {
+    const fn default_slope_scaled_depth_bias() -> f32 {
         0.0
     }
-    fn default_stencil_ref() -> u32 {
+    const fn default_stencil_ref() -> u32 {
         0
     }
-    fn default_stencil_read_mask() -> u32 {
+    const fn default_stencil_read_mask() -> u32 {
         0
     }
-    fn default_stencil_write_mask() -> u32 {
+    const fn default_stencil_write_mask() -> u32 {
         0
     }
-    fn default_msaa_support() -> MSAASupport {
+    const fn default_msaa_support() -> MSAASupport {
         MSAASupport::None
     }
-    fn default_primitive_mode() -> PrimitiveTopology {
+    const fn default_primitive_mode() -> PrimitiveTopology {
         PrimitiveTopology::Triangles
     }
-    fn default_src_blend_factor() -> BlendFactor {
+    const fn default_src_blend_factor() -> BlendFactor {
         BlendFactor::One
     }
-    fn default_dst_blend_factor() -> BlendFactor {
+    const fn default_dst_blend_factor() -> BlendFactor {
         BlendFactor::Zero
     }
-    fn default_alpha_src() -> BlendFactor {
+    const fn default_alpha_src() -> BlendFactor {
         BlendFactor::One
     }
-    fn default_alpha_dst() -> BlendFactor {
+    const fn default_alpha_dst() -> BlendFactor {
         BlendFactor::Zero
     }
-    fn default_depth_func() -> CompareOp {
+    const fn default_depth_func() -> CompareOp {
         CompareOp::Less
     }
-    fn default_render_queue() -> RenderQueue {
+    const fn default_render_queue() -> RenderQueue {
         RenderQueue::Opaque
     }
-    fn default_vertex_shader() -> ShaderSource {
+    const fn default_vertex_shader() -> ShaderSource {
         ShaderSource::Invalid
     }
 
@@ -187,7 +187,7 @@ impl PipelineCreationInfo {
     /// # Parameters
     ///
     /// - `_other` - Shaderpack to merge with.
-    pub fn merge_with_parent(&mut self, _other: &PipelineCreationInfo) -> Self {
+    pub fn merge_with_parent(&mut self, _other: &Self) -> Self {
         unimplemented!()
     }
 }
@@ -345,22 +345,22 @@ pub struct StencilOpState {
 }
 
 impl StencilOpState {
-    fn default_fail_op() -> StencilOp {
+    const fn default_fail_op() -> StencilOp {
         StencilOp::Keep
     }
-    fn default_pass_op() -> StencilOp {
+    const fn default_pass_op() -> StencilOp {
         StencilOp::Keep
     }
-    fn default_depth_fail_op() -> StencilOp {
+    const fn default_depth_fail_op() -> StencilOp {
         StencilOp::Keep
     }
-    fn default_compare_op() -> CompareOp {
+    const fn default_compare_op() -> CompareOp {
         CompareOp::Equal
     }
-    fn default_compare_mask() -> u32 {
+    const fn default_compare_mask() -> u32 {
         0
     }
-    fn default_write_mask() -> u32 {
+    const fn default_write_mask() -> u32 {
         0
     }
 }
@@ -398,10 +398,10 @@ pub struct TextureAttachmentInfo {
 }
 
 impl TextureAttachmentInfo {
-    fn default_pixel_format() -> PixelFormat {
+    const fn default_pixel_format() -> PixelFormat {
         PixelFormat::RGBA8
     }
-    fn default_clear() -> bool {
+    const fn default_clear() -> bool {
         false
     }
 }
@@ -498,13 +498,13 @@ pub struct SamplerCreateInfo {
 }
 
 impl SamplerCreateInfo {
-    fn default_name() -> String {
+    const fn default_name() -> String {
         String::new()
     }
-    fn default_filter() -> TextureFilter {
+    const fn default_filter() -> TextureFilter {
         TextureFilter::Point
     }
-    fn default_wrap_mode() -> WrapMode {
+    const fn default_wrap_mode() -> WrapMode {
         WrapMode::Clamp
     }
 }
@@ -531,16 +531,16 @@ pub struct TextureFormat {
 }
 
 impl TextureFormat {
-    fn default_pixel_format() -> PixelFormat {
+    const fn default_pixel_format() -> PixelFormat {
         PixelFormat::RGBA8
     }
-    fn default_dimension_type() -> TextureDimensionType {
+    const fn default_dimension_type() -> TextureDimensionType {
         TextureDimensionType::ScreenRelative
     }
-    fn default_width() -> f32 {
+    const fn default_width() -> f32 {
         0.0
     }
-    fn default_height() -> f32 {
+    const fn default_height() -> f32 {
         0.0
     }
 

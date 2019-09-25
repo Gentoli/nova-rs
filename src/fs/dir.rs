@@ -48,7 +48,7 @@ impl DirectoryEntry {
     /// let d_entry = b_entry.get("c/d").unwrap();
     /// # Ok::<(), std::io::Error>(())
     /// ```
-    pub fn get<P>(&self, path: P) -> Option<&DirectoryEntry>
+    pub fn get<P>(&self, path: P) -> Option<&Self>
     where
         P: AsRef<Path>,
     {
@@ -57,10 +57,10 @@ impl DirectoryEntry {
         let mut node = self;
         for component in path_iter {
             match node {
-                DirectoryEntry::File => {
+                Self::File => {
                     return None;
                 }
-                DirectoryEntry::Directory { entries: map } => {
+                Self::Directory { entries: map } => {
                     node = match map.get(component.as_os_str()) {
                         Some(v) => v,
                         None => return None,

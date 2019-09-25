@@ -86,7 +86,7 @@ impl FileTree for DirectoryFileTree {
 
     fn read(&self, path: &Path) -> Self::ReadResult {
         let path = path.to_owned();
-        let data = self.0.clone();
+        let data = Arc::clone(&self.0);
         Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();
@@ -111,7 +111,7 @@ impl FileTree for DirectoryFileTree {
 
     fn read_u32(&self, path: &Path) -> Self::ReadU32Result {
         let path = path.to_owned();
-        let data = self.0.clone();
+        let data = Arc::clone(&self.0);
         Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();
@@ -136,7 +136,7 @@ impl FileTree for DirectoryFileTree {
 
     fn read_text(&self, path: &Path) -> Self::ReadTextResult {
         let path = path.to_owned();
-        let data = self.0.clone();
+        let data = Arc::clone(&self.0);
         Pin::from(Box::new(async move {
             let real_path = {
                 let mut p = data.cache.root.clone();

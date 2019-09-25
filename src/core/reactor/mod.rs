@@ -88,7 +88,7 @@ where
     R: Send + 'static,
 {
     fn from(tuple: (S, Waker, Sender<R>)) -> Self {
-        ReactorDatagram {
+        Self {
             data: tuple.0,
             waker: tuple.1,
             sender: tuple.2,

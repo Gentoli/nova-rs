@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["David Dubois <dexcelstraun7@gmail.com>"]
 edition = "2018"
 build = "build.rs"
+
+license = "MIT"
+repository = "https://github.com/NovaMods/nova-rs"
+readme = "README.md"
 description = "A modern, high-performance, customizable rendering engine"
 keywords = ["nova", "renderer", "directx-12", "vulkan", "minecraft"]
 categories = ["rendering::engine", "graphics"]
@@ -12,16 +16,21 @@ categories = ["rendering::engine", "graphics"]
 # TODO: Profiles
 
 [dependencies]
-bitflags = "1.1.0"
-cgmath = { version = "0.17.0", features = ["swizzle"] }
-crossbeam = "^0.7"
-failure = "0.1.5"
-futures-preview = { version = "=0.3.0-alpha.17", features = ["async-await", "nightly"] }
-log = { version = "0.4.7", features = ["std"] }
-matches = "0.1.8"
-path-dsl = "0.5.4"
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "1.0.40"
+bitflags = "1"
+cgmath = { version = "0.17", features = ["serde"]}
+crossbeam = "0.7"
+failure = { version = "0.1", git = "https://github.com/infinity0/failure.git", branch = "master" }
+futures-preview = { version = "=0.3.0-alpha.18", features = ["async-await"]}
+log = { version = "0.4", features = ["std"] }
+matches = "0.1"
+path-dsl = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]
-maplit = "1.0.1"
+maplit = "1"
+
+[patch.crates-io]
+cgmath = { git = "https://github.com/rustgd/cgmath.git", branch = "master" }
+futures-preview = { git = "https://github.com/rust-lang-nursery/futures-rs.git", branch = "master" }
+synstructure = { git = "https://github.com/NovaMods/synstructure.git", branch = "cw/update-unicode-xid" }
