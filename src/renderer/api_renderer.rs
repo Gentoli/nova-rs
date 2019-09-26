@@ -12,9 +12,10 @@ use crate::shaderpack::{
     TextureCreateInfo,
 };
 use cgmath::Vector2;
-use spirv_cross::spirv::Resource;
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::iter::Iterator;
+use std::mem;
 use std::sync::Arc;
 
 pub fn new_dx12_renderer(settings: Settings) -> Box<dyn Renderer> {
@@ -244,21 +245,19 @@ where
                         .create_pipeline_interface(&bindings, &pass_info.texture_outputs, &pass_info.depth_texture)
                         .unwrap();
 
-                    match self
-                        .device
+                    self.device
                         .create_graphics_pipeline(pipeline_interface, pipeline_info)
                         .map_err(|e| format!("Could not create pipeline {}: {}", pipeline_info.name, e))
-                    {
-                        Ok(pipeline) => {
+                        .map(|pipeline| {
                             let template_key = MaterialPassKey {
                                 renderpass_index: self.renderpasses.len() as u32,
                                 pipeline_index: renderpass.pipelines.len() as u32,
                                 material_pass_index: 0,
                             };
 
-                            let mut material_metadatas = HashSet::<FullMaterialPassName, MaterialPassMetadata>::new();
+                            let mut material_metadatas = HashMap::<FullMaterialPassName, MaterialPassMetadata>::new();
 
-                            self.create_materials_for_pipeline(
+                            let material_passes = self.create_materials_for_pipeline(
                                 &pipeline,
                                 &mut material_metadatas,
                                 &materials,
@@ -268,22 +267,26 @@ where
                                 &template_key,
                             );
 
-                            renderpass.pipelines.push(pipeline);
+                            (
+                                Pipeline {
+                                    pipeline,
+                                    passes: material_passes,
+                                },
+                                material_metadatas,
+                            )
+                        })
+                        .iter()
+                        .for_each(|(pipeline, material_metadatas)| {
+                            renderpass.pipelines.push(*pipeline.clone());
 
-                            renderpass_metadata
-                                .pipeline_metadata
-                                .insert(pipeline_info.name, pipeline_metadata);
-                        }
-                        Err(err) => {
-                            error!(
-                                "Could not create pipeline {} for pass {}: {}",
-                                pipeline_info.name, pass_info.name, err
+                            renderpass_metadata.pipeline_metadata.insert(
+                                pipeline_info.name,
+                                PipelineMetadata {
+                                    data: pipeline_info,
+                                    material_metadatas: *material_metadatas.clone(),
+                                },
                             );
-
-                            success = false;
-                            continue;
-                        }
-                    }
+                        });
                 }
             }
         }
@@ -309,7 +312,10 @@ where
                 .iter()
                 .filter(|pass_data| pass_data.pipeline == pipeline_name)
                 .for_each(|pass_data| {
-                    let mut pass = MaterialPass::default();
+                    #[allow(unsafe_code)]
+                    let mut pass = MaterialPass {
+                        ..unsafe { mem::zeroed() }
+                    };
 
                     pass.descriptor_sets = descriptor_pool.create_descriptor_sets(pipeline_interface);
 
@@ -334,11 +340,16 @@ where
 
                     self.material_pass_keys.insert(full_pass_name, key);
 
-                    passes.pus(pass);
+                    passes.push(pass);
                 });
         });
 
         passes
+    }
+
+    fn bind_data_to_material_descriptor_sets() {
+        // TODO
+        unimplemented!();
     }
 }
 
