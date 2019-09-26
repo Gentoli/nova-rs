@@ -439,7 +439,7 @@ pub trait DescriptorPool {
     /// # Parameters
     ///
     /// * `pipeline_interface` - The PipelineInterface to create the descriptors from.
-    fn create_descriptor_sets(&self, pipeline_interface: Self::PipelineInterface) -> Vec<Self::DescriptorSet>;
+    fn create_descriptor_sets(&self, pipeline_interface: &Self::PipelineInterface) -> Vec<Self::DescriptorSet>;
 }
 
 /// FIXME(dethraid): docs
