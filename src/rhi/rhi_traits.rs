@@ -258,7 +258,7 @@ pub trait Device {
         num_sampled_images: u32,
         num_samplers: u32,
         num_uniform_buffers: u32,
-    ) -> Result<Vec<Self::DescriptorPool>, DescriptorPoolCreationError>;
+    ) -> Result<Self::DescriptorPool, DescriptorPoolCreationError>;
 
     /// Creates a Pipeline with the provided PipelineInterface and the given PipelineCreateInfo.
     ///
