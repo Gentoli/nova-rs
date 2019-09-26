@@ -1,8 +1,9 @@
 use crate::mesh::StaticMeshDrawCommand;
 use crate::rhi::ResourceBarrier;
 use crate::{rhi, shaderpack};
+use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt;
+use std::fmt::{Debug, Display};
 
 /// All the runtime data needed to execute a single renderpass
 pub struct Renderpass<GraphicsApi>
@@ -97,6 +98,7 @@ where
 }
 
 /// A key to where a material pass is in a compiled rendergraph
+#[derive(Default, Debug)]
 pub struct MaterialPassKey {
     /// Index of this material's renderpass
     pub renderpass_index: u32,
@@ -109,6 +111,7 @@ pub struct MaterialPassKey {
 }
 
 /// Metadata about a pipeline
+#[derive(Default, Debug)]
 pub struct PipelineMetadata {
     /// The data that this pipeline was created with
     pub data: shaderpack::PipelineCreationInfo,
@@ -118,20 +121,30 @@ pub struct PipelineMetadata {
 }
 
 /// The full name of a material pass, mostly useful for logging
+#[derive(Default, Debug, Eq, Hash)]
 pub struct FullMaterialPassName {
     /// Name of the material that this material pass belongs to
     pub material_name: String,
+
     pub pass_name: String,
 }
 
-impl fmt::Display for FullMaterialPassName {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Material Pass {} in Material {}", self.pass_name, self.material_name)
+impl PartialEq for FullMaterialPassName {
+    fn eq(&self, other: &Self) -> bool {
+        self.material_name.eq(&other.material_name) && self.pass_name.eq(&other.material_name)
     }
 }
 
 /// Metadata about a material pass
+#[derive(Default, Debug)]
 pub struct MaterialPassMetadata {
     /// The data that the material pass was created with
     pub data: shaderpack::MaterialPass,
+}
+
+#[derive(Default, Debug)]
+pub struct RenderpassMetadata {
+    pub data: shaderpack::RenderPassCreationInfo,
+
+    pub pipeline_metadata: HashMap<String, PipelineMetadata>,
 }

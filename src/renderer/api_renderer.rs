@@ -1,8 +1,11 @@
 use crate::mesh::MeshData;
-use crate::renderer::rendergraph::{MaterialPassKey, Pipeline, PipelineMetadata, Renderpass};
+use crate::renderer::rendergraph::{
+    FullMaterialPassName, MaterialPassKey, MaterialPassMetadata, Pipeline, PipelineMetadata, Renderpass,
+    RenderpassMetadata,
+};
 use crate::renderer::Renderer;
 use crate::rhi;
-use crate::rhi::{Device, Swapchain};
+use crate::rhi::{Device, ResourceBindingDescription, Swapchain};
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
@@ -144,15 +147,19 @@ where
             }
         }
 
-        let descriptor_pool =
-            self.device
-                .create_descriptor_pool(total_num_descriptors as u32, 0, total_num_descriptors as u32);
+        let descriptor_pool = self
+            .device
+            .create_descriptor_pool(total_num_descriptors as u32, 0, total_num_descriptors as u32)
+            .unwrap();
 
         let swapchain: &GraphicsApi::Swapchain = self.swapchain.borrow();
         let swapchain_size = swapchain.get_size();
 
         for pass_info in passes {
             let mut renderpass: Renderpass<GraphicsApi> = Default::default();
+
+            let mut renderpass_metadata: RenderpassMetadata = Default::default();
+            renderpass_metadata.data = pass_info.clone();
 
             let mut output_images = Vec::<GraphicsApi::Image>::with_capacity(pass_info.texture_outputs.len());
             let mut attachment_errors = Vec::<String>::with_capacity(pass_info.texture_outputs.len());
@@ -228,7 +235,7 @@ where
             renderpass.pipelines.reserve(pipelines.len());
             for pipeline_info in pipelines {
                 if pipeline_info.pass == pipeline_info.name {
-                    let mut bindings = HashMap::<String, Resource>::new();
+                    let mut bindings = HashMap::<String, ResourceBindingDescription>::new();
 
                     // TODO: Get bindings BEFORE MERGING
 
@@ -246,14 +253,20 @@ where
                             };
 
                             self.create_materials_for_pipeline(
-                                pipeline,
-                                pipeline_metadata.material_metadatas,
-                                materials,
-                                pipeline_info.name,
-                                pipeline_interface,
-                                descriptor_pool,
-                                template_key,
+                                &pipeline,
+                                &pipeline_metadata.material_metadatas,
+                                &materials,
+                                &pipeline_info.name,
+                                &pipeline_interface,
+                                &descriptor_pool,
+                                &template_key,
                             );
+
+                            renderpass.pipelines.push(pipeline);
+
+                            renderpass_metadata
+                                .pipeline_metadata
+                                .insert(pipeline_info.name, pipeline_metadata);
                         }
                         Err(err) => {
                             error!(
@@ -285,12 +298,21 @@ where
         // TODO: Create the material metadatas BEFORE MERGING
 
         self.device
-            .create_graphics_pipeline(create_info)
+            .create_graphics_pipeline(interface, create_info)
             .map_error(|e| format!("Could not create pipeline {}: {}", create_info.name, e))
             .map(|pipeline| (pipeline, metadata))
     }
 
-    fn create_materials_for_pipeline(&self, pipeline: &GraphicsApi::Pipeline) -> bool {
+    fn create_materials_for_pipeline(
+        &self,
+        pipeline: &Pipeline<GraphicsApi>,
+        material_metadata: &HashMap<FullMaterialPassName, MaterialPassMetadata>,
+        materials: &Vec<MaterialData>,
+        pipeline_name: &str,
+        pipeline_interface: &GraphicsApi::PipelineInterface,
+        descriptor_pool: &GraphicsApi::DescriptorPool,
+        template_key: &MaterialPassKey,
+    ) -> bool {
         unimplemented!();
     }
 }
