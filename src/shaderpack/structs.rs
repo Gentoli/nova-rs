@@ -27,7 +27,7 @@ pub struct ShaderpackData {
 }
 
 /// Information needed to create a pipeline
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PipelineCreationInfo {
     /// The name of this pipeline.
@@ -209,7 +209,7 @@ impl PipelineCreationInfo {
 /// change per frame, a UBO for per-model data like the model matrix, and the virtual texture atlases. The default
 /// resources.json file sets up sixteen framebuffer color attachments for ping-pong buffers, a depth attachment,
 /// some shadow maps, etc.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenderPassCreationInfo {
     /// The name of this render pass.
@@ -407,7 +407,7 @@ impl TextureAttachmentInfo {
 }
 
 /// The per-renderpass data for a material
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MaterialPass {
     /// Name of the render pass.
@@ -549,7 +549,7 @@ impl TextureFormat {
     /// # Parameters
     ///
     /// - `screen_size` - Needed if the texture resolution is relative to the screen size
-    pub fn get_size_in_pixels(&self, screen_size: Vector2<f32>) -> Vector2<f32> {
+    pub fn get_size_in_pixels(&self, screen_size: Vector2<u32>) -> Vector2<f32> {
         let (width, height) = match self.dimension_type {
             TextureDimensionType::ScreenRelative => (self.width * screen_size.x, self.height * screen_size.y),
             TextureDimensionType::Absolute => (self.width, self.height),
