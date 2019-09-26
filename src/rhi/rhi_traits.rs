@@ -478,8 +478,14 @@ pub trait Swapchain {
     fn get_size(&self) -> Vector2<u32>;
 }
 
-/// FIXME(dethraid): docs
-pub trait PipelineInterface {}
+/// Represents a pipeline interface ain an API-agnostic way
+///
+/// You can create pipeline interfaces from a pipeline's shader, and you can use pipeline interfaces to create
+/// descriptor sets. You also bind descriptor sets to pipeline interfaces, and bind a pipeline interface to a command
+/// list
+pub trait PipelineInterface {
+    fn get_bindings() -> Vec<ResourceBindingDescription>;
+}
 
 /// FIXME(dethraid): docs
 pub trait Pipeline {}
