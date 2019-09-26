@@ -62,6 +62,7 @@ where
 }
 
 /// A single pass from a material
+#[derive(Default)]
 pub struct MaterialPass<GraphicsApi>
 where
     GraphicsApi: rhi::GraphicsApi,
@@ -107,7 +108,7 @@ pub struct MaterialPassKey {
     pub pipeline_index: u32,
 
     /// Index of this material
-    pub material_pass_key: u32,
+    pub material_pass_index: u32,
 }
 
 /// Metadata about a pipeline

@@ -1,11 +1,11 @@
 use crate::mesh::MeshData;
 use crate::renderer::rendergraph::{
-    FullMaterialPassName, MaterialPassKey, MaterialPassMetadata, Pipeline, PipelineMetadata, Renderpass,
+    FullMaterialPassName, MaterialPass, MaterialPassKey, MaterialPassMetadata, Pipeline, PipelineMetadata, Renderpass,
     RenderpassMetadata,
 };
 use crate::renderer::Renderer;
 use crate::rhi;
-use crate::rhi::{Device, ResourceBindingDescription, Swapchain};
+use crate::rhi::{DescriptorPool, Device, ResourceBindingDescription, Swapchain};
 use crate::settings::Settings;
 use crate::shaderpack::{
     MaterialData, PipelineCreationInfo, RenderPassCreationInfo, ShaderpackData, ShaderpackResourceData,
@@ -244,17 +244,23 @@ where
                         .create_pipeline_interface(&bindings, &pass_info.texture_outputs, &pass_info.depth_texture)
                         .unwrap();
 
-                    match self.create_graphics_pipeline(pipeline_interface, &pipeline_info) {
-                        Ok((pipeline, pipeline_metadata)) => {
+                    match self
+                        .device
+                        .create_graphics_pipeline(pipeline_interface, pipeline_info)
+                        .map_err(|e| format!("Could not create pipeline {}: {}", pipeline_info.name, e))
+                    {
+                        Ok(pipeline) => {
                             let template_key = MaterialPassKey {
                                 renderpass_index: self.renderpasses.len() as u32,
                                 pipeline_index: renderpass.pipelines.len() as u32,
-                                material_pass_key: 0,
+                                material_pass_index: 0,
                             };
+
+                            let mut material_metadatas = HashSet::<FullMaterialPassName, MaterialPassMetadata>::new();
 
                             self.create_materials_for_pipeline(
                                 &pipeline,
-                                &pipeline_metadata.material_metadatas,
+                                &mut material_metadatas,
                                 &materials,
                                 &pipeline_info.name,
                                 &pipeline_interface,
@@ -285,35 +291,54 @@ where
         success
     }
 
-    fn create_graphics_pipeline(
-        &self,
-        interface: GraphicsApi::PipelineInterface,
-        create_info: &PipelineCreationInfo,
-    ) -> Result<(Pipeline<GraphicsApi>, PipelineMetadata), String> {
-        let mut metadata = PipelineMetadata {
-            data: create_info.clone(),
-            material_metadatas: vec![],
-        };
-
-        // TODO: Create the material metadatas BEFORE MERGING
-
-        self.device
-            .create_graphics_pipeline(interface, create_info)
-            .map_error(|e| format!("Could not create pipeline {}: {}", create_info.name, e))
-            .map(|pipeline| (pipeline, metadata))
-    }
-
     fn create_materials_for_pipeline(
         &self,
-        pipeline: &Pipeline<GraphicsApi>,
-        material_metadata: &HashMap<FullMaterialPassName, MaterialPassMetadata>,
+        pipeline: &GraphicsApi::Pipeline,
+        material_metadata: &mut HashMap<FullMaterialPassName, MaterialPassMetadata>,
         materials: &Vec<MaterialData>,
         pipeline_name: &str,
         pipeline_interface: &GraphicsApi::PipelineInterface,
         descriptor_pool: &GraphicsApi::DescriptorPool,
         template_key: &MaterialPassKey,
-    ) -> bool {
-        unimplemented!();
+    ) -> Vec<MaterialPass<GraphicsApi>> {
+        let mut passes = Vec::with_capacity(materials.len());
+
+        materials.iter().for_each(|material_data| {
+            material_data
+                .passes
+                .iter()
+                .filter(|pass_data| pass_data.pipeline == pipeline_name)
+                .for_each(|pass_data| {
+                    let mut pass = MaterialPass::default();
+
+                    pass.descriptor_sets = descriptor_pool.create_descriptor_sets(pipeline_interface);
+
+                    self.bind_data_to_material_descriptor_sets(
+                        &mut pass,
+                        &pass_data.bindings,
+                        &pipeline_interface.get_bindings(),
+                    );
+
+                    let full_pass_name = FullMaterialPassName {
+                        material_name: pass_data.material_name,
+                        pass_name: pass_data.name,
+                    };
+
+                    let pass_metadata = MaterialPassMetadata {
+                        data: pass_data.clone(),
+                    };
+                    material_metadata.insert(full_pass_name, pass_metadata);
+
+                    let mut key = *template_key.clone();
+                    key.material_pass_index = passes.len() as u32;
+
+                    self.material_pass_keys.insert(full_pass_name, key);
+
+                    passes.pus(pass);
+                });
+        });
+
+        passes
     }
 }
 
