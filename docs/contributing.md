@@ -28,18 +28,18 @@ These documents outline the purpose of the project and the rules you must adhere
 
 #### Principles
 
-- [The Project Charter](docs/project_charter.md).
-- [Project Pipeline](docs/project_pipeline.md). Don't know what to do? Look here!
+- [The Project Charter](project_charter.md).
+- [Project Pipeline](project_pipeline.md). Don't know what to do? Look here!
 
 #### Rules
 
 **These must be followed for your PR to be accepted.**
 
-- [Git Rules/Cheatsheet](docs/git.md).
-- [Rust Conventions](docs/rust_conventions.md). 
+- [Git Rules/Cheatsheet](git.md).
+- [Rust Conventions](rust_conventions.md). 
 
 ## Primers
 
 Primers on various new Rust technologies that we will be using in Nova Renderer.
 
-- [Async Await Primer](docs/async_await.md)
+- [Async Await Primer](async_await.md)
